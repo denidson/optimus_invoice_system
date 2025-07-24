@@ -1,41 +1,71 @@
 import React from "react";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import Login from "./pages/Login";
-import Dashboard from "./pages/Dashboard";
-import Clientes from "./pages/Clientes";
-import { AuthProvider, AuthContext } from "./context/AuthContext";
-import Navbar from "./components/Navbar";
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { AuthProvider } from "./context/AuthContext";
 
-function RutaPrivada({ children }) {
-  const { usuario } = React.useContext(AuthContext);
-  return usuario ? children : <Navigate to="/" />;
-}
+import Login from "./pages/Login";
+import Signup from "./pages/Signup";
+import Dashboard from "./pages/Dashboard";
+// import Profile from "./pages/Profile";
+// import Invoices from "./pages/Invoices";
+// import InvoiceForm from "./pages/InvoiceForm";
+import PrivateRoute from "./components/PrivateRoute";
+import '@fortawesome/fontawesome-free/css/all.min.css';
+
 
 function App() {
   return (
     <AuthProvider>
-      <BrowserRouter>
-        <Navbar />
+      <Router>
         <Routes>
-          <Route path="/" element={<Login />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/signup" element={<Signup />} />
+
           <Route
             path="/dashboard"
             element={
-              <RutaPrivada>
+              <PrivateRoute>
                 <Dashboard />
-              </RutaPrivada>
+              </PrivateRoute>
             }
           />
-          <Route
-            path="/clientes"
+
+          {/* <Route
+            path="/profile"
             element={
-              <RutaPrivada>
-                <Clientes />
-              </RutaPrivada>
+              <PrivateRoute>
+                <Profile />
+              </PrivateRoute>
             }
           />
+
+          <Route
+            path="/invoices"
+            element={
+              <PrivateRoute>
+                <Invoices />
+              </PrivateRoute>
+            }
+          />
+
+          <Route
+            path="/invoices/new"
+            element={
+              <PrivateRoute>
+                <InvoiceForm />
+              </PrivateRoute>
+            }
+          />
+
+          <Route
+            path="/invoices/edit/:id"
+            element={
+              <PrivateRoute>
+                <InvoiceForm />
+              </PrivateRoute>
+            }
+          /> */}
         </Routes>
-      </BrowserRouter>
+      </Router>
     </AuthProvider>
   );
 }

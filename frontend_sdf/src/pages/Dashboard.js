@@ -1,11 +1,23 @@
-import React from "react";
+import React, { useContext } from "react";
+import { AuthContext } from "../context/AuthContext";
+import Sidebar from '../components/Sidebar/Sidebar';
+import Navbar from '../components/Navbars/IndexNavbar';
+import HeaderStats from '../components/Headers/HeaderStats';
+import CardStats from '../components/Cards/CardStats';
+
 
 function Dashboard() {
+  const { usuario } = useContext(AuthContext);
+
   return (
-    <div className="p-8">
-      <h2 className="text-2xl font-bold mb-4">Dashboard</h2>
-      <p>Bienvenido al Sistema de Facturación Digital.</p>
-    </div>
+    <>
+      <Sidebar />
+      <div className="relative md:ml-64 bg-blueGray-100">
+        <Navbar />
+        {/* Header */}
+        <HeaderStats />
+      </div>
+    </>
   );
 }
 
