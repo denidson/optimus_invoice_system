@@ -4,6 +4,8 @@ import { AuthProvider } from "./context/AuthContext";
 
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
+import ListClients from "./pages/Clients/ListClients";
+import FormClients from "./pages/Clients/FormClients";
 import Dashboard from "./pages/Dashboard";
 // import Profile from "./pages/Profile";
 // import Invoices from "./pages/Invoices";
@@ -17,14 +19,39 @@ function App() {
     <AuthProvider>
       <Router>
         <Routes>
+          <Route path="/" element={<Login />} />
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
-
           <Route
             path="/dashboard"
             element={
               <PrivateRoute>
                 <Dashboard />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/clients"
+            element={
+              <PrivateRoute>
+                <ListClients />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/clients/edit"
+            element={
+              <PrivateRoute>
+                <FormClients />
+              </PrivateRoute>
+            }
+          />
+
+          <Route
+            path="/clients/create"
+            element={
+              <PrivateRoute>
+                <FormClients />
               </PrivateRoute>
             }
           />
