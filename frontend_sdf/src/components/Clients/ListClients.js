@@ -57,22 +57,6 @@ function ListClients() {
     navigate(`/clients/create`);
   };
 
-  // Filtrar clientes según el término de búsqueda
-  const filteredClients = clients.filter(client =>
-    client.nombre_empresa.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    client.rif.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    client.direccion.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    client.telefono.includes(searchTerm)
-  );
-
-  // Calcular el índice de los clientes a mostrar en la página actual
-  const indexOfLastClient = (currentPage + 1) * clientsPerPage;
-  const indexOfFirstClient = indexOfLastClient - clientsPerPage;
-  const currentClients = filteredClients.slice(indexOfFirstClient, indexOfLastClient);
-
-  // Cambiar la página actual
-  const paginate = (pageNumber) => setCurrentPage(pageNumber);
-
   const handleAction = async (id) => {
     try {
       const data = await deleteClient(id);
@@ -94,6 +78,7 @@ function ListClients() {
       console.error("Error cargando clientes:", err);
     }
   };
+
   const handleConfirm = () => {
     if (clientIdToDeactivate) {
       handleAction(clientIdToDeactivate.id);
@@ -179,6 +164,7 @@ function ListClients() {
                 </label>
               </div>
             </div>
+
 
             {/* DataTable */}
             <div className="block w-full overflow-x-auto px-4 py-4">
