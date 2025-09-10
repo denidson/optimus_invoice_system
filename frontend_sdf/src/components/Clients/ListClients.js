@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from "react-router-dom"; // Para la redirección
-import { getClients, deleteClient } from '../../services/api_clients'; // Importa el servicio
+import { getClients, deleteClient, showClient } from '../../services/api_clients'; // Importa el servicio
 import { encryptText, decryptText } from '../../services/api'; // Importa el servicio para encriptar/desencriptar parametros
 import ModalConfirmation from "../Modals/ModalConfirmation";
+import ModalClients from "./ModalClients";
 import { toast, ToastContainer } from "react-toastify"; // Importamos las funciones necesarias
 import "react-toastify/dist/ReactToastify.css"; // Importar el CSS de las notificaciones
 import $ from "jquery";
@@ -26,6 +27,7 @@ DataTable.use(DT);
 function CardTable() {
   const navigate = useNavigate(); // Hook para redirección
   const [modalOpen, setModalOpen] = useState(false); // Estado para manejar la visibilidad de la modal
+  const [modalOpenClients, setModalOpenClients] = useState(false); // Estado para manejar la visibilidad de la modal
   const [clientIdToDeactivate, setClientIdToDeactivate] = useState(null); // Estado para almacenar el ID del cliente a desactivar
 
   // Cargar los clientes al inicio
@@ -43,6 +45,13 @@ function CardTable() {
       const id = $(this).data("id");
       const nombre = $(this).data("nombre");
       handleOpenModal(id, nombre);
+    });
+
+    // Click visualizar
+    $("#ListClientDt tbody").on("click", "button.btn-view", function () {
+      const id = $(this).data("id");
+      const nombre = $(this).data("nombre");
+      handleOpenModalClients(id, nombre);
     });
 
     return () => {
@@ -112,6 +121,23 @@ function CardTable() {
     setModalOpen(false); // Cierra la modal
   };
 
+  const handleOpenModalClients = async (id) => {
+    try{
+        const data = await showClient(id);
+        setClientIdToDeactivate(data);
+        setModalOpenClients(true); // Abre la modal de confirmación
+    } catch (err) {
+      // Mostrar una notificación de error
+      toast.error("Error al consultar los datos del cliente.");
+    } finally {
+      // Indicamos que la carga ha finalizado
+    }
+  };
+
+  const handleCloseModalClients = () => {
+    setModalOpenClients(false); // Cierra la modal
+  };
+
   return (
     <div className="px-4 md:px-10 mx-auto w-full -m-24">
       {/* Colocamos el contenedor de las notificaciones */}
@@ -139,8 +165,9 @@ function CardTable() {
                     searchable: false,
                     render: (data, type, row) => {
                       return `
-                        <button class="btn-edit px-3 py-1 mx-2 text-blue-600" data-id="${row.id}"><i class="fa-solid fa-lg fa-pen-to-square"></i></button>
-                        <button class="btn-delete px-3 py-1 mx-2 text-red-600" data-id="${row.id}" data-nombre="${row.nombre_empresa}"><i class="fa-solid fa-lg fa-trash"></i></button>
+                        <button class="btn-view px-3 py-1 ml-2 mr-0" data-id="${row.id}"><i class="fa-solid fa-lg fa-expand"></i></button>
+                        <button class="btn-edit px-3 py-1 mx-0 text-blue-600" data-id="${row.id}"><i class="fa-solid fa-lg fa-pen-to-square"></i></button>
+                        <button class="btn-delete px-3 py-1 ml-0 mr-2 text-red-600" data-id="${row.id}" data-nombre="${row.nombre_empresa}"><i class="fa-solid fa-lg fa-trash"></i></button>
                       `;
                       // btn-edit bg-blue-500 hover:bg-blue-600 text-white p-2 rounded-xl mx-1
                       //btn-delete bg-red-500 hover:bg-red-600 text-white p-2 rounded-xl mx-1
@@ -232,6 +259,12 @@ function CardTable() {
                 onClose={handleCloseModal}
                 onConfirm={handleConfirm}
                 message={'¿Estás seguro de que deseas desactivar al cliente '+ (clientIdToDeactivate ? clientIdToDeactivate.nombre_empresa : '') +'?'} // Pasamos el mensaje personalizado
+              />
+              {/* Modal de confirmación */}
+              <ModalClients
+                isOpen={modalOpenClients}
+                onClose={handleCloseModalClients}
+                message={clientIdToDeactivate}//{'Detalle del cliente'} // Pasamos el mensaje personalizado
               />
             </div>
           </div>
