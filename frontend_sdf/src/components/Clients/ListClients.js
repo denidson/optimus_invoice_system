@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from "react-router-dom"; // Para la redirección
-import { getClients, deleteClient, showClient } from '../../services/api_clients'; // Importa el servicio
-import { encryptText, decryptText } from '../../services/api'; // Importa el servicio para encriptar/desencriptar parametros
+import { getClients, deleteClient, showClient, createClient } from '../../services/api_clients'; // Importa el servicio
+import { encryptText } from '../../services/api'; // Importa el servicio para encriptar/desencriptar parametros
 import ModalConfirmation from "../Modals/ModalConfirmation";
 import ModalClients from "./ModalClients";
 import { toast, ToastContainer } from "react-toastify"; // Importamos las funciones necesarias
@@ -19,12 +19,14 @@ import "datatables.net-buttons/js/buttons.print";
 import JSZip from "jszip";
 import pdfMake from "pdfmake/build/pdfmake";
 import pdfFonts from "pdfmake/build/vfs_fonts";
+import { read, utils } from 'xlsx'; // ✅ Import correcto para XLSX
+import Papa from 'papaparse';
 window.JSZip = JSZip;
 //pdfMake.vfs = pdfFonts.pdfMake.vfs;
 // Activar el "plugin" base de DataTables
 DataTable.use(DT);
 
-function CardTable() {
+function ListClients() {
   const navigate = useNavigate(); // Hook para redirección
   const [modalOpen, setModalOpen] = useState(false); // Estado para manejar la visibilidad de la modal
   const [modalOpenClients, setModalOpenClients] = useState(false); // Estado para manejar la visibilidad de la modal
@@ -39,6 +41,7 @@ function CardTable() {
       const id = $(this).data("id");
       redirectToEdit(id);
     });
+
 
     // Click eliminar
     $("#ListClientDt tbody").on("click", "button.btn-delete", function () {
@@ -58,12 +61,12 @@ function CardTable() {
       // limpiar eventos para evitar duplicados
       $("#ListClientDt tbody").off("click", "button.btn-edit");
       $("#ListClientDt tbody").off("click", "button.btn-delete");
+      $("#ListClientDt tbody").off("click", "button.btn-view");
     };
   }, []); // Se ejecuta solo una vez al montar el componente
 
-  // Función para redirigir a la vista de edición
   const redirectToEdit = (id) => {
-    const hash = encryptText(id.toString()); // Crea el hash
+    const hash = encryptText(id.toString());
     navigate(`/clients/edit?id=${encodeURIComponent(hash)}`);
   };
 
@@ -72,25 +75,16 @@ function CardTable() {
   };
 
   const handleAction = async (id) => {
-    // Función que maneja la desactivación del cliente
-    try{
-        var data = await deleteClient(id); // Llamamos a createClient con el ID
-        toast.success(data.mensaje, {
-          onClose: () => {
-            // Espera a que la notificación se cierre para redirigir
-            setTimeout(() => {
-              // Aquí refrescas los clientes después de la acción exitosa
-              refreshClients(); // Llamamos a refreshClients para obtener la lista actualizada
-            }, 2000); // El tiempo debe ser el mismo o ligeramente mayor que la duración de la notificación
-          },
-        });
+    try {
+      const data = await deleteClient(id);
+      toast.success(data.mensaje, {
+        onClose: () => {
+          setTimeout(() => refreshClients(), 2000);
+        },
+      });
     } catch (err) {
-      // Mostrar una notificación de error
       toast.error("Error al actualizar el cliente");
-    } finally {
-      // Indicamos que la carga ha finalizado
     }
-    // Lógica para desactivar al cliente
   };
 
   const refreshClients = async () => {
@@ -104,21 +98,62 @@ function CardTable() {
   };
 
   const handleConfirm = () => {
-    console.log("deleteClient-clientIdToDeactivate: ", clientIdToDeactivate);
     if (clientIdToDeactivate) {
-      // Confirma la desactivación y ejecuta la acción
-      handleAction(clientIdToDeactivate.id); // Llamamos a handleAction con el id del cliente
-      setModalOpen(false); // Cierra la modal después de la confirmación
+      handleAction(clientIdToDeactivate.id);
+      setModalOpen(false);
     }
   };
 
   const handleOpenModal = (id, nombre_empresa) => {
-    setClientIdToDeactivate({'id': id, 'nombre_empresa': nombre_empresa});
-    setModalOpen(true); // Abre la modal de confirmación
+    setClientIdToDeactivate({ id, nombre_empresa });
+    setModalOpen(true);
   };
 
-  const handleCloseModal = () => {
-    setModalOpen(false); // Cierra la modal
+  const handleCloseModal = () => setModalOpen(false);
+
+  // Función que procesa el archivo seleccionado
+  const handleFileUpload = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const extension = file.name.split('.').pop().toLowerCase();
+
+    if (extension === 'csv') {
+      Papa.parse(file, {
+        header: true,
+        skipEmptyLines: true,
+        complete: async (results) => {
+          await uploadClients(results.data);
+        },
+      });
+    } else if (extension === 'xlsx' || extension === 'xls') {
+      const reader = new FileReader();
+      reader.onload = async (evt) => {
+        const bstr = evt.target.result;
+        const workbook = read(bstr, { type: 'binary' });
+        const sheetName = workbook.SheetNames[0];
+        const sheet = workbook.Sheets[sheetName];
+        const data = utils.sheet_to_json(sheet);
+        await uploadClients(data);
+      };
+      reader.readAsBinaryString(file);
+    } else {
+      toast.error('Archivo no soportado. Solo CSV o Excel.');
+    }
+  };
+
+  // Función que envía los clientes a la API
+  const uploadClients = async (clientsArray) => {
+    try {
+      for (let client of clientsArray) {
+        await createClient(client); // Llama a tu API para cada cliente
+      }
+      toast.success('Clientes importados correctamente');
+      refreshClients();
+    } catch (err) {
+      console.error(err);
+      toast.error('Error al importar clientes');
+    }
   };
 
   const handleOpenModalClients = async (id) => {
@@ -139,19 +174,34 @@ function CardTable() {
   };
 
   return (
-    <div className="px-4 md:px-10 mx-auto w-full -m-24">
-      {/* Colocamos el contenedor de las notificaciones */}
+    <div className="md:px-10 mx-auto w-full -m-24">
       <ToastContainer />
       <div className="flex flex-wrap">
-        <div className="w-full lg:w-12/12 px-4">
+        <div className="w-full lg:w-12/12">
           <div className="relative flex flex-col min-w-0 break-words w-full mb-6 shadow-lg rounded-lg bg-blueGray-100 border-0">
-            <div class="rounded-t bg-white mb-0 px-6 py-6">
-              <div class="text-center flex justify-between">
-                <h6 class="text-blueGray-700 text-xl font-bold">Lista de Clientes</h6>
+            {/* Header Card */}
+            <div className="rounded-t bg-white mb-0 px-6 py-6 flex justify-between items-center border-b">
+              <h6 className="text-blueGray-700 text-xl font-bold">Lista de Clientes</h6>
+              {/* Grupo de botones alineado a la derecha */}
+              <div className="flex items-center space-x-3">
+                <button
+                  className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded"
+                  onClick={redirectToCreate}>
+                  Crear Cliente
+                </button>
+
+                <label className="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded cursor-pointer">
+                  Importar Excel/CSV
+                  <input type="file" accept=".csv,.xlsx,.xls" className="hidden" onChange={handleFileUpload} />
+                </label>
               </div>
             </div>
-            <div className="block overflow-x-auto px-4 pb-4 pt-0">
-              <DataTable id="ListClientDt"
+
+            {/* DataTable */}
+            <div className="block w-full overflow-x-auto px-4 py-4">
+              <DataTable
+                id="ListClientDt"
+                className="table-auto w-full text-left"
                 columns={[
                   { title: "RIF", data: "rif" },
                   { title: "Razón Social", data: "nombre_empresa" },
@@ -192,7 +242,7 @@ function CardTable() {
                         data: response
                       });
                     } catch (err) {
-                      console.error("Error cargando clientes:", err);
+                      console.error(err);
                     }
                   },
                   paging: true,
@@ -200,7 +250,7 @@ function CardTable() {
                   ordering: true,
                   info: true,
                   responsive: true,
-                  pageLength: 2,         // cantidad inicial por página
+                  pageLength: 10,         // cantidad inicial por página
                   lengthMenu: [5, 10, 25, 50, 100], // opciones en el desplegable, false para oculta el selector
                   //dom: "Blfrtip",
                   buttons: [
@@ -252,7 +302,7 @@ function CardTable() {
                     }
                   }
                 }}
-                className="items-center w-full bg-transparent border-collapse"/>
+              className="items-center w-full bg-transparent border-collapse"/>
               {/* Modal de confirmación */}
               <ModalConfirmation
                 isOpen={modalOpen}
@@ -274,7 +324,7 @@ function CardTable() {
   );
 }
 
-export default CardTable;
+export default ListClients;
 
 /* ⚙️ Atributos principales de options
 🔹 Control de datos y renderizado
