@@ -4,7 +4,11 @@
   "proxy": "http://localhost:5000",
   "private": true,
   "dependencies": {
+    "@emotion/react": "^11.14.0",
+    "@emotion/styled": "^11.14.1",
     "@fortawesome/fontawesome-free": "^7.0.0",
+    "@mui/material": "^7.3.2",
+    "@mui/x-data-grid": "^8.11.2",
     "@popperjs/core": "^2.11.8",
     "axios": "^1.6.7",
     "chart.js": "^4.5.0",

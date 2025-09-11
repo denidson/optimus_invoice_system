@@ -6,6 +6,8 @@ import Login from "./pages/Login";
 import Signup from "./pages/Signup";
 import ListClients from "./pages/Clients/ListClients";
 import FormClients from "./pages/Clients/FormClients";
+import ListPreInvoices from "./pages/PreInvoices/ListPreInvoices";
+import FormPreInvoices from "./pages/PreInvoices/FormPreInvoices";
 import Dashboard from "./pages/Dashboard";
 // import Profile from "./pages/Profile";
 // import Invoices from "./pages/Invoices";
@@ -27,6 +29,31 @@ function App() {
             element={
               <PrivateRoute>
                 <Dashboard />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/preinvoices"
+            element={
+              <PrivateRoute>
+                <ListPreInvoices />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/preinvoices/edit"
+            element={
+              <PrivateRoute>
+                <FormPreInvoices />
+              </PrivateRoute>
+            }
+          />
+
+          <Route
+            path="/preinvoices/create"
+            element={
+              <PrivateRoute>
+                <FormPreInvoices />
               </PrivateRoute>
             }
           />
