@@ -1,7 +1,10 @@
 import axios from "axios";
 
 const api = axios.create({
-  baseURL: "",
+  baseURL:
+    process.env.NODE_ENV === "production"
+      ? process.env.REACT_APP_API_URL // En producción toma la URL de Vercel
+      : "", // En desarrollo usamos el proxy definido en package.json
   headers: {
     "Content-Type": "application/json",
   },
