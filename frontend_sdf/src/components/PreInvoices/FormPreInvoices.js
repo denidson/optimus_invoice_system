@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo, useRef } from "react";
 import { useParams } from "react-router-dom";
 import { getPreInvoices, showPreInvoice, createPreInvoice } from '../../services/api_pre_invoices'; // Importa el servicio
-import { getProducts, showProduct, createProduct } from '../../services/api_products'; // Importa el servicio
+import { getProducts, showProduct, createProduct } from '../../services/apiProducts'; // Importa el servicio
 import { useNavigate } from "react-router-dom"; // Para la redirección
 import { decryptText } from '../../services/api'; // Importa el servicio para encriptar/desencriptar parametros
 import { useLocation } from "react-router-dom"; // Para la obtener el parametro de la url

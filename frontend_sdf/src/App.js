@@ -8,6 +8,8 @@ import ListClients from "./pages/Clients/ListClients";
 import FormClients from "./pages/Clients/FormClients";
 import ListPreInvoices from "./pages/PreInvoices/ListPreInvoices";
 import FormPreInvoices from "./pages/PreInvoices/FormPreInvoices";
+import ListProducts from "./pages/Products/ListProducts";
+import FormProducts from "./pages/Products/FormProducts";
 import Dashboard from "./pages/Dashboard";
 // import Profile from "./pages/Profile";
 // import Invoices from "./pages/Invoices";
@@ -79,6 +81,32 @@ function App() {
             element={
               <PrivateRoute>
                 <FormClients />
+              </PrivateRoute>
+            }
+          />
+
+          <Route
+            path="/products"
+            element={
+              <PrivateRoute>
+                <ListProducts />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/products/edit"
+            element={
+              <PrivateRoute>
+                <FormProducts />
+              </PrivateRoute>
+            }
+          />
+
+          <Route
+            path="/products/create"
+            element={
+              <PrivateRoute>
+                <FormProducts />
               </PrivateRoute>
             }
           />

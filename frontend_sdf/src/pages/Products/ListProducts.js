@@ -3,9 +3,9 @@ import { AuthContext } from "../../context/AuthContext";
 import Sidebar from '../../components/Sidebar/Sidebar';
 import Navbar from '../../components/Navbars/IndexNavbar';
 import HeaderStats from '../../components/Headers/HeaderStats';
-import ListClients from '../../components/Clients/ListClients';
+import ListProducts from '../../components/Products/ListProducts';
 
-function ListClientsPage() {
+function ListProductsPage() {
   const { usuario } = useContext(AuthContext);
 
   return (
@@ -28,11 +28,11 @@ function ListClientsPage() {
 
         {/* Contenido principal */}
         <div className="mt-6 px-4 md:px-8">
-          <ListClients />
+          <ListProducts />
         </div>
       </div>
     </>
   );
 }
 
-export default ListClientsPage;
+export default ListProductsPage;

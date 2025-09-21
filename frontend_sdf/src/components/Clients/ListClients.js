@@ -302,7 +302,7 @@ function ListClients() {
                     }
                   }
                 }}
-              className="items-center w-full bg-transparent border-collapse"/>
+              />
               {/* Modal de confirmación */}
               <ModalConfirmation
                 isOpen={modalOpen}

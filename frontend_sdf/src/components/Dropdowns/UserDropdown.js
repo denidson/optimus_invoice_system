@@ -1,13 +1,9 @@
-import React, { useState, useRef, useEffect, useContext } from "react";
-import { AuthContext } from "../../context/AuthContext";
+import React, { useState, useRef, useEffect } from "react";
 import ReactImg from "../../assets/img/react.jpg";
-import { useNavigate } from "react-router-dom";
 
-export default function UserDropdown() {
+export default function UserDropdown({ nombreUsuario, onLogout }) {
   const [open, setOpen] = useState(false);
   const dropdownRef = useRef(null);
-  const { user, logout } = useContext(AuthContext);
-  const navigate = useNavigate(); // 👉 importa el navigate
 
   const toggleDropdown = () => setOpen(!open);
 
@@ -18,15 +14,8 @@ export default function UserDropdown() {
       }
     }
     document.addEventListener("mousedown", handleClickOutside);
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, [dropdownRef]);
-
-  const handleLogout = () => {
-    logout();
-    navigate("/login"); // 👈 redirige al login después de cerrar sesión
-  };
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   return (
     <div ref={dropdownRef} className="relative inline-block text-left">
@@ -42,7 +31,7 @@ export default function UserDropdown() {
           />
         </span>
         <span className="text-white font-medium hidden md:inline">
-          {user?.nombre || "Usuario"}
+          {nombreUsuario || "Usuario"}
         </span>
       </button>
 
@@ -60,7 +49,7 @@ export default function UserDropdown() {
               href="#logout"
               onClick={(e) => {
                 e.preventDefault();
-                handleLogout();
+                onLogout();
               }}
               className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
             >

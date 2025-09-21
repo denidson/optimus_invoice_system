@@ -3,10 +3,10 @@ import { AuthContext } from "../../context/AuthContext";
 import Sidebar from '../../components/Sidebar/Sidebar';
 import Navbar from '../../components/Navbars/IndexNavbar';
 import HeaderStats from '../../components/Headers/HeaderStats';
-import FormClients from '../../components/Clients/FormClients';
+import FormProducts from '../../components/Products/FormProducts';
 import CardStats from '../../components/Cards/CardStats';
 
-function FormClientPage() {
+function FormProductPage() {
   const { usuario } = useContext(AuthContext);
 
   return (
@@ -28,9 +28,9 @@ function FormClientPage() {
             statIconColor="bg-blue-500"
           />
 
-          {/* Formulario de Clientes */}
+          {/* Formulario de Productos */}
           <div className="mt-6 md:px-6 w-full">
-            <FormClients />
+            <FormProducts />
           </div>
         </main>
       </div>
@@ -38,4 +38,4 @@ function FormClientPage() {
   );
 }
 
-export default FormClientPage;
+export default FormProductPage;

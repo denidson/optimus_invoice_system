@@ -3,13 +3,16 @@ import { Navigate } from "react-router-dom";
 import { AuthContext } from "../context/AuthContext";
 
 export default function PrivateRoute({ children }) {
-  const { user } = useContext(AuthContext);
+  const { user, loading } = useContext(AuthContext);
 
-  if (!user) {
-    // Si no hay sesión, redirige a login
-    return <Navigate to="/" replace />;
+  // ⚡ Mientras cargamos el contexto, no hacemos nada
+  if (loading) {
+    return <div>Cargando...</div>;
   }
 
-  // Si hay sesión, renderiza el componente hijo
+  if (!user || !user.token) {
+    return <Navigate to="/login" replace />;
+  }
+
   return children;
 }

@@ -1,18 +1,37 @@
 import axios from "axios";
 
-// Configuración centralizada de axios
-// Puedes ajustar la baseURL según tu entorno
-// http://host.docker.internal:5000 es para acceder al host desde un contenedor Docker en Windows/Mac
-// localhost:5000 es para desarrollo local sin Docker
 const api = axios.create({
-  baseURL:
-    process.env.REACT_APP_API_URL ||
-    (window.location.hostname === "localhost"
-      ? "http://localhost:5000"
-      : "http://host.docker.internal:5000"),
+  baseURL: "",
   headers: {
     "Content-Type": "application/json",
   },
 });
+
+// Agregar token a cada request
+api.interceptors.request.use(
+  (config) => {
+    const authData = localStorage.getItem("authData");
+    if (authData) {
+      const { token } = JSON.parse(authData);
+      if (token) {
+        config.headers["Authorization"] = `Bearer ${token}`;
+      }
+    }
+    return config;
+  },
+  (error) => Promise.reject(error)
+);
+
+// Manejar 401 globalmente
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401) {
+      localStorage.removeItem("authData");
+      window.location.href = "/login"; // redirige al login
+    }
+    return Promise.reject(error);
+  }
+);
 
 export default api;
