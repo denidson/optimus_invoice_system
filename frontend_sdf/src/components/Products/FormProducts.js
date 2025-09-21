@@ -18,7 +18,6 @@ function FormProducts() {
   const [buttonDisabled, setButtonDisabled] = useState(false);
   const [error, setError] = useState(null);
 
-  // Cargar producto si estamos editando
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -37,7 +36,7 @@ function FormProducts() {
             iva_categoria_id: categories.length > 0 ? categories[0].id : 1,
             activo: true,
             aplica_iva: true,
-            cliente_id: 1, // Ajusta si aplica
+            cliente_id: 1,
           });
         }
       } catch (err) {
@@ -57,7 +56,6 @@ function FormProducts() {
     setButtonDisabled(true);
 
     try {
-      // Crear body completo con todos los campos requeridos por la API
       const body = {
         nombre: product.nombre,
         sku: product.sku,
@@ -66,16 +64,13 @@ function FormProducts() {
         iva_categoria_id: parseInt(product.iva_categoria_id, 10),
         activo: product.activo ?? true,
         aplica_iva: product.aplica_iva ?? true,
-        cliente_id: product.cliente_id ?? 1, 
+        cliente_id: product.cliente_id ?? 1,
       };
 
-      console.log("Enviando body:", body); // Para debug
-
-      let response;
       if (!productId) {
-        response = await createProduct(body);
+        await createProduct(body); // POST con JSON
       } else {
-        response = await editProduct(decryptText(productId), body);
+        await editProduct(decryptText(productId), body); // PUT con JSON
       }
 
       toast.success("Producto guardado correctamente", {
@@ -83,11 +78,29 @@ function FormProducts() {
       });
     } catch (err) {
       console.error("Error creating/editing product:", err);
-      toast.error("Error al guardar el producto");
+
+      // Manejo del mensaje de error real del backend
+      if (err.response) {
+        const data = err.response.data;
+
+        if (data && typeof data === "object" && data.error) {
+          // Mostramos el error enviado por el backend
+          toast.error(data.error);
+        } else if (typeof data === "string") {
+          // Si es texto plano
+          toast.error(data);
+        } else {
+          toast.error("Error al guardar el producto");
+        }
+      } else {
+        // Error de red u otro tipo
+        toast.error("Error al guardar el producto");
+      }
     } finally {
       setButtonDisabled(false);
     }
   };
+
 
   const redirectToList = () => navigate("/products");
 

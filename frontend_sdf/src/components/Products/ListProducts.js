@@ -52,6 +52,7 @@ function ListProducts() {
     // View button
     $("#ListProductDt tbody").on("click", "button.btn-view", function () {
       const id = $(this).data("id");
+      console.log("View product with ID:", id);
       handleOpenModalProducts(id);
     });
 
@@ -155,6 +156,7 @@ function ListProducts() {
   const handleOpenModalProducts = async (id) => {
     try {
       const data = await showProduct(id);
+      console.log("Fetched product details:", data);
       setProductToAction(data);
       setModalOpenProducts(true);
     } catch (err) {
@@ -287,8 +289,9 @@ function ListProducts() {
               <ModalProducts
                 isOpen={modalOpenProducts}
                 onClose={handleCloseModalProducts}
-                message={productToAction}
+                product={productToAction} // <-- Cambiado de message a product
               />
+
             </div>
           </div>
         </div>
