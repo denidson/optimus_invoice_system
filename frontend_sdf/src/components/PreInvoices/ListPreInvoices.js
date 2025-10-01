@@ -203,12 +203,28 @@ function ListPreInvoices() {
                 id="ListPreInvoicesDt"
                 className="table-auto w-full text-left"
                 columns={[
+                  {
+                    title: "Fecha de emisión",
+                    data: "fecha_emision",
+                    orderable: true,
+                    searchable: false,
+                    render: (data, type, row) => {
+                      return data.toString().replace('T', ' ').substr(0,19);
+                      /*if (data == true){
+                        return '<label class="bg-emerald-400 text-white py-1 px-3 rounded-full text-center">Activo</label>';
+                      }else{
+                        return '<label class="bg-red-400 text-white py-1 px-3 rounded-full text-center">Inactivo</label>';
+                      }*/
+                    }
+                  },
                   { title: "RIF", data: "cliente_final_rif" },
                   { title: "Razón Social", data: "cliente_final_nombre" },
-                  { title: "Zona", data: "zona" },
+                  { title: "Tipo de documento", data: "tipo_documento" },
+                  { title: "Número de control", data: "numero_control" },
+                  { title: "Correlativo", data: "correlativo_interno" },
                   {
-                    title: "Total",
-                    data: "total",
+                    title: "Base imponible",
+                    data: "total_base",
                     render: (data, type, row) => {
                       if (type === "display" || type === "filter") {
                         // Formato de número con separadores para Venezuela
@@ -222,6 +238,56 @@ function ListPreInvoices() {
                       }
                       // Para ordenamiento y cálculos → devolver el valor numérico real
                       return data;
+                    }
+                  },
+                  {
+                    title: "I.V.A.",
+                    data: "total_impuestos",
+                    render: (data, type, row) => {
+                      if (type === "display" || type === "filter") {
+                        // Formato de número con separadores para Venezuela
+                        const formatted = new Intl.NumberFormat("es-VE", {
+                          style: "decimal",
+                          minimumFractionDigits: 2,
+                          maximumFractionDigits: 2
+                        }).format(data);
+
+                        return `Bs. ${formatted}`;
+                      }
+                      // Para ordenamiento y cálculos → devolver el valor numérico real
+                      return data;
+                    }
+                  },
+                  {
+                    title: "Total",
+                    data: "total_neto",
+                    render: (data, type, row) => {
+                      if (type === "display" || type === "filter") {
+                        // Formato de número con separadores para Venezuela
+                        const formatted = new Intl.NumberFormat("es-VE", {
+                          style: "decimal",
+                          minimumFractionDigits: 2,
+                          maximumFractionDigits: 2
+                        }).format(data);
+
+                        return `Bs. ${formatted}`;
+                      }
+                      // Para ordenamiento y cálculos → devolver el valor numérico real
+                      return data;
+                    }
+                  },
+                  {
+                    title: "Estado",
+                    data: "estatus",
+                    orderable: true,
+                    searchable: false,
+                    render: (data, type, row) => {
+                      return data;
+                      /*if (data == true){
+                        return '<label class="bg-emerald-400 text-white py-1 px-3 rounded-full text-center">Activo</label>';
+                      }else{
+                        return '<label class="bg-red-400 text-white py-1 px-3 rounded-full text-center">Inactivo</label>';
+                      }*/
                     }
                   },
                   {

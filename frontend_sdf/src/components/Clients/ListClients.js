@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from "react-router-dom"; // Para la redirección
-import { getClients, deleteClient, showClient, createClient } from '../../services/api_clients'; // Importa el servicio
+import { getClients, deleteClient, showClient, createClient, activateClient } from '../../services/api_clients'; // Importa el servicio
 import { encryptText } from '../../services/api'; // Importa el servicio para encriptar/desencriptar parametros
 import ModalConfirmation from "../Modals/ModalConfirmation";
 import ModalClients from "./ModalClients";
@@ -47,7 +47,8 @@ function ListClients() {
     $("#ListClientDt tbody").on("click", "button.btn-delete", function () {
       const id = $(this).data("id");
       const nombre = $(this).data("nombre");
-      handleOpenModal(id, nombre);
+      const action = $(this).data("action");
+      handleOpenModal(id, nombre, action);
     });
 
     // Click visualizar
@@ -74,12 +75,17 @@ function ListClients() {
     navigate(`/clients/create`);
   };
 
-  const handleAction = async (id) => {
+  const handleAction = async (id, action) => {
     try {
-      const data = await deleteClient(id);
+      var data;
+      if (action == 'delete'){
+        data = await deleteClient(id);
+      }else{
+        data = await activateClient(id);
+      }
       toast.success(data.mensaje, {
         onClose: () => {
-          setTimeout(() => refreshClients(), 2000);
+          setTimeout(() => refreshClients(), 3000);
         },
       });
     } catch (err) {
@@ -90,8 +96,9 @@ function ListClients() {
   const refreshClients = async () => {
     // Llamamos a la función del servicio REST para obtener los clientes
     try {
-      const data = await getClients();
-      setClients(data); // Actualizamos el estado con los clientes obtenidos
+      //const data = await getClients();
+      //setClients(data); // Actualizamos el estado con los clientes obtenidos
+      location.reload(true);
     } catch (error) {
       console.error("Error al cargar los clientes:", error);
     }
@@ -99,13 +106,13 @@ function ListClients() {
 
   const handleConfirm = () => {
     if (clientIdToDeactivate) {
-      handleAction(clientIdToDeactivate.id);
+      handleAction(clientIdToDeactivate.id, clientIdToDeactivate.action);
       setModalOpen(false);
     }
   };
 
-  const handleOpenModal = (id, nombre_empresa) => {
-    setClientIdToDeactivate({ id, nombre_empresa });
+  const handleOpenModal = (id, nombre_empresa, action) => {
+    setClientIdToDeactivate({ id, nombre_empresa, action });
     setModalOpen(true);
   };
 
@@ -204,21 +211,44 @@ function ListClients() {
                 className="table-auto w-full text-left"
                 columns={[
                   { title: "RIF", data: "rif" },
-                  { title: "Razón Social", data: "nombre_empresa" },
+                  { title: "Razón social", data: "nombre_empresa" },
+                  { title: "Correo electrónico", data: "email" },
                   { title: "Teléfono", data: "telefono" },
+                  { title: "Tipo de contribuyente", data: "tipo_contribuyente.nombre" },
                   { title: "Dirección", data: "direccion" },
-                  { title: "Tipo de contribuyente", data: "tipo_contribuyente_id" },
+                  { title: "Zona", data: "zona" },
+                  { title: "Estado", data: "estado" },
+                  { title: "Región", data: "region" },
+                  {
+                    title: "Condición",
+                    data: "activo",
+                    orderable: true,
+                    searchable: false,
+                    render: (data, type, row) => {
+                      if (data == true){
+                        return '<label class="bg-emerald-400 text-white py-1 px-3 rounded-full text-center">Activo</label>';
+                      }else{
+                        return '<label class="bg-red-400 text-white py-1 px-3 rounded-full text-center">Inactivo</label>';
+                      }
+                    }
+                  },
                   {
                     title: "Acciones",
-                    data: null,
+                    data: 'activo',
                     orderable: false,
                     searchable: false,
                     render: (data, type, row) => {
-                      return `
-                        <button class="btn-view px-3 py-1 ml-2 mr-0" data-id="${row.id}"><i class="fa-solid fa-lg fa-expand"></i></button>
-                        <button class="btn-edit px-3 py-1 mx-0 text-blue-600" data-id="${row.id}"><i class="fa-solid fa-lg fa-pen-to-square"></i></button>
-                        <button class="btn-delete px-3 py-1 ml-0 mr-2 text-red-600" data-id="${row.id}" data-nombre="${row.nombre_empresa}"><i class="fa-solid fa-lg fa-trash"></i></button>
-                      `;
+                      if (data == true){
+                        return `
+                          <button class="btn-view px-3 py-1 ml-2 mr-0" data-id="${row.id}"><i class="fa-solid fa-lg fa-expand"></i></button>
+                          <button class="btn-edit px-3 py-1 mx-0 text-blue-600" data-id="${row.id}"><i class="fa-solid fa-lg fa-pen-to-square"></i></button>
+                          <button class="btn-delete px-3 py-1 ml-0 mr-2 text-red-600" data-id="${row.id}" data-nombre="${row.nombre_empresa}" data-action="delete"><i class="fa-regular fa-rectangle-xmark fa-lg"></i></button>`
+                      }else{
+                        return `
+                          <button class="btn-view px-3 py-1 ml-2 mr-0" data-id="${row.id}"><i class="fa-solid fa-lg fa-expand"></i></button>
+                          <button class="btn-edit px-3 py-1 mx-0 text-blue-600" data-id="${row.id}"><i class="fa-solid fa-lg fa-pen-to-square"></i></button>
+                          <button class="btn-delete px-3 py-1 ml-0 mr-2 text-green-600" data-id="${row.id}" data-nombre="${row.nombre_empresa}" data-action="active"><i class="fa-regular fa-square-check fa-lg"></i></button>`
+                      }
                       // btn-edit bg-blue-500 hover:bg-blue-600 text-white p-2 rounded-xl mx-1
                       //btn-delete bg-red-500 hover:bg-red-600 text-white p-2 rounded-xl mx-1
                     }
@@ -308,7 +338,7 @@ function ListClients() {
                 isOpen={modalOpen}
                 onClose={handleCloseModal}
                 onConfirm={handleConfirm}
-                message={'¿Estás seguro de que deseas desactivar al cliente '+ (clientIdToDeactivate ? clientIdToDeactivate.nombre_empresa : '') +'?'} // Pasamos el mensaje personalizado
+                message={'¿Estás seguro de que deseas '+ (clientIdToDeactivate && clientIdToDeactivate.action == 'delete' ? 'desactivar': 'activar') + ' al cliente '+ (clientIdToDeactivate ? clientIdToDeactivate.nombre_empresa : '') +'?'} // Pasamos el mensaje personalizado
               />
               {/* Modal de confirmación */}
               <ModalClients

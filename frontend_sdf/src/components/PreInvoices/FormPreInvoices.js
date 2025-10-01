@@ -11,6 +11,7 @@ import { DataGrid, useGridApiRef } from '@mui/x-data-grid';
 import { Button } from "@mui/material";
 import { Autocomplete, TextField } from "@mui/material";
 import { esES } from '@mui/x-data-grid/locales';
+import $ from "jquery";
 
 // Componente editor para el Autocomplete
 function ProductoEditCell({ params, products }) {
@@ -111,9 +112,42 @@ function FormPreInvoices() {
         }).format(Number(raw));
       },
     },
+    { field: "iva_categoria_id", headerName: "iva_categoria_id", editable: false },
+    {
+      field: "tasa_porcentaje",
+      headerName: "Impuesto",
+      flex: 1,
+      type: "number",
+      editable: false,
+      headerAlign: "center",
+      renderCell: (params) => {
+        // safe check: params puede ser undefined muy tempranamente, evitamos crash
+        const raw = params?.value ?? 0;
+        return new Intl.NumberFormat("es-VE", {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2,
+        }).format(Number(raw));
+      },
+    },
     {
       field: "precio_unitario",
       headerName: "Precio Unitario",
+      flex: 1,
+      type: "number",
+      editable: true,
+      headerAlign: "center",
+      renderCell: (params) => {
+        // safe check: params puede ser undefined muy tempranamente, evitamos crash
+        const raw = params?.value ?? 0;
+        return new Intl.NumberFormat("es-VE", {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2,
+        }).format(Number(raw));
+      },
+    },
+    {
+      field: "descuento_porcentaje",
+      headerName: "Desc %",
       flex: 1,
       type: "number",
       editable: true,
@@ -139,7 +173,9 @@ function FormPreInvoices() {
 
         const cantidad = Number(params.row.cantidad) || 0;
         const precio = Number(params.row.precio_unitario) || 0;
-        const total = cantidad * precio;
+        const tasa_porcentaje = Number(params.row.tasa_porcentaje) || 0;
+        const descuento_porcentaje = Number(params.row.descuento_porcentaje) || 0;
+        const total = cantidad * (precio - (precio * descuento_porcentaje/100));
         //handleCellEditCommit(params);
         return new Intl.NumberFormat("es-VE", {
           style: "currency",
@@ -184,8 +220,13 @@ function FormPreInvoices() {
             cliente_final_rif: "",
             cliente_id: 1,
             items: [],
-            total: "0.0",
-            zona: ""
+            correlativo_interno: "",
+            numero_control: "",
+            aplica_igtf: false,
+            monto_pagado_divisas: 0,
+            igtf_porcentaje: 3.0,
+            igtf_monto: 0,
+            tipo_documento: 'FC'
           })
         }
       } catch (err) {
@@ -198,15 +239,83 @@ function FormPreInvoices() {
     fetchPreInvoice();
   }, [preInvoiceId]); // Recarga si el `preInvoiceId` cambia
 
+  // función auxiliar para redondear
+  const roundTo = (num, decimals) => {
+    const factor = Math.pow(10, decimals);
+    return Math.round(num * factor) / factor;
+  };
+
+  //Calcular base imponible de la Pre-Factura
+  const taxBase = useMemo(() => {
+    if (!preInvoice?.items) return 0;
+
+    const baseTotal = preInvoice.items.reduce((acc, item) => {
+      const cantidad = Number(item.cantidad) || 0;
+      const precio = Number(item.precio_unitario) || 0;
+      const descuento_porcentaje = Number(item.descuento_porcentaje) || 0;
+
+      // calcular Base de la línea
+      const baseLine = cantidad * (precio - (precio * (descuento_porcentaje/100)));
+
+      // redondear a 4 decimales por línea
+      return acc + roundTo(baseLine, 2);
+    }, 0);
+
+    // resultado final redondeado a 2 decimales
+    return roundTo(baseTotal, 2);
+  }, [preInvoice?.items]);
+
+  //Calcular iva de la Pre-Factura
+  const taxApplied = useMemo(() => {
+    if (!preInvoice?.items) return 0;
+
+    const taxTotal = preInvoice.items.reduce((acc, item) => {
+      const cantidad = Number(item.cantidad) || 0;
+      const precio = Number(item.precio_unitario) || 0;
+      const tasa_porcentaje = Number(item.tasa_porcentaje) || 0;
+      const descuento_porcentaje = Number(item.descuento_porcentaje) || 0;
+
+      // calcular IVA de la línea
+      const taxLine = cantidad * (precio - (precio * (descuento_porcentaje/100))) * (tasa_porcentaje / 100);
+
+      // redondear a 4 decimales por línea
+      return acc + roundTo(taxLine, 2);
+    }, 0);
+
+    // resultado final redondeado a 2 decimales
+    return roundTo(taxTotal, 2);
+  }, [preInvoice?.items]);
+
   //Calcular total de la Pre-Factura
   const totalAmount = useMemo(() => {
     if (!preInvoice?.items) return 0;
-    return preInvoice.items.reduce((acc, item) => {
+
+    const total = preInvoice.items.reduce((acc, item) => {
       const cantidad = Number(item.cantidad) || 0;
       const precio = Number(item.precio_unitario) || 0;
-      return acc + cantidad * precio;
+      const tasa_porcentaje = Number(item.tasa_porcentaje) || 0;
+      const descuento_porcentaje = Number(item.descuento_porcentaje) || 0;
+
+      // calcular Total de la línea
+      const totalLine = cantidad * ((precio - (precio * (descuento_porcentaje/100))) * (1 + (tasa_porcentaje / 100)));
+
+      // redondear a 4 decimales por línea
+      return acc + roundTo(totalLine, 2);
     }, 0);
+
+    // resultado final redondeado a 2 decimales
+    return roundTo(total, 2);
   }, [preInvoice?.items]);
+
+  //Calcular monto del igtf en la Pre-Factura
+  const igtfAmount = useMemo(() => {
+    if (!preInvoice?.items) return 0;
+    if (!preInvoice?.monto_pagado_divisas) return 0;
+    const igtfAmount = preInvoice.monto_pagado_divisas * (preInvoice.igtf_porcentaje / 100);
+
+    // resultado final redondeado a 2 decimales
+    return roundTo(igtfAmount, 2);
+  }, [preInvoice?.monto_pagado_divisas]);
 
   if (loading) return <div>Cargando...</div>;
   if (error) return <div>{error}</div>;
@@ -220,24 +329,29 @@ function FormPreInvoices() {
       var data;
       if (preInvoice.id == '#'){
         delete preInvoice.id;
-        preInvoice.total = totalAmount;
+        //preInvoice.total = totalAmount;
         console.log("preInvoice(F):", preInvoice);
-        data = await createPreInvoice(preInvoice); // Llamamos a createClient con el ID
+        var preInvoiceList = [preInvoice];
+        data = await createPreInvoice(preInvoiceList); // Llamamos a createClient con el ID
         console.log("preInvoice(F)-data:", data);
       }else{
         data = await editPreInvoice(decryptText(preInvoiceId), preInvoice); // Llamamos a editPreInvoice con el ID
       }
       //console.log('editPreInvoice-data: ', data);
-      setPreInvoice(data.prefactura); // Guardamos los datos del preInvoice en el estado
+      //setPreInvoice(data.resultados[0]); // Guardamos los datos del preInvoice en el estado
       // Mostrar una notificación de éxito
-      toast.success(data.mensaje, {
-        onClose: () => {
-          // Espera a que la notificación se cierre para redirigir
-          setTimeout(() => {
-            navigate("/preinvoices");  // Redirige a la lista de pre-facturas
-          }, 2000); // El tiempo debe ser el mismo o ligeramente mayor que la duración de la notificación
-        },
-      });
+      if (data.resultados[0].status == 'creada'){
+        toast.success(data.mensaje, {
+          onClose: () => {
+            // Espera a que la notificación se cierre para redirigir
+            setTimeout(() => {
+              navigate("/preinvoices");  // Redirige a la lista de pre-facturas
+            }, 2000); // El tiempo debe ser el mismo o ligeramente mayor que la duración de la notificación
+          },
+        });
+      }else{
+        toast.error("Error al actualizar la Pre-Factura");
+      }
     } catch (err) {
       setError('Error al cargar la Pre-Factura');
       // Mostrar una notificación de error
@@ -257,8 +371,8 @@ function FormPreInvoices() {
       preInvoice.items.length > 0
         ? Math.max(...preInvoice.items.map((r) => r.id)) + 1
         : 1;
-
-    const newRow = { id: newId, producto_id: "", cantidad: 1, precio_unitario: 0 };
+    console.log('newId: ', newId);
+    const newRow = { id: newId, producto_id: "", cantidad: 1, precio_unitario: 0, iva_categoria_id: "", tasa_porcentaje: "", descuento_porcentaje: 0 };
 
     setPreInvoice((prev) => {
       const updated = {
@@ -300,6 +414,8 @@ const processRowUpdate = (newRow, oldRow) => {
   const updatedRow = {
     ...newRow,
     precio_unitario: precioUnitario,
+    iva_categoria_id: selectedProduct.iva_categoria.id,
+    tasa_porcentaje: selectedProduct.iva_categoria.tasa_porcentaje,
   };
 
   // Actualizar estado global preInvoice
@@ -343,6 +459,17 @@ const processRowUpdate = (newRow, oldRow) => {
                   </div>
                   <div className="w-full lg:w-2/12 px-4">
                     <div className="relative w-full mb-3">
+                      <label className="block text-blueGray-600 text-xs font-bold mb-2">Fecha de emisión</label>
+                      <input
+                        type="date"
+                        className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
+                        value={preInvoice.fecha_emision}
+                        onChange={(e) => setPreInvoice({ ...preInvoice, fecha_emision: e.target.value })}
+                      />
+                    </div>
+                  </div>
+                  <div className="w-full lg:w-2/12 px-4">
+                    <div className="relative w-full mb-3">
                       <label className="block text-blueGray-600 text-xs font-bold mb-2">RIF</label>
                       <input
                         type="text"
@@ -352,7 +479,7 @@ const processRowUpdate = (newRow, oldRow) => {
                       />
                     </div>
                   </div>
-                  <div className="w-full lg:w-10/12 px-4">
+                  <div className="w-full lg:w-8/12 px-4">
                     <div className="relative w-full mb-3">
                       <label className="block text-blueGray-600 text-xs font-bold mb-2">Razon Social</label>
                       <input
@@ -361,36 +488,43 @@ const processRowUpdate = (newRow, oldRow) => {
                         value={preInvoice.cliente_final_nombre}
                         onChange={(e) => setPreInvoice({ ...preInvoice, cliente_final_nombre: e.target.value })}
                       />
-                      </div>
+                    </div>
                   </div>
-                  <div className="w-full lg:w-7/12 px-4">
+                  <div className="w-full lg:w-6/12 px-4">
                     <div className="relative w-full mb-3">
-                      <label className="block text-blueGray-600 text-xs font-bold mb-2">Zona</label>
+                      <label className="block text-blueGray-600 text-xs font-bold mb-2">Correlativo Interno</label>
                       <input
                         type="text"
                         className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
-                        value={preInvoice.zona}
-                        onChange={(e) => setPreInvoice({ ...preInvoice, zona: e.target.value })}
+                        value={preInvoice.correlativo_interno}
+                        onChange={(e) => setPreInvoice({ ...preInvoice, correlativo_interno: e.target.value })}
+                      />
+                    </div>
+                  </div>
+                  <div className="w-full lg:w-6/12 px-4">
+                    <div className="relative w-full mb-3">
+                      <label className="block text-blueGray-600 text-xs font-bold mb-2">Número de control</label>
+                      <input
+                        type="text"
+                        className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
+                        value={preInvoice.numero_control}
+                        onChange={(e) => setPreInvoice({ ...preInvoice, numero_control: e.target.value })}
                       />
                     </div>
                   </div>
                   <div className="w-full lg:w-2/12 px-4">
-                    {/*<div className="relative w-full mb-3">
-                      <label className="block text-blueGray-600 text-xs font-bold mb-2">Tipo de contribuyente</label>
+                    <div className="relative w-full mb-3">
+                      <label className="block text-blueGray-600 text-xs font-bold mb-2">Tipo de documento</label>
                       <select
                         className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
-                        value={client.tipo_contribuyente_id}
-                        onChange={(e) => setClient({ ...client, tipo_contribuyente_id: e.target.value })}
-                      >
-                        {typeTaxpayer.length > 0 ? (
-                            typeTaxpayer.map(taxpayer => (
-                            <option key={taxpayer.id} value={taxpayer.id}>{taxpayer.nombre}</option>
-                          ))
-                        ) : (
-                          <option value="0">Seleccione...</option>
-                        )}
+                        value={preInvoice.tipo_documento}
+                        onChange={(e) => setClient({ ...preInvoice, tipo_documento: e.target.value })}>
+                        <option value="#">Seleccione...</option>
+                        <option value="FC">Factura</option>
+                        <option value="NC">Nota de Crédito</option>
+                        <option value="ND">Nota de Débito</option>
                       </select>
-                    </div>*/}
+                    </div>*
                   </div>
                 </div>
                 <div className="flex flex-wrap">
@@ -412,6 +546,7 @@ const processRowUpdate = (newRow, oldRow) => {
                       processRowUpdate={processRowUpdate}
                       columnVisibilityModel={{
                         id: false, // oculta la columna "id"
+                        iva_categoria_id: false, // oculta la columna "iva_categoria_id"
                       }}
                       rowHeight={30}
                       localeText={esES.components.MuiDataGrid.defaultProps.localeText} // Traducción al español
@@ -423,21 +558,103 @@ const processRowUpdate = (newRow, oldRow) => {
                       }}
                     />
                   </div>
-                  <div className="w-full lg:w-7/12 px-4 mt-3"></div>
-                  <div className="w-full lg:w-5/12 px-4 mt-3">
+                  <div className="w-full lg:w-4/12 px-4 mt-3">
                     <div className="relative w-full mb-3">
-                      <label className="block text-blueGray-600 text-xs font-bold mb-2">Total</label>
-                      <input
-                        type="text"
-                        className="text-right border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
-                        value={new Intl.NumberFormat("es-VE", {
+                      <label class="inline-flex items-center cursor-pointer">
+                        <input value={preInvoice.aplica_igtf} type="checkbox" class="form-checkbox border-0 rounded text-blueGray-700 ml-1 w-5 h-5 ease-linear transition-all duration-150"
+                          onChange={(e) => {
+                            const aplica_igtf = e.target.checked; // obtienes el value normal
+                            //console.log("aplica_igtf:", aplica_igtf);
+                            if (aplica_igtf){
+                              $('.apply_igtf').removeClass('hidden');
+                            }else{
+                              $('.apply_igtf').addClass('hidden');
+                            }
+                            // actualizamos el atributo aplica_igtf
+                            setPreInvoice({ ...preInvoice, aplica_igtf: e.target.value })
+                          }}/>
+                        <span class="ml-2 text-sm font-semibold text-blueGray-600">Aplicar IGTF</span>
+                      </label>
+                      <div className="apply_igtf mt-3 p-4 border rounded bg-gray-50 hidden">
+                        <label className="block text-blueGray-600 text-xs font-bold mb-2">Monto pagado en divisas</label>
+                        <input
+                          type="number" step="0.01"
+                          className="border-0 px-3 py-3 placeholder-blueGray-300 text-right text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
+                          value={preInvoice.monto_pagado_divisas}
+                          onChange={(e) => {
+                            // convertir a float, pero permitir "" si el input está vacío
+                            const value = e.target.value;
+                            console.log('value: ', value);
+                            setPreInvoice({...preInvoice,
+                              monto_pagado_divisas: value === "" ? "" : value
+                            });
+                          }}
+                          onBlur={(e) => {
+                            const value = parseFloat(e.target.value || 0).toFixed(2); // redondea a 2 decimales
+                            setPreInvoice({
+                              ...preInvoice,
+                              monto_pagado_divisas: parseFloat(value) // guardamos como float
+                            });
+                          }}/>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="w-full lg:w-3/12 px-4 mt-10">
+                    <div className="apply_igtf mt-3 p-4 pb-2 border border-b-0 rounded rounded-t-none bg-gray-50 hidden">
+                        <label className="block text-blueGray-600 text-xs font-bold mb-2">{'IGTF ' + parseFloat(preInvoice.igtf_porcentaje).toFixed(2).toString() + '%' }</label>
+                    </div>
+                    <div className="apply_igtf p-4 pt-0 border border-t-0 rounded rounded-b-none bg-gray-50 text-right hidden">
+                        <label className="border-0 px-3 text-blueGray-600 rounded text-lg font-bold">
+                        {new Intl.NumberFormat("es-VE", {
+                          style: "currency",
+                          currency: "VES",
+                          minimumFractionDigits: 2,
+                        }).format(igtfAmount)}
+                        </label>
+                      </div>
+                  </div>
+                  <div className="w-full lg:w-5/12 px-4 mt-3">
+                    <div className="flex w-full mb-1">
+                      <div className="w-full lg:w-4/12 px-4 mt-3">
+                        <label className="block text-blueGray-600 font-bold text-lg">Base imponible</label>
+                      </div>
+                      <div className="w-full lg:w-9/12 px-4 mt-3 text-right">
+                        <label className="text-right border-0 px-3 text-blueGray-600 bg-white rounded text-lg font-bold">
+                        {new Intl.NumberFormat("es-VE", {
+                          style: "currency",
+                          currency: "VES",
+                          minimumFractionDigits: 2,
+                        }).format(taxBase)}
+                        </label>
+                      </div>
+                    </div>
+                    <div className="flex w-full mb-1">
+                      <div className="w-full lg:w-4/12 px-4">
+                        <label className="block text-blueGray-600 font-bold text-lg">I.V.A.</label>
+                      </div>
+                      <div className="w-full lg:w-9/12 px-4 text-right">
+                        <label className="text-right border-0 px-3 text-blueGray-600 bg-white rounded text-lg font-bold">
+                        {new Intl.NumberFormat("es-VE", {
+                          style: "currency",
+                          currency: "VES",
+                          minimumFractionDigits: 2,
+                        }).format(taxApplied)}
+                        </label>
+                      </div>
+                    </div>
+                    <div className="flex w-full mb-3">
+                      <div className="w-full lg:w-3/12 px-4">
+                        <label className="block text-blueGray-600 font-bold text-lg">Total</label>
+                      </div>
+                      <div className="w-full lg:w-9/12 px-4 text-right">
+                        <label className="text-right border-0 px-3 text-blueGray-600 bg-white rounded text-lg font-bold">
+                        {new Intl.NumberFormat("es-VE", {
                           style: "currency",
                           currency: "VES",
                           minimumFractionDigits: 2,
                         }).format(totalAmount)}
-                        readOnly
-                        onChange={(e) => setPreInvoice({ ...preInvoice, total: e.target.value })}
-                      />
+                        </label>
+                      </div>
                     </div>
                   </div>
                 </div>

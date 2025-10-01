@@ -7,6 +7,7 @@ import { decryptText } from '../../services/api'; // Importa el servicio para en
 import { useLocation } from "react-router-dom"; // Para la obtener el parametro de la url
 import { toast, ToastContainer } from "react-toastify"; // Importamos las funciones necesarias
 import "react-toastify/dist/ReactToastify.css"; // Importar el CSS de las notificaciones
+import $ from "jquery";
 
 function FormClients() {
   const navigate = useNavigate(); // Hook para redirección
@@ -25,9 +26,11 @@ function FormClients() {
     const fetchClient = async () => {
       try {
         const datattp = await getTypeTaxpayer();
+        console.log('datattp: ', datattp);
         setTypeTaxpayer(datattp);
         if (clientId != null){
           const data = await showClient(decryptText(clientId)); // Llamamos a showClient con el ID
+          console.log('data: ', data);
           setClient(data); // Guardamos los datos del client en el estado
         }else{
           setClient({
@@ -35,6 +38,10 @@ function FormClients() {
             rif: "",
             nombre_empresa: "",
             telefono: "",
+            email: "",
+            region: "",
+            estado: "",
+            zona: "",
             direccion: "",
             tipo_contribuyente_id: 1,
           })
@@ -58,18 +65,25 @@ function FormClients() {
     console.log("Client:", client);
     try {
       var data;
+      var message = '';
       if (client.id == '#'){
         delete client.id;
-        console.log("Client(F):", client);
-        data = await createClient(client); // Llamamos a createClient con el ID
-        console.log("Client(F)-data:", data);
+        console.log("Client(F): ", client);
+        var clientList = [client];
+        console.log("clientList(F): ", clientList);
+        data = await createClient(clientList); // Llamamos a createClient con el ID
+        //console.log("Client(F)-data: ", data);
+        message = '!Creación de cliente realizada correctamente!';
       }else{
         data = await editClient(decryptText(clientId), client); // Llamamos a editClient con el ID
+        //console.log("Client(F)-editClient-data: ", data);
+        //console.log("Client(F)-editClient-client: ", client);
+        message = '!Actualización de cliente realizada correctamente!';
       }
       //console.log('editClient-data: ', data);
-      setClient(data.cliente); // Guardamos los datos del client en el estado
+      setClient(data); // Guardamos los datos del client en el estado
       // Mostrar una notificación de éxito
-      toast.success(data.mensaje, {
+      toast.success(message, {
         onClose: () => {
           // Espera a que la notificación se cierre para redirigir
           setTimeout(() => {
@@ -151,14 +165,14 @@ function FormClients() {
                       />
                     </div>
                   </div>
-                  <div className="w-full lg:w-10/12 px-4">
+                  <div className="w-full lg:w-5/12 px-4">
                     <div className="relative w-full mb-3">
-                      <label className="block text-blueGray-600 text-xs font-bold mb-2">Direccion</label>
+                      <label className="block text-blueGray-600 text-xs font-bold mb-2">Correo Electronico</label>
                       <input
                         type="text"
                         className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
-                        value={client.direccion}
-                        onChange={(e) => setClient({ ...client, direccion: e.target.value })}
+                        value={client.email}
+                        onChange={(e) => setClient({ ...client, email: e.target.value })}
                       />
                     </div>
                   </div>
@@ -178,6 +192,105 @@ function FormClients() {
                           <option value="0">Seleccione...</option>
                         )}
                       </select>
+                    </div>
+                  </div>
+                  <div className="w-full lg:w-12/12 px-4">
+                    <div className="relative w-full mb-3">
+                      <label className="block text-blueGray-600 text-xs font-bold mb-2">Direccion</label>
+                      <input
+                        type="text"
+                        className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
+                        value={client.direccion}
+                        onChange={(e) => setClient({ ...client, direccion: e.target.value })}
+                      />
+                    </div>
+                  </div>
+                  <div className="w-full lg:w-2/12 px-4">
+                    <div className="relative w-full mb-3">
+                      <label className="block text-blueGray-600 text-xs font-bold mb-2">Región</label>
+                      <select
+                        className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
+                        value={client.region} onChange={(e) => {
+                          const selectedOption = e.target.options[e.target.selectedIndex];
+                          const regionId = selectedOption.getAttribute("region_id"); // obtienes el atributo
+                          const regionValue = e.target.value; // obtienes el value normal
+                          console.log("region_id:", regionId);
+                          console.log("region value:", regionValue);
+                          $('.region_id').addClass('hidden');
+                          $('.region_' + regionId.toString()).removeClass('hidden');
+                          client.estado = '#';
+                          // actualizamos el estado con ambos si quieres
+                          setClient({ ...client, region: e.target.value });
+                        }}>
+                        <option value="#">Seleccione...</option>
+                        <option region_id="1" value="Central">Central</option>
+                        <option region_id="2" value="Capital">Capital</option>
+                        <option region_id="3" value="Occidental">Occidental</option>
+                        <option region_id="4" value="Guayana">Guayana</option>
+                        <option region_id="5" value="Insular">Insular</option>
+                        <option region_id="6" value="Los Andes">Los Andes</option>
+                        <option region_id="7" value="Los Llanos">Los Llanos</option>
+                        <option region_id="8" value="Oriental">Oriental</option>
+                        <option region_id="9" value="Zuliana">Zuliana</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div className="w-full lg:w-2/12 px-4">
+                    <div className="relative w-full mb-3">
+                      <label className="block text-blueGray-600 text-xs font-bold mb-2">Estado</label>
+                      <select id="select_state"
+                        className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
+                        value={client.estado} onChange={(e) => setClient({ ...client, estado: e.target.value })}>
+                        <option value="#">Seleccione...</option>
+                        <option class="region_id region_1" value="Aragua">Aragua</option>
+                        <option class="region_id region_1" value="Carabobo">Carabobo</option>
+                        <option class="region_id region_1" value="Cojedes">Cojedes</option>
+                        <option class="region_id region_2" value="Distrito Capital">Distrito Capital</option>
+                        <option class="region_id region_2" value="Miranda">Miranda</option>
+                        <option class="region_id region_2" value="La Guaira">La Guaira</option>
+                        <option class="region_id region_3" value="Falcón">Falcón</option>
+                        <option class="region_id region_3" value="Lara">Lara</option>
+                        <option class="region_id region_3" value="Portuguesa">Portuguesa</option>
+                        <option class="region_id region_3" value="Yaracuy">Yaracuy</option>
+                        <option class="region_id region_4" value="Amazonas">Amazonas</option>
+                        <option class="region_id region_4" value="Bolívar">Bolívar</option>
+                        <option class="region_id region_4" value="Delta Amacuro">Delta Amacuro</option>
+                        <option class="region_id region_4" value="Guayana Esequiba">Guayana Esequiba</option>
+                        <option class="region_id region_5" value="Dependencias Federales">Dependencias Federales</option>
+                        <option class="region_id region_5" value="Nueva Esparta">Nueva Esparta</option>
+                        <option class="region_id region_6" value="Barinas">Barinas</option>
+                        <option class="region_id region_6" value="Mérida">Mérida</option>
+                        <option class="region_id region_6" value="Táchira">Táchira</option>
+                        <option class="region_id region_6" value="Trujillo">Trujillo</option>
+                        <option class="region_id region_6" value="Apure - Municipio Páez">Apure - Municipio Páez</option>
+                        <option class="region_id region_7" value="Apure - Sin el Municipio Páez">Apure - Sin el Municipio Páez</option>
+                        <option class="region_id region_7" value="Guárico">Guárico</option>
+                        <option class="region_id region_8" value="Anzoátegui">Anzoátegui</option>
+                        <option class="region_id region_8" value="Monagas">Monagas</option>
+                        <option class="region_id region_8" value="Sucre">Sucre</option>
+                        <option class="region_id region_9" value="Zulia">Zulia</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div className="w-full lg:w-6/12 px-4">
+                    <div className="relative w-full mb-3">
+                      <label className="block text-blueGray-600 text-xs font-bold mb-2">Zona</label>
+                      <input
+                        type="text"
+                        className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
+                        value={client.zona}
+                        onChange={(e) => setClient({ ...client, zona: e.target.value })}
+                      />
+                    </div>
+                  </div>
+                  <div className="w-full lg:w-2/12 px-4">
+                    <div className="relative w-full mb-3">
+                      <label className="block text-blueGray-600 text-xs font-bold mb-4">Condición</label>
+                      {(client.activo == true) ? (
+                        <label class="bg-emerald-400 text-white py-1 px-3 rounded-full text-center">Activo</label>
+                      ):(
+                        <label class="bg-red-400 text-white py-1 px-3 rounded-full text-center">Inactivo</label>
+                      )}
                     </div>
                   </div>
                 </div>
