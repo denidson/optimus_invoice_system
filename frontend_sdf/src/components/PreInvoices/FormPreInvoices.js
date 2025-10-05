@@ -226,7 +226,8 @@ function FormPreInvoices() {
             monto_pagado_divisas: 0,
             igtf_porcentaje: 3.0,
             igtf_monto: 0,
-            tipo_documento: 'FC'
+            tipo_documento: 'FC',
+            fecha_factura: ''
           })
         }
       } catch (err) {
@@ -459,12 +460,12 @@ const processRowUpdate = (newRow, oldRow) => {
                   </div>
                   <div className="w-full lg:w-2/12 px-4">
                     <div className="relative w-full mb-3">
-                      <label className="block text-blueGray-600 text-xs font-bold mb-2">Fecha de emisión</label>
+                      <label className="block text-blueGray-600 text-xs font-bold mb-2">Fecha de factura</label>
                       <input
                         type="date"
                         className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
-                        value={preInvoice.fecha_emision}
-                        onChange={(e) => setPreInvoice({ ...preInvoice, fecha_emision: e.target.value })}
+                        value={preInvoice.fecha_factura}
+                        onChange={(e) => setPreInvoice({ ...preInvoice, fecha_factura: e.target.value })}
                       />
                     </div>
                   </div>
@@ -524,7 +525,7 @@ const processRowUpdate = (newRow, oldRow) => {
                         <option value="NC">Nota de Crédito</option>
                         <option value="ND">Nota de Débito</option>
                       </select>
-                    </div>*
+                    </div>
                   </div>
                 </div>
                 <div className="flex flex-wrap">

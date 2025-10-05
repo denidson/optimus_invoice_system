@@ -204,17 +204,12 @@ function ListPreInvoices() {
                 className="table-auto w-full text-left"
                 columns={[
                   {
-                    title: "Fecha de emisión",
-                    data: "fecha_emision",
+                    title: "Fecha",
+                    data: "fecha_factura",
                     orderable: true,
                     searchable: false,
                     render: (data, type, row) => {
-                      return data.toString().replace('T', ' ').substr(0,19);
-                      /*if (data == true){
-                        return '<label class="bg-emerald-400 text-white py-1 px-3 rounded-full text-center">Activo</label>';
-                      }else{
-                        return '<label class="bg-red-400 text-white py-1 px-3 rounded-full text-center">Inactivo</label>';
-                      }*/
+                      return data ? data.toString().replace('T', ' ').substr(0,19) : '';
                     }
                   },
                   { title: "RIF", data: "cliente_final_rif" },
@@ -277,17 +272,57 @@ function ListPreInvoices() {
                     }
                   },
                   {
+                    title: "Pagado en divisas",
+                    data: "monto_pagado_divisas",
+                    render: (data, type, row) => {
+                      if (type === "display" || type === "filter") {
+                        // Formato de número con separadores para Venezuela
+                        const formatted = new Intl.NumberFormat("es-VE", {
+                          style: "decimal",
+                          minimumFractionDigits: 2,
+                          maximumFractionDigits: 2
+                        }).format(data);
+
+                        return `Bs. ${formatted}`;
+                      }
+                      // Para ordenamiento y cálculos → devolver el valor numérico real
+                      return data;
+                    }
+                  },
+                  {
+                    title: "IGTF",
+                    data: "igtf_monto",
+                    render: (data, type, row) => {
+                      if (type === "display" || type === "filter") {
+                        // Formato de número con separadores para Venezuela
+                        const formatted = new Intl.NumberFormat("es-VE", {
+                          style: "decimal",
+                          minimumFractionDigits: 2,
+                          maximumFractionDigits: 2
+                        }).format(data);
+
+                        return `Bs. ${formatted}`;
+                      }
+                      // Para ordenamiento y cálculos → devolver el valor numérico real
+                      return data;
+                    }
+                  },
+                  {
                     title: "Estado",
                     data: "estatus",
                     orderable: true,
                     searchable: false,
                     render: (data, type, row) => {
-                      return data;
-                      /*if (data == true){
-                        return '<label class="bg-emerald-400 text-white py-1 px-3 rounded-full text-center">Activo</label>';
-                      }else{
-                        return '<label class="bg-red-400 text-white py-1 px-3 rounded-full text-center">Inactivo</label>';
-                      }*/
+                      return data ? data.toUpperCase():'';
+                    }
+                  },
+                  {
+                    title: "Zona",
+                    data: "zona",
+                    orderable: true,
+                    searchable: false,
+                    render: (data, type, row) => {
+                      return data ? data.toUpperCase():'';
                     }
                   },
                   {
@@ -297,9 +332,9 @@ function ListPreInvoices() {
                     searchable: false,
                     render: (data, type, row) => {
                       return `
-                        <button class="btn-view px-3 py-1 ml-2 mr-0" data-id="${row.id}"><i class="fa-solid fa-lg fa-expand"></i></button>
-                        <button class="btn-edit px-3 py-1 mx-0 text-blue-600" data-id="${row.id}"><i class="fa-solid fa-lg fa-pen-to-square"></i></button>
-                        <button class="btn-delete px-3 py-1 ml-0 mr-2 text-red-600" data-id="${row.id}" data-nombre="${row.cliente_final_nombre}"><i class="fa-solid fa-lg fa-trash"></i></button>
+                        <button class="btn-view px-1 py-1 mx-0" data-id="${row.id}"><i class="fa-solid fa-lg fa-expand"></i></button>
+                        <button class="btn-edit px-1 py-1 mx-0 text-blue-600" data-id="${row.id}"><i class="fa-solid fa-lg fa-pen-to-square"></i></button>
+                        <button class="btn-delete px-1 py-1 mx-0 text-red-600" data-id="${row.id}" data-nombre="${row.cliente_final_nombre}"><i class="fa-solid fa-lg fa-trash"></i></button>
                       `;
                       // btn-edit bg-blue-500 hover:bg-blue-600 text-white p-2 rounded-xl mx-1
                       //btn-delete bg-red-500 hover:bg-red-600 text-white p-2 rounded-xl mx-1
@@ -331,6 +366,7 @@ function ListPreInvoices() {
                   searching: true,
                   ordering: true,
                   info: true,
+                  scrollx: true,
                   responsive: true,
                   pageLength: 10,         // cantidad inicial por página
                   lengthMenu: [5, 10, 25, 50, 100], // opciones en el desplegable, false para oculta el selector
