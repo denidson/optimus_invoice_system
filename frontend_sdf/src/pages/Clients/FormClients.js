@@ -7,13 +7,14 @@ import FormClients from '../../components/Clients/FormClients';
 import CardStats from '../../components/Cards/CardStats';
 
 function FormClientPage() {
-  const { usuario } = useContext(AuthContext);
+  const { user } = useContext(AuthContext);
+  const nombreUsuario = user?.nombre || "Usuario";
 
   return (
     <>
       <Sidebar />
       <div className="relative md:ml-64 min-h-screen bg-blueGray-100 flex flex-col">
-        <Navbar />
+        <Navbar nombreUsuario={nombreUsuario} />
         {/* Header */}
         <main className="flex-1">
           {/* HeaderStats */}

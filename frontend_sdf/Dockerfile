@@ -4,13 +4,13 @@ FROM node:18
 # Crea carpeta de trabajo
 WORKDIR /app
 
-# Copia dependencias
+# Copia solo archivos de dependencias primero (mejor cache)
 COPY package*.json ./
 
 # Instala dependencias
 RUN npm ci
 
-# Copia todo el código
+# Copia solo el código fuente (excluyendo node_modules)
 COPY . .
 
 # Expone el puerto 3000

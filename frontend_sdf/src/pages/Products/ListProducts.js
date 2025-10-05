@@ -6,13 +6,13 @@ import HeaderStats from '../../components/Headers/HeaderStats';
 import ListProducts from '../../components/Products/ListProducts';
 
 function ListProductsPage() {
-  const { usuario } = useContext(AuthContext);
-
+  const { user } = useContext(AuthContext);
+  const nombreUsuario = user?.nombre || "Usuario";
   return (
     <>
       <Sidebar />
       <div className="relative md:ml-64 bg-blueGray-100 min-h-screen">
-        <Navbar />
+        <Navbar nombreUsuario={nombreUsuario} />
 
         {/* Header con estadísticas */}
         <HeaderStats

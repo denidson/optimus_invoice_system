@@ -30,8 +30,23 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      localStorage.removeItem("authData");
-      window.location.href = "/login"; // redirige al login
+      // Evitar mostrar múltiples toasts si se disparan varios 401 a la vez
+      if (!window._sessionExpired) {
+        window._sessionExpired = true;
+
+        // Mostrar notificación
+        import("react-toastify").then(({ toast }) => {
+          toast.error("Tu sesión ha expirado. Por favor inicia sesión nuevamente.", {
+            position: "top-center",
+            autoClose: 3000,
+            onClose: () => {
+              localStorage.removeItem("authData");
+              window._sessionExpired = false;
+              window.location.href = "/login";
+            },
+          });
+        });
+      }
     }
     return Promise.reject(error);
   }
