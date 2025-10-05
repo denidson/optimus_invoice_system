@@ -8,7 +8,7 @@ function Dashboard() {
   const { user } = useContext(AuthContext);
 
   // Extraemos el nombre del usuario correctamente
-  const nombreUsuario = user?.usuario?.nombre || "Usuario";
+  const nombreUsuario = user?.nombre || "Usuario";
 
   return (
     <>

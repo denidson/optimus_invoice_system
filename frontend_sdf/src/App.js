@@ -10,13 +10,13 @@ import ListPreInvoices from "./pages/PreInvoices/ListPreInvoices";
 import FormPreInvoices from "./pages/PreInvoices/FormPreInvoices";
 import ListProducts from "./pages/Products/ListProducts";
 import FormProducts from "./pages/Products/FormProducts";
+import ListTaxes from "./pages/Taxes/ListTaxes";
 import Dashboard from "./pages/Dashboard";
-// import Profile from "./pages/Profile";
+import Profile from "./pages/Profile"; // 👈 Descomentado
 // import Invoices from "./pages/Invoices";
 // import InvoiceForm from "./pages/InvoiceForm";
 import PrivateRoute from "./components/PrivateRoute";
 import '@fortawesome/fontawesome-free/css/all.min.css';
-
 
 function App() {
   return (
@@ -26,6 +26,7 @@ function App() {
           <Route path="/" element={<Login />} />
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
+
           <Route
             path="/dashboard"
             element={
@@ -34,6 +35,17 @@ function App() {
               </PrivateRoute>
             }
           />
+
+          {/* 🔹 Nueva ruta para el perfil */}
+          <Route
+            path="/profile"
+            element={
+              <PrivateRoute>
+                <Profile />
+              </PrivateRoute>
+            }
+          />
+
           <Route
             path="/preinvoices"
             element={
@@ -50,7 +62,6 @@ function App() {
               </PrivateRoute>
             }
           />
-
           <Route
             path="/preinvoices/create"
             element={
@@ -59,6 +70,7 @@ function App() {
               </PrivateRoute>
             }
           />
+
           <Route
             path="/clients"
             element={
@@ -75,7 +87,6 @@ function App() {
               </PrivateRoute>
             }
           />
-
           <Route
             path="/clients/create"
             element={
@@ -101,7 +112,6 @@ function App() {
               </PrivateRoute>
             }
           />
-
           <Route
             path="/products/create"
             element={
@@ -110,42 +120,14 @@ function App() {
               </PrivateRoute>
             }
           />
-
-          {/* <Route
-            path="/profile"
+          <Route
+            path="/taxes"
             element={
               <PrivateRoute>
-                <Profile />
+                <ListTaxes />
               </PrivateRoute>
             }
           />
-
-          <Route
-            path="/invoices"
-            element={
-              <PrivateRoute>
-                <Invoices />
-              </PrivateRoute>
-            }
-          />
-
-          <Route
-            path="/invoices/new"
-            element={
-              <PrivateRoute>
-                <InvoiceForm />
-              </PrivateRoute>
-            }
-          />
-
-          <Route
-            path="/invoices/edit/:id"
-            element={
-              <PrivateRoute>
-                <InvoiceForm />
-              </PrivateRoute>
-            }
-          /> */}
         </Routes>
       </Router>
     </AuthProvider>

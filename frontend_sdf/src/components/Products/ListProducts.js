@@ -1,11 +1,11 @@
-import React, { useState, useEffect } from 'react'; 
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from "react-router-dom";
-import { getProducts, deleteProduct, showProduct, createProduct } from '../../services/apiProducts';
+import { getProducts, deleteProduct, showProduct, createProduct, activateProduct } from '../../services/apiProducts';
 import { encryptText } from '../../services/api';
 import ModalConfirmation from "../Modals/ModalConfirmation";
 import ModalProducts from "./ModalProducts";
 import { toast, ToastContainer } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css"; 
+import "react-toastify/dist/ReactToastify.css";
 import $ from "jquery";
 import DataTable from "datatables.net-react";
 import DT from "datatables.net-dt";
@@ -31,7 +31,7 @@ function ListProducts() {
   const navigate = useNavigate();
   const [modalOpen, setModalOpen] = useState(false);
   const [modalOpenProducts, setModalOpenProducts] = useState(false);
-  const [productToAction, setProductToAction] = useState(null);
+  const [productIdToAction, setProductIdToAction] = useState(null); // Estado para almacenar ID y acción del producto
 
   useEffect(() => {
     const table = $("#ListProductDt").DataTable();
@@ -42,17 +42,17 @@ function ListProducts() {
       redirectToEdit(id);
     });
 
-    // Delete button
+    // Delete or activate button
     $("#ListProductDt tbody").on("click", "button.btn-delete", function () {
       const id = $(this).data("id");
       const nombre = $(this).data("nombre");
-      handleOpenModal(id, nombre);
+      const action = $(this).data("action");
+      handleOpenModal(id, nombre, action);
     });
 
     // View button
     $("#ListProductDt tbody").on("click", "button.btn-view", function () {
       const id = $(this).data("id");
-      console.log("View product with ID:", id);
       handleOpenModalProducts(id);
     });
 
@@ -72,43 +72,53 @@ function ListProducts() {
     navigate(`/products/create`);
   };
 
-  const handleDelete = async (id) => {
+  const handleAction = async (id, action) => {
     try {
-      const data = await deleteProduct(id);
-      toast.success(data.mensaje, {
+      let data;
+      if (action === 'delete') {
+        data = await deleteProduct(id);
+      } else {
+        data = await activateProduct(id);
+      }
+
+      toast.success(data.mensaje || 'Acción realizada con éxito', {
         onClose: () => {
-          setTimeout(() => refreshProducts(), 2000);
+          // 🔹 Recarga el DataTable directamente:
+          $('#ListProductDt').DataTable().ajax.reload(null, false);
         },
       });
     } catch (err) {
-      toast.error("Error deleting product");
+      console.error(err);
+      toast.error("Error al actualizar el producto");
     }
   };
+
 
   const refreshProducts = async () => {
     try {
       const data = await getProducts();
-      setProductToAction(data);
+      // Aquí podrías actualizar un estado si tu tabla dependiera de él
+      console.log("Productos recargados:", data);
     } catch (error) {
       console.error("Error loading products:", error);
     }
   };
 
   const handleConfirm = () => {
-    if (productToAction) {
-      handleDelete(productToAction.id);
+    if (productIdToAction) {
+      handleAction(productIdToAction.id, productIdToAction.action);
       setModalOpen(false);
     }
   };
 
-  const handleOpenModal = (id, nombre) => {
-    setProductToAction({ id, nombre });
+  const handleOpenModal = (id, nombre, action) => {
+    setProductIdToAction({ id, nombre, action });
     setModalOpen(true);
   };
 
   const handleCloseModal = () => setModalOpen(false);
 
-  // Handle file upload
+  // 🔹 Manejo de carga de archivos
   const handleFileUpload = (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -135,32 +145,31 @@ function ListProducts() {
       };
       reader.readAsBinaryString(file);
     } else {
-      toast.error('Unsupported file. Only CSV or Excel allowed.');
+      toast.error('Archivo no soportado. Solo CSV o Excel.');
     }
   };
 
-  // Import products to API
+  // 🔹 Subida de productos
   const uploadProducts = async (productsArray) => {
     try {
       for (let product of productsArray) {
         await createProduct(product);
       }
-      toast.success('Products imported successfully');
+      toast.success('Productos importados exitosamente');
       refreshProducts();
     } catch (err) {
       console.error(err);
-      toast.error('Error importing products');
+      toast.error('Error importando productos');
     }
   };
 
   const handleOpenModalProducts = async (id) => {
     try {
       const data = await showProduct(id);
-      console.log("Fetched product details:", data);
-      setProductToAction(data);
+      setProductIdToAction(data);
       setModalOpenProducts(true);
     } catch (err) {
-      toast.error("Error fetching product details.");
+      toast.error("Error al obtener detalles del producto.");
     }
   };
 
@@ -183,11 +192,6 @@ function ListProducts() {
                   onClick={redirectToCreate}>
                   Crear Producto
                 </button>
-
-                {/* <label className="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded cursor-pointer">
-                  Importar Excel/CSV
-                  <input type="file" accept=".csv,.xlsx,.xls" className="hidden" onChange={handleFileUpload} />
-                </label> */}
               </div>
             </div>
 
@@ -199,31 +203,73 @@ function ListProducts() {
                 columns={[
                   { title: "SKU", data: "sku" },
                   { title: "Nombre", data: "nombre" },
-                    { title: "Descripción", data: "descripcion" },
+                  { title: "Descripción", data: "descripcion" },
                   { title: "Precio Base", data: "precio_base" },
-                  { 
-                    title: "IVA", 
-                    data: "iva_categoria", 
+                  {
+                    title: "IVA",
+                    data: "iva_categoria",
                     render: (data) => data ? `${data.tasa_porcentaje}%` : "N/A"
                   },
-                  { 
-                    title: "Activo", 
-                    data: "activo", 
-                    render: (data) => data ? "Sí" : "No" 
+                  {
+                    title: "Condición",
+                    data: "activo",
+                    render: (data) => {
+                      return data
+                        ? '<label class="bg-emerald-400 text-white py-1 px-3 rounded-full text-center">Activo</label>'
+                        : '<label class="bg-red-400 text-white py-1 px-3 rounded-full text-center">Inactivo</label>';
+                    }
                   },
+                  // {
+                  //   title: "Acciones",
+                  //   data: 'activo',
+                  //   orderable: false,
+                  //   searchable: false,
+                  //   render: (data, type, row) => {
+                  //     if (data) {
+                  //       return `
+                  //         <button class="btn-view px-3 py-1 ml-2 mr-0" data-id="${row.id}"><i class="fa-solid fa-lg fa-expand"></i></button>
+                  //         <button class="btn-edit px-3 py-1 mx-0 text-blue-600" data-id="${row.id}"><i class="fa-solid fa-lg fa-pen-to-square"></i></button>
+                  //         <button class="btn-delete px-3 py-1 ml-0 mr-2 text-red-600" data-id="${row.id}" data-nombre="${row.nombre}" data-action="delete"><i class="fa-regular fa-rectangle-xmark fa-lg"></i></button>`;
+                  //     } else {
+                  //       return `
+                  //         <button class="btn-view px-3 py-1 ml-2 mr-0" data-id="${row.id}"><i class="fa-solid fa-lg fa-expand"></i></button>
+                  //         <button class="btn-edit px-3 py-1 mx-0 text-blue-600" data-id="${row.id}"><i class="fa-solid fa-lg fa-pen-to-square"></i></button>
+                  //         <button class="btn-delete px-3 py-1 ml-0 mr-2 text-green-600" data-id="${row.id}" data-nombre="${row.nombre}" data-action="active"><i class="fa-regular fa-square-check fa-lg"></i></button>`;
+                  //     }
+                  //   }
+                  // }
                   {
                     title: "Acciones",
-                    data: null,
+                    data: 'activo',
                     orderable: false,
                     searchable: false,
                     render: (data, type, row) => {
+                      const viewBtn = `
+                        <button class="btn-view px-2 py-1 text-gray-700" data-id="${row.id}">
+                          <i class="fa-solid fa-lg fa-expand"></i>
+                        </button>`;
+                      const editBtn = `
+                        <button class="btn-edit px-2 py-1 text-blue-600" data-id="${row.id}">
+                          <i class="fa-solid fa-lg fa-pen-to-square"></i>
+                        </button>`;
+                      const toggleBtn = data
+                        ? `<button class="btn-delete px-2 py-1 text-red-600" data-id="${row.id}" data-nombre="${row.nombre}" data-action="delete">
+                            <i class="fa-regular fa-rectangle-xmark fa-lg"></i>
+                          </button>`
+                        : `<button class="btn-delete px-2 py-1 text-green-600" data-id="${row.id}" data-nombre="${row.nombre}" data-action="active">
+                            <i class="fa-regular fa-square-check fa-lg"></i>
+                          </button>`;
+
+                      // 🔹 Contenedor flex y nowrap para mantener todo alineado horizontalmente
                       return `
-                        <button class="btn-view px-3 py-1 ml-2 mr-0" data-id="${row.id}"><i class="fa-solid fa-lg fa-expand"></i></button>
-                        <button class="btn-edit px-3 py-1 mx-0 text-blue-600" data-id="${row.id}"><i class="fa-solid fa-lg fa-pen-to-square"></i></button>
-                        <button class="btn-delete px-3 py-1 ml-0 mr-2 text-red-600" data-id="${row.id}" data-nombre="${row.nombre}"><i class="fa-solid fa-lg fa-trash"></i></button>
-                      `;
+                        <div style="display: flex; justify-content: center; align-items: center; gap: 0.25rem; white-space: nowrap;">
+                          ${viewBtn}
+                          ${editBtn}
+                          ${toggleBtn}
+                        </div>`;
                     }
-                  },
+                  }
+
                 ]}
                 options={{
                   dom:
@@ -278,20 +324,29 @@ function ListProducts() {
                   }
                 }}
               />
-              {/* Delete Confirmation Modal */}
+
+              {/* Modal de confirmación */}
               <ModalConfirmation
                 isOpen={modalOpen}
                 onClose={handleCloseModal}
                 onConfirm={handleConfirm}
-                message={'¿Estás seguro de que deseas eliminar el producto '+ (productToAction ? productToAction.nombre : '') +'?'}
+                message={
+                  `¿Estás seguro de que deseas ${
+                    productIdToAction && productIdToAction.action === 'delete'
+                      ? 'desactivar'
+                      : 'activar'
+                  } al producto ${
+                    productIdToAction ? productIdToAction.nombre : ''
+                  }?`
+                }
               />
-              {/* Product Detail Modal */}
+
+              {/* Modal de vista de producto */}
               <ModalProducts
                 isOpen={modalOpenProducts}
                 onClose={handleCloseModalProducts}
-                product={productToAction} // <-- Cambiado de message a product
+                product={productIdToAction}
               />
-
             </div>
           </div>
         </div>

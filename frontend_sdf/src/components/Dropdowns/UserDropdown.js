@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
+import { Link } from "react-router-dom"; // 👈 Importa Link
 import ReactImg from "../../assets/img/react.jpg";
 
 export default function UserDropdown({ nombreUsuario, onLogout }) {
@@ -38,23 +39,22 @@ export default function UserDropdown({ nombreUsuario, onLogout }) {
       {open && (
         <div className="absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-50">
           <div className="py-1">
-            <a
-              href="#profile"
-              onClick={(e) => e.preventDefault()}
+            <Link
+              to="/profile"
+              onClick={() => setOpen(false)} // Cierra el dropdown
               className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
             >
               Perfil
-            </a>
-            <a
-              href="#logout"
-              onClick={(e) => {
-                e.preventDefault();
+            </Link>
+            <button
+              onClick={() => {
+                setOpen(false);
                 onLogout();
               }}
-              className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+              className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
             >
               Cerrar sesión
-            </a>
+            </button>
           </div>
         </div>
       )}

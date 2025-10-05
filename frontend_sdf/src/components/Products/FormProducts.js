@@ -62,11 +62,10 @@ function FormProducts() {
         precio_base: product.precio_base.toString(),
         descripcion: product.descripcion,
         iva_categoria_id: parseInt(product.iva_categoria_id, 10),
-        activo: product.activo ?? true,
         aplica_iva: product.aplica_iva ?? true,
         cliente_id: product.cliente_id ?? 1,
       };
-
+      console.log("Submitting product:", body);
       if (!productId) {
         await createProduct(body); // POST con JSON
       } else {
