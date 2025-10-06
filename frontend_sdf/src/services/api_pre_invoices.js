@@ -9,9 +9,9 @@ export const getPreInvoices = async () => {
       var response;
       if (rol == 'admin'){
         //response = await api.get('/admin/pre-invoices');
-        response = await api.get('/pre-invoices/');
+        response = await api.get('/pre-invoices');
       }else{
-        response = await api.get('/pre-invoices/');
+        response = await api.get('/pre-invoices');
       }
       return response.data; // Devuelve los datos de los pre-facturas
     }
@@ -56,7 +56,7 @@ export const editPreInvoice = async (id, body) => {
 // Crear un pre-facturas
 export const createPreInvoice = async (body) => {
   try {
-    const response = await api.post(`/api/invoices/`, body);
+    const response = await api.post(`/api/invoices`, body);
     console.log('createPreInvoice-response: ', response);
     return response.data;
   } catch (error) {
