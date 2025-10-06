@@ -1,5 +1,6 @@
 export default async function handler(req, res) {
-  const targetUrl = "http://95.215.204.79:51500" + req.url.replace("/api/proxy", "");
+  const targetUrl = ("http://95.215.204.79:51500" + req.url.replace("/api/proxy", ""))
+  .replace(/\/$/, ""); // Eliminar barra final si existe
 
   try {
     const response = await fetch(targetUrl, {
