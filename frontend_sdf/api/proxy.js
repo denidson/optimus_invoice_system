@@ -1,8 +1,12 @@
 export default async function handler(req, res) {
-  const targetUrl = ("http://95.215.204.79:51500" + req.url.replace("/api/proxy", ""))
-  .replace(/\/$/, ""); // Eliminar barra final si existe
-
   try {
+    // Separar path y query
+    const [path, query] = req.url.replace("/api/proxy", "").split("?");
+    // Eliminar barra final del path
+    const cleanPath = path.replace(/\/$/, "");
+    // Reconstruir URL completa
+    const targetUrl = "https://optimusinvoice.ddns.net" + cleanPath + (query ? "?" + query : "");
+
     const response = await fetch(targetUrl, {
       method: req.method,
       headers: {
@@ -12,7 +16,6 @@ export default async function handler(req, res) {
       body: req.method !== "GET" ? JSON.stringify(req.body) : undefined,
     });
 
-    // Responder según lo que devuelva el backend
     const text = await response.text();
     res.status(response.status).send(text);
   } catch (error) {
