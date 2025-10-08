@@ -8,8 +8,8 @@ export const getPreInvoices = async () => {
       const { rol } = JSON.parse(authData);
       var response;
       if (rol == 'admin'){
-        //response = await api.get('/admin/pre-invoices');
-        response = await api.get('/pre-invoices/');
+        response = await api.get('/admin/pre-invoices');
+        //response = await api.get('/pre-invoices/');
       }else{
         response = await api.get('/pre-invoices/');
       }
@@ -29,8 +29,8 @@ export const showPreInvoice = async (id) => {
       const { rol } = JSON.parse(authData);
       var response;
       if (rol == 'admin'){
-        //response = await api.get(`/admin/pre-invoices/${id}`);
-        response = await api.get(`/pre-invoices/${id}`);
+        response = await api.get(`/admin/pre-invoices/${id}`);
+        //response = await api.get(`/pre-invoices/${id}`);
       }else{
         response = await api.get(`/pre-invoices/${id}`);
       }
@@ -42,10 +42,22 @@ export const showPreInvoice = async (id) => {
   }
 };
 
+// Convertir en factura
+export const convertInInvoice = async (body) => {
+  try {
+    const response = await api.post(`/api/invoices/from-pre-invoice`, body);
+    //console.log('convertInInvoice-response: ', response);
+    return response.data;
+  } catch (error) {
+    console.error("Error al Convertir en factura:", error);
+    throw error;
+  }
+};
+
 // Editar un pre-facturas
 export const editPreInvoice = async (id, body) => {
   try {
-    const response = await api.put(`/api/prefacturas/${id}`, body);
+    const response = await api.put(`/pre-invoices/${id}/`, body);
     return response.data;
   } catch (error) {
     console.error("Error al editar el pre-facturas:", error);
@@ -68,7 +80,7 @@ export const createPreInvoice = async (body) => {
 // Eliminar un pre-facturas
 export const deletePreInvoice = async (id) => {
   try {
-    const response = await api.delete(`/api/invoices/${id}`);
+    const response = await api.delete(`/pre-invoices/${id}`);
     console.log('deletePreInvoice-response: ', response);
     return response.data;
   } catch (error) {

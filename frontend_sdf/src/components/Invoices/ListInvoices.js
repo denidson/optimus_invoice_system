@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from "react-router-dom"; // Para la redirección
-import { getClients, deleteClient, showClient, createClient, activateClient } from '../../services/api_clients'; // Importa el servicio
+import { getInvoices, showInvoice } from '../../services/api_invoices'; // Importa el servicio
 import { encryptText } from '../../services/api'; // Importa el servicio para encriptar/desencriptar parametros
-import ModalConfirmation from "../Modals/ModalConfirmation";
-import ModalClients from "./ModalClients";
+import ModalInvoices from "./ModalInvoices";
 import { toast, ToastContainer } from "react-toastify"; // Importamos las funciones necesarias
 import "react-toastify/dist/ReactToastify.css"; // Importar el CSS de las notificaciones
 import $ from "jquery";
@@ -26,148 +25,39 @@ window.JSZip = JSZip;
 // Activar el "plugin" base de DataTables
 DataTable.use(DT);
 
-function ListClients() {
+function ListInvoices() {
   const navigate = useNavigate(); // Hook para redirección
   const [modalOpen, setModalOpen] = useState(false); // Estado para manejar la visibilidad de la modal
-  const [modalOpenClients, setModalOpenClients] = useState(false); // Estado para manejar la visibilidad de la modal
-  const [clientIdToDeactivate, setClientIdToDeactivate] = useState(null); // Estado para almacenar el ID del cliente a desactivar
+  const [modalOpenInvoices, setModalOpenInvoices] = useState(false); // Estado para manejar la visibilidad de la modal
+  const [Invoices, setInvoices] = useState(false);
+  const authData = localStorage.getItem("authData");
+  var rol;
+  if (authData) {
+    rol = JSON.parse(authData)['rol'];
+  }
 
-  // Cargar los clientes al inicio
+  // Cargar las pre-facturas al inicio
   useEffect(() => {
-    const table = $("#ListClientDt").DataTable();
-
-    // Click editar
-    $("#ListClientDt tbody").on("click", "button.btn-edit", function () {
-      const id = $(this).data("id");
-      redirectToEdit(id);
-    });
-
-
-    // Click eliminar
-    $("#ListClientDt tbody").on("click", "button.btn-delete", function () {
-      const id = $(this).data("id");
-      const nombre = $(this).data("nombre");
-      const action = $(this).data("action");
-      handleOpenModal(id, nombre, action);
-    });
+    const table = $("#ListInvoicesDt").DataTable();
 
     // Click visualizar
-    $("#ListClientDt tbody").on("click", "button.btn-view", function () {
+    $("#ListInvoicesDt tbody").on("click", "button.btn-view", function () {
       const id = $(this).data("id");
       const nombre = $(this).data("nombre");
-      handleOpenModalClients(id, nombre);
+      handleOpenModalInvoices(id, nombre);
     });
 
     return () => {
       // limpiar eventos para evitar duplicados
-      $("#ListClientDt tbody").off("click", "button.btn-edit");
-      $("#ListClientDt tbody").off("click", "button.btn-delete");
-      $("#ListClientDt tbody").off("click", "button.btn-view");
+      $("#ListInvoicesDt tbody").off("click", "button.btn-view");
     };
   }, []); // Se ejecuta solo una vez al montar el componente
 
-  const redirectToEdit = (id) => {
-    const hash = encryptText(id.toString());
-    navigate(`/clients/edit?id=${encodeURIComponent(hash)}`);
-  };
-
-  const redirectToCreate = () => {
-    navigate(`/clients/create`);
-  };
-
-  const handleAction = async (id, action) => {
-    try {
-      var data;
-      if (action == 'delete'){
-        data = await deleteClient(id);
-      }else{
-        data = await activateClient(id);
-      }
-      toast.success(data.mensaje, {
-        onClose: () => {
-          setTimeout(() => refreshClients(), 3000);
-        },
-      });
-    } catch (err) {
-      toast.error("Error al actualizar el cliente");
-    }
-  };
-
-  const refreshClients = async () => {
-    // Llamamos a la función del servicio REST para obtener los clientes
-    try {
-      //const data = await getClients();
-      //setClients(data); // Actualizamos el estado con los clientes obtenidos
-      location.reload(true);
-    } catch (error) {
-      console.error("Error al cargar los clientes:", error);
-    }
-  };
-
-  const handleConfirm = () => {
-    if (clientIdToDeactivate) {
-      handleAction(clientIdToDeactivate.id, clientIdToDeactivate.action);
-      setModalOpen(false);
-    }
-  };
-
-  const handleOpenModal = (id, nombre_empresa, action) => {
-    setClientIdToDeactivate({ id, nombre_empresa, action });
-    setModalOpen(true);
-  };
-
-  const handleCloseModal = () => setModalOpen(false);
-
-  // Función que procesa el archivo seleccionado
-  const handleFileUpload = (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-
-    const extension = file.name.split('.').pop().toLowerCase();
-
-    if (extension === 'csv') {
-      Papa.parse(file, {
-        header: true,
-        skipEmptyLines: true,
-        complete: async (results) => {
-          await uploadClients(results.data);
-        },
-      });
-    } else if (extension === 'xlsx' || extension === 'xls') {
-      const reader = new FileReader();
-      reader.onload = async (evt) => {
-        const bstr = evt.target.result;
-        const workbook = read(bstr, { type: 'binary' });
-        const sheetName = workbook.SheetNames[0];
-        const sheet = workbook.Sheets[sheetName];
-        const data = utils.sheet_to_json(sheet);
-        await uploadClients(data);
-      };
-      reader.readAsBinaryString(file);
-    } else {
-      toast.error('Archivo no soportado. Solo CSV o Excel.');
-    }
-  };
-
-  // Función que envía los clientes a la API
-  const uploadClients = async (clientsArray) => {
-    try {
-      for (let client of clientsArray) {
-        await createClient(client); // Llama a tu API para cada cliente
-      }
-      toast.success('Clientes importados correctamente');
-      refreshClients();
-    } catch (err) {
-      console.error(err);
-      toast.error('Error al importar clientes');
-    }
-  };
-
-  const handleOpenModalClients = async (id) => {
+  const handleOpenModalInvoices = async (id) => {
     try{
-        const data = await showClient(id);
-        setClientIdToDeactivate(data);
-        setModalOpenClients(true); // Abre la modal de confirmación
+        const data = await showInvoice(id);
+        setInvoices(data);
+        setModalOpenInvoices(true); // Abre la modal de confirmación
     } catch (err) {
       // Mostrar una notificación de error
       toast.error("Error al consultar los datos del cliente.");
@@ -176,8 +66,8 @@ function ListClients() {
     }
   };
 
-  const handleCloseModalClients = () => {
-    setModalOpenClients(false); // Cierra la modal
+  const handleCloseModalInvoices = () => {
+    setModalOpenInvoices(false); // Cierra la modal
   };
 
   return (
@@ -188,69 +78,161 @@ function ListClients() {
           <div className="relative flex flex-col min-w-0 break-words w-full mb-6 shadow-lg rounded-lg bg-blueGray-100 border-0">
             {/* Header Card */}
             <div className="rounded-t bg-white mb-0 px-6 py-6 flex justify-between items-center border-b">
-              <h6 className="text-blueGray-700 text-xl font-bold">Lista de Clientes</h6>
+              <h6 className="text-blueGray-700 text-xl font-bold">Lista de Facturas</h6>
               {/* Grupo de botones alineado a la derecha */}
-              <div className="flex items-center space-x-3">
-                <button
-                  className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded"
-                  onClick={redirectToCreate}>
-                  Crear Cliente
-                </button>
-
-                <label className="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded cursor-pointer">
-                  Importar Excel/CSV
-                  <input type="file" accept=".csv,.xlsx,.xls" className="hidden" onChange={handleFileUpload} />
-                </label>
-              </div>
+              <div className="flex items-center space-x-3"></div>
             </div>
 
             {/* DataTable */}
             <div className="block w-full overflow-x-auto px-4 py-4">
               <DataTable
-                id="ListClientDt"
+                id="ListInvoicesDt"
                 className="table-auto w-full text-left"
                 columns={[
-                  { title: "RIF", data: "rif" },
-                  { title: "Razón social", data: "nombre_empresa" },
-                  { title: "Correo electrónico", data: "email" },
-                  { title: "Teléfono", data: "telefono" },
-                  { title: "Tipo de contribuyente", data: "tipo_contribuyente.nombre" },
-                  { title: "Dirección", data: "direccion" },
-                  { title: "Zona", data: "zona" },
-                  { title: "Estado", data: "estado" },
-                  { title: "Región", data: "region" },
                   {
-                    title: "Condición",
-                    data: "activo",
+                    title: "Fecha",
+                    data: "fecha_factura",
                     orderable: true,
                     searchable: false,
                     render: (data, type, row) => {
-                      if (data == true){
-                        return '<label class="bg-emerald-400 text-white py-1 px-3 rounded-full text-center">Activo</label>';
+                      return data ? data.toString().replace('T', ' ').substr(0,19) : '';
+                    }
+                  },
+                  { title: "RIF", data: "cliente_final_rif" },
+                  { title: "Razón Social", data: "cliente_final_nombre" },
+                  {
+                    title: "Tipo de documento", data: "tipo_documento",
+                    orderable: true,
+                    searchable: false,
+                    render: (data, type, row) => {
+                      if (data == 'FC'){
+                        return 'FACTURA';
+                      }else if(data == 'NC'){
+                        return 'NOTA DE CREDITO';
                       }else{
-                        return '<label class="bg-red-400 text-white py-1 px-3 rounded-full text-center">Inactivo</label>';
+                        return 'NOTA DE DEBITO';
                       }
+                    }
+                  },
+                  { title: "Número de control", data: "numero_control" },
+                  { title: "Correlativo", data: "correlativo_interno" },
+                  {
+                    title: "Base imponible",
+                    data: "total_base",
+                    render: (data, type, row) => {
+                      if (type === "display" || type === "filter") {
+                        // Formato de número con separadores para Venezuela
+                        const formatted = new Intl.NumberFormat("es-VE", {
+                          style: "decimal",
+                          minimumFractionDigits: 2,
+                          maximumFractionDigits: 2
+                        }).format(data);
+
+                        return `Bs. ${formatted}`;
+                      }
+                      // Para ordenamiento y cálculos → devolver el valor numérico real
+                      return data;
+                    }
+                  },
+                  {
+                    title: "I.V.A.",
+                    data: "total_impuestos",
+                    render: (data, type, row) => {
+                      if (type === "display" || type === "filter") {
+                        // Formato de número con separadores para Venezuela
+                        const formatted = new Intl.NumberFormat("es-VE", {
+                          style: "decimal",
+                          minimumFractionDigits: 2,
+                          maximumFractionDigits: 2
+                        }).format(data);
+
+                        return `Bs. ${formatted}`;
+                      }
+                      // Para ordenamiento y cálculos → devolver el valor numérico real
+                      return data;
+                    }
+                  },
+                  {
+                    title: "Total",
+                    data: "total_neto",
+                    render: (data, type, row) => {
+                      if (type === "display" || type === "filter") {
+                        // Formato de número con separadores para Venezuela
+                        const formatted = new Intl.NumberFormat("es-VE", {
+                          style: "decimal",
+                          minimumFractionDigits: 2,
+                          maximumFractionDigits: 2
+                        }).format(data);
+
+                        return `Bs. ${formatted}`;
+                      }
+                      // Para ordenamiento y cálculos → devolver el valor numérico real
+                      return data;
+                    }
+                  },
+                  {
+                    title: "Pagado en divisas",
+                    data: "monto_pagado_divisas",
+                    render: (data, type, row) => {
+                      if (type === "display" || type === "filter") {
+                        // Formato de número con separadores para Venezuela
+                        const formatted = new Intl.NumberFormat("es-VE", {
+                          style: "decimal",
+                          minimumFractionDigits: 2,
+                          maximumFractionDigits: 2
+                        }).format(data);
+
+                        return `Bs. ${formatted}`;
+                      }
+                      // Para ordenamiento y cálculos → devolver el valor numérico real
+                      return data;
+                    }
+                  },
+                  {
+                    title: "IGTF",
+                    data: "igtf_monto",
+                    render: (data, type, row) => {
+                      if (type === "display" || type === "filter") {
+                        // Formato de número con separadores para Venezuela
+                        const formatted = new Intl.NumberFormat("es-VE", {
+                          style: "decimal",
+                          minimumFractionDigits: 2,
+                          maximumFractionDigits: 2
+                        }).format(data);
+
+                        return `Bs. ${formatted}`;
+                      }
+                      // Para ordenamiento y cálculos → devolver el valor numérico real
+                      return data;
+                    }
+                  },
+                  {
+                    title: "Zona",
+                    data: "zona",
+                    orderable: true,
+                    searchable: false,
+                    render: (data, type, row) => {
+                      return data ? data.toUpperCase():'';
+                    }
+                  },
+                  {
+                    title: "Estado",
+                    data: "estatus",
+                    orderable: true,
+                    searchable: false,
+                    render: (data, type, row) => {
+                      return data ? data.toUpperCase():'';
                     }
                   },
                   {
                     title: "Acciones",
-                    data: 'activo',
+                    data: null,
                     orderable: false,
                     searchable: false,
                     render: (data, type, row) => {
-                      if (data == true){
-                        return `
-                          <button class="btn-view px-3 py-1 ml-2 mr-0" data-id="${row.id}"><i class="fa-solid fa-lg fa-expand"></i></button>
-                          <button class="btn-edit px-3 py-1 mx-0 text-blue-600" data-id="${row.id}"><i class="fa-solid fa-lg fa-pen-to-square"></i></button>
-                          <button class="btn-delete px-3 py-1 ml-0 mr-2 text-red-600" data-id="${row.id}" data-nombre="${row.nombre_empresa}" data-action="delete"><i class="fa-regular fa-rectangle-xmark fa-lg"></i></button>`
-                      }else{
-                        return `
-                          <button class="btn-view px-3 py-1 ml-2 mr-0" data-id="${row.id}"><i class="fa-solid fa-lg fa-expand"></i></button>
-                          <button class="btn-edit px-3 py-1 mx-0 text-blue-600" data-id="${row.id}"><i class="fa-solid fa-lg fa-pen-to-square"></i></button>
-                          <button class="btn-delete px-3 py-1 ml-0 mr-2 text-green-600" data-id="${row.id}" data-nombre="${row.nombre_empresa}" data-action="active"><i class="fa-regular fa-rectangle-xmark fa-lg"></i></button>`
-                      }
-                      // btn-edit bg-blue-500 hover:bg-blue-600 text-white p-2 rounded-xl mx-1
-                      //btn-delete bg-red-500 hover:bg-red-600 text-white p-2 rounded-xl mx-1
+                      return `
+                        <button class="btn-view px-1 py-1 mx-0" data-id="${row.id}"><i class="fa-solid fa-lg fa-expand"></i></button>
+                      `;
                     }
                   },
                 ]}
@@ -264,7 +246,7 @@ function ListClients() {
                   processing: true,
                   ajax: async (dataTablesParams, callback) => {
                     try {
-                      const response = await getClients();
+                      const response = await getInvoices();
                       callback({
                         draw: dataTablesParams.draw,
                         recordsTotal: response.length,
@@ -279,6 +261,7 @@ function ListClients() {
                   searching: true,
                   ordering: true,
                   info: true,
+                  scrollx: true,
                   responsive: true,
                   pageLength: 10,         // cantidad inicial por página
                   lengthMenu: [5, 10, 25, 50, 100], // opciones en el desplegable, false para oculta el selector
@@ -287,32 +270,32 @@ function ListClients() {
                     {
                       extend: "copyHtml5",
                       text: "Copiar",
-                      title: "Lista de clientes"   // nombre del documento en el portapapeles
+                      title: "Lista de Pre-Facturas"   // nombre del documento en el portapapeles
                     },
                     {
                       extend: "excelHtml5",
                       text: "Excel",
-                      title: "Lista de clientes",  // título dentro del archivo
-                      filename: "Lista_clientes"   // nombre del archivo generado (sin extensión)
+                      title: "Lista de Pre-Facturas",  // título dentro del archivo
+                      filename: "Lista_pre_facturas"   // nombre del archivo generado (sin extensión)
                     },
                     {
                       extend: "csvHtml5",
                       text: "CSV",
-                      title: "Lista de clientes",
-                      filename: "Lista_clientes"
+                      title: "Lista de Pre-Facturas",
+                      filename: "Lista_pre_facturas"
                     },
                     {
                       extend: "pdfHtml5",
                       text: "PDF",
-                      title: "Lista de clientes",
-                      filename: "Lista_clientes",
+                      title: "Lista de Pre-Facturas",
+                      filename: "Lista_pre_facturas",
                       //orientation: "landscape",   // opcional
                       //pageSize: "A4"              // opcional
                     },
                     {
                       extend: "print",
                       text: "Imprimir",
-                      title: "Lista de clientes"
+                      title: "Lista de Pre-Facturas"
                     }
                   ],
                   language: {
@@ -332,19 +315,12 @@ function ListClients() {
                     }
                   }
                 }}
-              />
+              className="items-center w-full bg-transparent border-collapse"/>
               {/* Modal de confirmación */}
-              <ModalConfirmation
-                isOpen={modalOpen}
-                onClose={handleCloseModal}
-                onConfirm={handleConfirm}
-                message={'¿Estás seguro de que deseas '+ (clientIdToDeactivate && clientIdToDeactivate.action == 'delete' ? 'desactivar': 'activar') + ' al cliente '+ (clientIdToDeactivate ? clientIdToDeactivate.nombre_empresa : '') +'?'} // Pasamos el mensaje personalizado
-              />
-              {/* Modal de confirmación */}
-              <ModalClients
-                isOpen={modalOpenClients}
-                onClose={handleCloseModalClients}
-                message={clientIdToDeactivate}//{'Detalle del cliente'} // Pasamos el mensaje personalizado
+              <ModalInvoices
+                isOpen={modalOpenInvoices}
+                onClose={handleCloseModalInvoices}
+                message={Invoices}//{'Detalle del Pre-Factura'} // Pasamos el mensaje personalizado
               />
             </div>
           </div>
@@ -354,7 +330,7 @@ function ListClients() {
   );
 }
 
-export default ListClients;
+export default ListInvoices;
 
 /* ⚙️ Atributos principales de options
 🔹 Control de datos y renderizado

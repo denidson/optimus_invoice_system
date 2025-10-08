@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useRef } from "react";
 import { useParams } from "react-router-dom";
-import { getPreInvoices, showPreInvoice, createPreInvoice } from '../../services/api_pre_invoices'; // Importa el servicio
+import { getPreInvoices, showPreInvoice, createPreInvoice, editPreInvoice } from '../../services/api_pre_invoices'; // Importa el servicio
 import { getProducts, showProduct, createProduct } from '../../services/apiProducts'; // Importa el servicio
 import { useNavigate } from "react-router-dom"; // Para la redirección
 import { decryptText } from '../../services/api'; // Importa el servicio para encriptar/desencriptar parametros
@@ -75,6 +75,12 @@ function FormPreInvoices() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [buttonDisabled, setButtonDisabled] = useState(false);
+  const authData = localStorage.getItem("authData");
+  var authclientId;
+  if (authData) {
+    authclientId = JSON.parse(authData)['cliente_id'];
+  }
+
   //Autofocus
   const apiRef = useGridApiRef();
   //Campos del DataGrid
@@ -204,6 +210,9 @@ function FormPreInvoices() {
     //{ id: 1, producto_id: "P001", cantidad: 2, precio_unitario: 1500.0 },
     //{ id: 2, producto_id: "P002", cantidad: 5, precio_unitario: 15.5 },
   ]);
+
+  const today = new Date();
+  const formattedDate = today.toISOString().split('T')[0];
   // Simulando la carga de datos del Pre-Factura por el ID
   useEffect(() => {
     const fetchPreInvoice = async () => {
@@ -212,22 +221,28 @@ function FormPreInvoices() {
         setProducts(datapts);
         if (preInvoiceId != null){
           const data = await showPreInvoice(decryptText(preInvoiceId)); // Llamamos a showPreInvoice con el ID
+          if (data.igtf_monto > 0){
+            data['aplica_igtf'] = true;
+            $('#aplica_igtf').prop('checked', true);
+            $('.apply_igtf').removeClass('hidden');
+          }
           setPreInvoice(data); // Guardamos los datos del Pre-Factura en el estado
         }else{
           setPreInvoice({
             id: "#",
             cliente_final_nombre: "",
             cliente_final_rif: "",
-            cliente_id: 1,
+            cliente_id: authclientId,
             items: [],
             correlativo_interno: "",
-            numero_control: "",
+            zona: "",
             aplica_igtf: false,
             monto_pagado_divisas: 0,
             igtf_porcentaje: 3.0,
             igtf_monto: 0,
             tipo_documento: 'FC',
-            fecha_factura: ''
+            fecha_factura: formattedDate,
+            serial: ''
           })
         }
       } catch (err) {
@@ -341,8 +356,10 @@ function FormPreInvoices() {
       //console.log('editPreInvoice-data: ', data);
       //setPreInvoice(data.resultados[0]); // Guardamos los datos del preInvoice en el estado
       // Mostrar una notificación de éxito
+      console.log('editPreInvoice-status: ', data.resultados[0].status);
       if (data.resultados[0].status == 'creada'){
-        toast.success(data.mensaje, {
+        console.log('editPreInvoice-toast:==>');
+        toast.success('Pre-Factura creada satisfactoriamente.', {
           onClose: () => {
             // Espera a que la notificación se cierre para redirigir
             setTimeout(() => {
@@ -352,11 +369,14 @@ function FormPreInvoices() {
         });
       }else{
         toast.error("Error al actualizar la Pre-Factura");
+        setButtonDisabled(false);
       }
     } catch (err) {
+      console.log('Error: ', err);
       setError('Error al cargar la Pre-Factura');
       // Mostrar una notificación de error
       toast.error("Error al actualizar la Pre-Factura");  // Notificación de error
+      setButtonDisabled(false);
     } finally {
       setLoading(false); // Indicamos que la carga ha finalizado
     }
@@ -405,7 +425,9 @@ const processRowUpdate = (newRow, oldRow) => {
 
   // Normalizar precio_base: convertir "31,00" -> 31.00 (float)
   let precioUnitario = newRow.precio_unitario;
-  if (selectedProduct) {
+
+  // Solo tomar el precio_base si el usuario no ha editado o no existe valor
+  if (selectedProduct && (oldRow.producto_id !== newRow.producto_id || !precioUnitario)) {
     precioUnitario = parseFloat(
       selectedProduct.precio_base.toString().replace(",", ".")
     );
@@ -464,7 +486,7 @@ const processRowUpdate = (newRow, oldRow) => {
                       <input
                         type="date"
                         className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
-                        value={preInvoice.fecha_factura}
+                        value={preInvoice.fecha_factura} max={formattedDate}
                         onChange={(e) => setPreInvoice({ ...preInvoice, fecha_factura: e.target.value })}
                       />
                     </div>
@@ -472,12 +494,37 @@ const processRowUpdate = (newRow, oldRow) => {
                   <div className="w-full lg:w-2/12 px-4">
                     <div className="relative w-full mb-3">
                       <label className="block text-blueGray-600 text-xs font-bold mb-2">RIF</label>
-                      <input
-                        type="text"
+                      <input type="text" maxLength={12} // V-12345678-9 → 12 caracteres
                         className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
-                        value={preInvoice.cliente_final_rif}
-                        onChange={(e) => setPreInvoice({ ...preInvoice, cliente_final_rif: e.target.value })}
+                        value={preInvoice.cliente_final_rif} placeholder="V-12345678-9" onChange={(e) => {
+                          let value = e.target.value.toUpperCase();
+
+                          // Elimina caracteres no válidos (solo letras, números y guiones)
+                          value = value.replace(/[^A-Z0-9-]/g, "");
+
+                          // Forzar el patrón paso a paso
+                          if (value.length === 1) {
+                            // Primera posición → solo letras válidas
+                            if (!/[VJEPG]/.test(value)) value = "";
+                          } else if (value.length === 2) {
+                            // Después de la letra → añadir guion automáticamente
+                            if (!value.includes("-")) value = value[0] + "-";
+                          } else if (value.length > 2) {
+                            // Asegurar que los 8 números estén bien colocados
+                            const match = value.match(/^([VJEPG])-(\d{0,8})-?(\d{0,1})?$/);
+                            if (match) {
+                              const [, letra, numeros, verificador] = match;
+                              value = `${letra}-${numeros}${numeros.length === 8 ? "-" : ""}${verificador || ""}`;
+                            } else {
+                              // Si el formato se sale de control, lo limpiamos
+                              value = preInvoice.cliente_final_rif;
+                            }
+                          }
+
+                          setPreInvoice({ ...preInvoice, cliente_final_rif: value });
+                        }}
                       />
+
                     </div>
                   </div>
                   <div className="w-full lg:w-8/12 px-4">
@@ -487,44 +534,69 @@ const processRowUpdate = (newRow, oldRow) => {
                         type="text"
                         className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
                         value={preInvoice.cliente_final_nombre}
-                        onChange={(e) => setPreInvoice({ ...preInvoice, cliente_final_nombre: e.target.value })}
+                        onChange={(e) => setPreInvoice({ ...preInvoice, cliente_final_nombre: e.target.value.toString().toUpperCase() })}
                       />
                     </div>
                   </div>
-                  <div className="w-full lg:w-6/12 px-4">
+                  <div className="w-full lg:w-2/12 px-4">
+                    <div className="relative w-full mb-3">
+                      <label className="block text-blueGray-600 text-xs font-bold mb-4">Tipo de documento</label>
+                      <label className="block text-blueGray-600 text-xs mt-4 font-bold">{preInvoice.tipo_documento == 'FC' ?
+                        ('FACTURA')
+                        :
+                        (preInvoice.tipo_documento == 'NC'?
+                          ('NOTA DE CREDITO')
+                          :
+                          ('NOTA DE DEBITO')
+                        )
+                      }</label>
+                      <input
+                        type="text"
+                        className="hidden border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
+                        value={preInvoice.tipo_documento}
+                      />
+                      {/*<select
+                        className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
+                        value={preInvoice.tipo_documento} readonly
+                        onChange={(e) => setClient({ ...preInvoice, tipo_documento: e.target.value })}>
+                        <option value="#">Seleccione...</option>
+                        <option value="FC">Factura</option>
+                        <option value="NC">Nota de Crédito</option>
+                        <option value="ND">Nota de Débito</option>
+                      </select>*/}
+                    </div>
+                  </div>
+                  <div className="w-full lg:w-2/12 px-4">
                     <div className="relative w-full mb-3">
                       <label className="block text-blueGray-600 text-xs font-bold mb-2">Correlativo Interno</label>
                       <input
                         type="text"
                         className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
                         value={preInvoice.correlativo_interno}
-                        onChange={(e) => setPreInvoice({ ...preInvoice, correlativo_interno: e.target.value })}
-                      />
-                    </div>
-                  </div>
-                  <div className="w-full lg:w-6/12 px-4">
-                    <div className="relative w-full mb-3">
-                      <label className="block text-blueGray-600 text-xs font-bold mb-2">Número de control</label>
-                      <input
-                        type="text"
-                        className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
-                        value={preInvoice.numero_control}
-                        onChange={(e) => setPreInvoice({ ...preInvoice, numero_control: e.target.value })}
+                        onChange={(e) => setPreInvoice({ ...preInvoice, correlativo_interno: e.target.value.toString().toUpperCase() })}
                       />
                     </div>
                   </div>
                   <div className="w-full lg:w-2/12 px-4">
                     <div className="relative w-full mb-3">
-                      <label className="block text-blueGray-600 text-xs font-bold mb-2">Tipo de documento</label>
-                      <select
+                      <label className="block text-blueGray-600 text-xs font-bold mb-2">Serial</label>
+                      <input
+                        type="text"
                         className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
-                        value={preInvoice.tipo_documento}
-                        onChange={(e) => setClient({ ...preInvoice, tipo_documento: e.target.value })}>
-                        <option value="#">Seleccione...</option>
-                        <option value="FC">Factura</option>
-                        <option value="NC">Nota de Crédito</option>
-                        <option value="ND">Nota de Débito</option>
-                      </select>
+                        value={preInvoice.serial}
+                        onChange={(e) => setPreInvoice({ ...preInvoice, serial: e.target.value.toString().toUpperCase() })}
+                      />
+                    </div>
+                  </div>
+                  <div className="w-full lg:w-6/12 px-4">
+                    <div className="relative w-full mb-3">
+                      <label className="block text-blueGray-600 text-xs font-bold mb-2">Dirección</label>
+                      <input
+                        type="text"
+                        className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
+                        value={preInvoice.zona}
+                        onChange={(e) => setPreInvoice({ ...preInvoice, zona: e.target.value.toString().toUpperCase() })}
+                      />
                     </div>
                   </div>
                 </div>
@@ -562,10 +634,9 @@ const processRowUpdate = (newRow, oldRow) => {
                   <div className="w-full lg:w-4/12 px-4 mt-3">
                     <div className="relative w-full mb-3">
                       <label class="inline-flex items-center cursor-pointer">
-                        <input value={preInvoice.aplica_igtf} type="checkbox" class="form-checkbox border-0 rounded text-blueGray-700 ml-1 w-5 h-5 ease-linear transition-all duration-150"
+                        <input value={preInvoice.aplica_igtf} type="checkbox" id="aplica_igtf" class="form-checkbox border-0 rounded text-blueGray-700 ml-1 w-5 h-5 ease-linear transition-all duration-150"
                           onChange={(e) => {
                             const aplica_igtf = e.target.checked; // obtienes el value normal
-                            //console.log("aplica_igtf:", aplica_igtf);
                             if (aplica_igtf){
                               $('.apply_igtf').removeClass('hidden');
                             }else{
@@ -585,7 +656,6 @@ const processRowUpdate = (newRow, oldRow) => {
                           onChange={(e) => {
                             // convertir a float, pero permitir "" si el input está vacío
                             const value = e.target.value;
-                            console.log('value: ', value);
                             setPreInvoice({...preInvoice,
                               monto_pagado_divisas: value === "" ? "" : value
                             });
@@ -657,6 +727,29 @@ const processRowUpdate = (newRow, oldRow) => {
                         </label>
                       </div>
                     </div>
+                    {(preInvoice.monto_pagado_divisas > 0.0) ?
+                    (<div className="flex w-full mb-3">
+                        <div className="w-full lg:w-3/12 px-4">
+                          <label className="block text-blueGray-600 font-bold text-lg">Total + IGTF</label>
+                        </div>
+                        <div className="w-full lg:w-9/12 px-4 text-right">
+                          <label className="text-right border-0 px-3 text-blueGray-600 bg-white rounded text-lg font-bold">
+                          {new Intl.NumberFormat("es-VE", {
+                            style: "currency",
+                            currency: "VES",
+                            minimumFractionDigits: 2,
+                          }).format(totalAmount + igtfAmount)}
+                          </label>
+                        </div>
+                      </div>)
+                      :
+                      (<div className="hidden flex w-full mb-3">
+                        <div className="w-full lg:w-3/12 px-4">
+                        </div>
+                        <div className="w-full lg:w-9/12 px-4 text-right">
+                        </div>
+                      </div>)
+                    }
                   </div>
                 </div>
 

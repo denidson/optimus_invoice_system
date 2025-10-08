@@ -3,9 +3,9 @@ import { AuthContext } from "../../context/AuthContext";
 import Sidebar from '../../components/Sidebar/Sidebar';
 import Navbar from '../../components/Navbars/IndexNavbar';
 import HeaderStats from '../../components/Headers/HeaderStats';
-import ListPreInvoices from '../../components/PreInvoices/ListPreInvoices';
+import ListInvoices from '../../components/Invoices/ListInvoices';
 
-function ListPreInvoicesPage() {
+function ListInvoicesPage() {
   const { user } = useContext(AuthContext);
   const nombreUsuario = user?.nombre || "Usuario";
 
@@ -17,7 +17,7 @@ function ListPreInvoicesPage() {
 
         {/* Header con estadísticas */}
         <HeaderStats
-          statSubtitle="Pre-Facturas"
+          statSubtitle="Facturas"
           statTitle="1,200"
           statArrow="up"
           statPercent="3.48"
@@ -29,11 +29,11 @@ function ListPreInvoicesPage() {
 
         {/* Contenido principal */}
         <div className="mt-6 px-4 md:px-8">
-          <ListPreInvoices />
+          <ListInvoices />
         </div>
       </div>
     </>
   );
 }
 
-export default ListPreInvoicesPage;
+export default ListInvoicesPage;

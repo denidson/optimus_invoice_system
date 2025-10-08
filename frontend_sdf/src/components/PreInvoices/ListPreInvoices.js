@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from "react-router-dom"; // Para la redirección
-import { getPreInvoices, deletePreInvoice, showPreInvoice, createPreInvoice } from '../../services/api_pre_invoices'; // Importa el servicio
+import { getPreInvoices, deletePreInvoice, showPreInvoice, createPreInvoice, convertInInvoice } from '../../services/api_pre_invoices'; // Importa el servicio
 import { encryptText } from '../../services/api'; // Importa el servicio para encriptar/desencriptar parametros
 import ModalConfirmation from "../Modals/ModalConfirmation";
 import ModalPreinvoices from "./ModalPreInvoices";
@@ -30,7 +30,14 @@ function ListPreInvoices() {
   const navigate = useNavigate(); // Hook para redirección
   const [modalOpen, setModalOpen] = useState(false); // Estado para manejar la visibilidad de la modal
   const [modalOpenPreinvoices, setModalOpenPreinvoices] = useState(false); // Estado para manejar la visibilidad de la modal
+  const [modalOpenInInvoices, setModalOpenInInvoices] = useState(false); // Estado para manejar la visibilidad de la modal
   const [preInvoicesIdToDeactivate, setPreInvoicesIdToDeactivate] = useState(null); // Estado para almacenar el ID de la pre-factura a eliminar
+  const [preInvoicesIdInInvoices, setPreInvoicesIdInInvoices] = useState(null); // Estado para almacenar el ID de la pre-factura a Facturar
+  const authData = localStorage.getItem("authData");
+  var rol;
+  if (authData) {
+    rol = JSON.parse(authData)['rol'];
+  }
 
   // Cargar las pre-facturas al inicio
   useEffect(() => {
@@ -42,6 +49,12 @@ function ListPreInvoices() {
       redirectToEdit(id);
     });
 
+    // Click Convertir en factura
+    $("#ListPreInvoicesDt tbody").on("click", "button.btn-invoice", function () {
+      const id = $(this).data("id");
+      const correlativo_interno = $(this).data("correlativo_interno");
+      handleOpenModalInInvoices(id, correlativo_interno);
+    });
 
     // Click eliminar
     $("#ListPreInvoicesDt tbody").on("click", "button.btn-delete", function () {
@@ -90,8 +103,9 @@ function ListPreInvoices() {
   const refreshPreInvoices = async () => {
     // Llamamos a la función del servicio REST para obtener los clientes
     try {
-      const data = await getPreInvoices();
-      setPreInvoices(data); // Actualizamos el estado con los clientes obtenidos
+      /*const data = await getPreInvoices();
+      setPreInvoices(data); // Actualizamos el estado con los clientes obtenidos*/
+      location.reload(true);
     } catch (error) {
       console.error("Error al cargar las Pre-Facturas:", error);
     }
@@ -173,6 +187,41 @@ function ListPreInvoices() {
     setModalOpenPreinvoices(false); // Cierra la modal
   };
 
+  const handleOpenModalInInvoices = (id, correlativo_interno) => {
+    setPreInvoicesIdInInvoices({ id, correlativo_interno });
+    setModalOpenInInvoices(true);
+  };
+
+  const handleConfirmInInvoices = () => {
+    if (preInvoicesIdInInvoices) {
+      handleActionInInvoices(preInvoicesIdInInvoices.id);
+      setModalOpenInInvoices(false);
+    }
+  };
+
+  const handleActionInInvoices = async (id) => {
+    try{
+        var body = { 'prefactura_id': id };
+        console.log('handleActionInInvoices-body: ', body);
+        const data = await convertInInvoice(body);
+        console.log('handleActionInInvoices-data: ', data);
+        toast.success(data.mensaje, {
+          onClose: () => {
+            setTimeout(() => refreshPreInvoices(), 2000);
+          },
+        });
+    } catch (err) {
+      // Mostrar una notificación de error
+      toast.error("Error al consultar los datos del cliente.");
+    } finally {
+      // Indicamos que la carga ha finalizado
+    }
+  };
+
+  const handleCloseModalInInvoices = () => {
+    setModalOpenInInvoices(false); // Cierra la modal
+  };
+
   return (
     <div className="md:px-10 mx-auto w-full -m-24">
       <ToastContainer />
@@ -183,7 +232,8 @@ function ListPreInvoices() {
             <div className="rounded-t bg-white mb-0 px-6 py-6 flex justify-between items-center border-b">
               <h6 className="text-blueGray-700 text-xl font-bold">Lista de Pre-Facturas</h6>
               {/* Grupo de botones alineado a la derecha */}
-              <div className="flex items-center space-x-3">
+              {rol == 'operador' ?
+              (<div className="flex items-center space-x-3">
                 <button
                   className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded"
                   onClick={redirectToCreate}>
@@ -195,6 +245,9 @@ function ListPreInvoices() {
                   <input type="file" accept=".csv,.xlsx,.xls" className="hidden" onChange={handleFileUpload} />
                 </label>
               </div>
+              ):
+              (<div className="flex items-center space-x-3"></div>)
+            }
             </div>
 
             {/* DataTable */}
@@ -214,8 +267,21 @@ function ListPreInvoices() {
                   },
                   { title: "RIF", data: "cliente_final_rif" },
                   { title: "Razón Social", data: "cliente_final_nombre" },
-                  { title: "Tipo de documento", data: "tipo_documento" },
-                  { title: "Número de control", data: "numero_control" },
+                  {
+                    title: "Tipo de documento", data: "tipo_documento",
+                    orderable: true,
+                    searchable: false,
+                    render: (data, type, row) => {
+                      if (data == 'FC'){
+                        return 'FACTURA';
+                      }else if(data == 'NC'){
+                        return 'NOTA DE CREDITO';
+                      }else{
+                        return 'NOTA DE DEBITO';
+                      }
+                    }
+                  },
+                  //{ title: "Número de control", data: "numero_control" },
                   { title: "Correlativo", data: "correlativo_interno" },
                   {
                     title: "Base imponible",
@@ -308,8 +374,8 @@ function ListPreInvoices() {
                     }
                   },
                   {
-                    title: "Estado",
-                    data: "estatus",
+                    title: "Zona",
+                    data: "zona",
                     orderable: true,
                     searchable: false,
                     render: (data, type, row) => {
@@ -317,8 +383,8 @@ function ListPreInvoices() {
                     }
                   },
                   {
-                    title: "Zona",
-                    data: "zona",
+                    title: "Estado",
+                    data: "estatus",
                     orderable: true,
                     searchable: false,
                     render: (data, type, row) => {
@@ -331,11 +397,23 @@ function ListPreInvoices() {
                     orderable: false,
                     searchable: false,
                     render: (data, type, row) => {
-                      return `
-                        <button class="btn-view px-1 py-1 mx-0" data-id="${row.id}"><i class="fa-solid fa-lg fa-expand"></i></button>
-                        <button class="btn-edit px-1 py-1 mx-0 text-blue-600" data-id="${row.id}"><i class="fa-solid fa-lg fa-pen-to-square"></i></button>
-                        <button class="btn-delete px-1 py-1 mx-0 text-red-600" data-id="${row.id}" data-nombre="${row.cliente_final_nombre}"><i class="fa-solid fa-lg fa-trash"></i></button>
-                      `;
+                      if (rol == 'admin'){
+                        return `
+                          <button class="btn-view px-1 py-1 mx-0" data-id="${row.id}"><i class="fa-solid fa-lg fa-expand"></i></button>
+                          `;
+                      }else{
+                        if (row.estatus.toUpperCase() != 'FACTURADA'){
+                          return `
+                            <button class="btn-view px-1 py-1 mx-0" data-id="${row.id}"><i class="fa-solid fa-lg fa-expand"></i></button>
+                            <button class="btn-invoice px-1 py-1 mx-0 text-green-600" data-id="${row.id}" data-correlativo_interno="${row.correlativo_interno}"><i class="fa-solid fa-file-invoice fa-lg"></i></button>
+                            <button class="btn-delete px-1 py-1 mx-0 text-red-600" data-id="${row.id}" data-nombre="${row.cliente_final_nombre}"><i class="fa-regular fa-rectangle-xmark fa-lg"></i></button>
+                          `;//<button class="btn-edit px-1 py-1 mx-0 text-blue-600" data-id="${row.id}"><i class="fa-solid fa-lg fa-pen-to-square"></i></button>
+                        }else{
+                          return `
+                            <button class="btn-view px-1 py-1 mx-0" data-id="${row.id}"><i class="fa-solid fa-lg fa-expand"></i></button>
+                          `;
+                        }
+                      }
                       // btn-edit bg-blue-500 hover:bg-blue-600 text-white p-2 rounded-xl mx-1
                       //btn-delete bg-red-500 hover:bg-red-600 text-white p-2 rounded-xl mx-1
                     }
@@ -433,6 +511,13 @@ function ListPreInvoices() {
                 isOpen={modalOpenPreinvoices}
                 onClose={handleCloseModalPreinvoices}
                 message={preInvoicesIdToDeactivate}//{'Detalle del Pre-Factura'} // Pasamos el mensaje personalizado
+              />
+              {/* Modal de confirmación */}
+              <ModalConfirmation
+                isOpen={modalOpenInInvoices}
+                onClose={handleCloseModalInInvoices}
+                onConfirm={handleConfirmInInvoices}
+                message={'¿Estás seguro de que deseas convertir en Factura la Pre-Factura '+ (preInvoicesIdInInvoices ? preInvoicesIdInInvoices.correlativo_interno : '') +'?'} // Pasamos el mensaje personalizado
               />
             </div>
           </div>

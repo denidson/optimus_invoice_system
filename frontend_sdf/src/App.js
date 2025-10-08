@@ -13,6 +13,7 @@ import FormProducts from "./pages/Products/FormProducts";
 import ListTaxes from "./pages/Taxes/ListTaxes";
 import Dashboard from "./pages/Dashboard";
 import Profile from "./pages/Profile"; // 👈 Descomentado
+import ListInvoices from "./pages/Invoices/ListInvoices";
 // import Invoices from "./pages/Invoices";
 // import InvoiceForm from "./pages/InvoiceForm";
 import PrivateRoute from "./components/PrivateRoute";
@@ -125,6 +126,14 @@ function App() {
             element={
               <PrivateRoute>
                 <ListTaxes />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/invoices"
+            element={
+              <PrivateRoute>
+                <ListInvoices />
               </PrivateRoute>
             }
           />

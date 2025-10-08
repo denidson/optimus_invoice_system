@@ -11,19 +11,23 @@ function ModalPreinvoices({ isOpen, onClose, message }) {
             <div className="relative flex flex-col min-w-0 break-words w-full mb-6 rounded-lg bg-blueGray-100 border-0">
               <div class="rounded-t bg-white mb-0 px-6 py-6">
                 <div class="text-center flex justify-center pb-4">
-                  <h6 class="text-blueGray-700 text-xl font-bold">Detalles de la Pre-Factura</h6>
+                  <h6 class="text-blueGray-700 text-xl font-bold">Detalles de la Factura</h6>
                 </div>
                 <hr class="my-6 border-b-1 border-blueGray-300"/>
                 <div class="px-5 text-center flex justify-between">
-                  <div className="lg:w-4/12 text-start">
-                    <label class="text-blueGray-700 lg:w-4/12 font-bold me-3">Fecha de Pre-Factura:</label>
+                  <div className="lg:w-3/12 text-start">
+                    <label class="text-blueGray-700 lg:w-4/12 font-bold me-3">Fecha de Factura:</label>
                     <label class="text-blueGray-700 lg:w-8/12">{message.fecha_factura ? message.fecha_factura.replace('T',' ').substr(0, 19) : ''}</label>
                   </div>
-                  <div className="lg:w-4/12 text-start">
+                  <div className="lg:w-3/12 text-start">
+                    <label class="text-blueGray-700 lg:w-6/12 font-bold me-3">Número de control:</label>
+                    <label class="text-blueGray-700 lg:w-8/12">{message.numero_control}</label>
+                  </div>
+                  <div className="lg:w-3/12 text-start">
                     <label class="text-blueGray-700 lg:w-6/12 font-bold me-3">Correlativo:</label>
                     <label class="text-blueGray-700 lg:w-8/12">{message.correlativo_interno}</label>
                   </div>
-                  <div className="lg:w-4/12 text-start">
+                  <div className="lg:w-3/12 text-start">
                     <label class="text-blueGray-700 lg:w-6/12 font-bold me-3">Serial:</label>
                     <label class="text-blueGray-700 lg:w-8/12">{(message.serial ? message.serial.toUpperCase():'')}</label>
                   </div>
