@@ -11,7 +11,7 @@ export const getInvoices = async () => {
         response = await api.get('/admin/invoices');
         //response = await api.get('/pre-invoices/');
       }else{
-        response = await api.get('/api/invoices/');
+        response = await api.get('/api/invoices');
       }
       return response.data; // Devuelve los datos de los pre-facturas
     }
