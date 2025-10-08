@@ -2,12 +2,12 @@ import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { showProduct, editProduct, createProduct } from "../../services/apiProducts"; 
 import { getTaxCategories } from "../../services/apiConfig";
-import { getClients } from "../../services/api_clients"; // ✅ tu servicio de clientes
+import { getClients } from "../../services/api_clients";
 import { decryptText } from "../../services/api"; 
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
-function FormProducts({ cliente_id: clienteProp, rol }) {  // 👈 recibe opcionalmente el cliente_id y el rol
+function FormProducts({ cliente_id: clienteProp, rol }) {
   const navigate = useNavigate();
   const location = useLocation();
   const queryParams = new URLSearchParams(location.search);
@@ -15,10 +15,11 @@ function FormProducts({ cliente_id: clienteProp, rol }) {  // 👈 recibe opcion
 
   const [product, setProduct] = useState(null);
   const [taxCategories, setTaxCategories] = useState([]);
-  const [clients, setClients] = useState([]); // 👈 lista de clientes (solo para admin)
+  const [clients, setClients] = useState([]);
   const [loading, setLoading] = useState(true);
   const [buttonDisabled, setButtonDisabled] = useState(false);
   const [error, setError] = useState(null);
+  const [errors, setErrors] = useState({}); // Estado para errores de validación
 
   useEffect(() => {
     const fetchData = async () => {
@@ -26,18 +27,15 @@ function FormProducts({ cliente_id: clienteProp, rol }) {  // 👈 recibe opcion
         const categories = await getTaxCategories();
         setTaxCategories(categories);
 
-        // 👇 Si el usuario es admin, traer todos los clientes
         if (rol === "admin") {
           const clientsData = await getClients();
           setClients(clientsData);
         }
 
-        // 👇 Si estamos editando un producto
         if (productId) {
           const data = await showProduct(decryptText(productId));
           setProduct(data);
         } else {
-          // 👇 Si estamos creando un nuevo producto
           setProduct({
             nombre: "",
             sku: "",
@@ -46,7 +44,7 @@ function FormProducts({ cliente_id: clienteProp, rol }) {  // 👈 recibe opcion
             iva_categoria_id: categories.length > 0 ? categories[0].id : 1,
             activo: true,
             aplica_iva: true,
-            cliente_id: clienteProp || "", // vacío si es admin
+            cliente_id: clienteProp || "",
           });
         }
       } catch (err) {
@@ -63,10 +61,23 @@ function FormProducts({ cliente_id: clienteProp, rol }) {  // 👈 recibe opcion
   if (loading) return <div>Cargando...</div>;
   if (error) return <div>{error}</div>;
 
+  // Validación de campos requeridos
+  const validate = () => {
+    const newErrors = {};
+    if (!product.sku) newErrors.sku = "SKU es obligatorio";
+    if (!product.nombre) newErrors.nombre = "Nombre es obligatorio";
+    if (!product.precio_base) newErrors.precio_base = "Precio base es obligatorio";
+    if (!product.iva_categoria_id) newErrors.iva_categoria_id = "Debe seleccionar IVA";
+    if (rol === "admin" && !product.cliente_id) newErrors.cliente_id = "Debe seleccionar un cliente";
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setButtonDisabled(true);
+    if (!validate()) return;
 
+    setButtonDisabled(true);
     try {
       const body = {
         nombre: product.nombre,
@@ -77,10 +88,7 @@ function FormProducts({ cliente_id: clienteProp, rol }) {  // 👈 recibe opcion
         aplica_iva: product.aplica_iva ?? true,
       };
 
-      // 👇 Solo enviar cliente_id si existe
-      if (product.cliente_id) {
-        body.cliente_id = product.cliente_id;
-      }
+      if (product.cliente_id) body.cliente_id = product.cliente_id;
 
       if (!productId) {
         await createProduct(body);
@@ -105,6 +113,12 @@ function FormProducts({ cliente_id: clienteProp, rol }) {  // 👈 recibe opcion
 
   const redirectToList = () => navigate("/products");
 
+  // Función para clases de input según error
+  const inputClass = (field) =>
+    `border-0 px-3 py-3 rounded text-sm shadow focus:outline-none focus:ring w-full ${
+      errors[field] ? "border-red-500 ring-red-200" : "border-gray-200 ring-blue-300"
+    }`;
+
   return (
     <div className="px-4 md:px-10 mx-auto w-full -m-24">
       <ToastContainer />
@@ -124,11 +138,11 @@ function FormProducts({ cliente_id: clienteProp, rol }) {  // 👈 recibe opcion
                   <label className="block text-blueGray-600 text-xs font-bold mb-2">SKU</label>
                   <input
                     type="text"
-                    className="border-0 px-3 py-3 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full"
+                    className={inputClass("sku")}
                     value={product.sku}
                     onChange={(e) => setProduct({ ...product, sku: e.target.value })}
-                    required
                   />
+                  {errors.sku && <p className="text-red-500 text-xs mt-1">{errors.sku}</p>}
                 </div>
 
                 {/* Nombre */}
@@ -136,11 +150,11 @@ function FormProducts({ cliente_id: clienteProp, rol }) {  // 👈 recibe opcion
                   <label className="block text-blueGray-600 text-xs font-bold mb-2">Nombre</label>
                   <input
                     type="text"
-                    className="border-0 px-3 py-3 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full"
+                    className={inputClass("nombre")}
                     value={product.nombre}
                     onChange={(e) => setProduct({ ...product, nombre: e.target.value })}
-                    required
                   />
+                  {errors.nombre && <p className="text-red-500 text-xs mt-1">{errors.nombre}</p>}
                 </div>
 
                 {/* Precio Base */}
@@ -149,11 +163,11 @@ function FormProducts({ cliente_id: clienteProp, rol }) {  // 👈 recibe opcion
                   <input
                     type="number"
                     step="0.01"
-                    className="border-0 px-3 py-3 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full"
+                    className={inputClass("precio_base")}
                     value={product.precio_base}
                     onChange={(e) => setProduct({ ...product, precio_base: e.target.value })}
-                    required
                   />
+                  {errors.precio_base && <p className="text-red-500 text-xs mt-1">{errors.precio_base}</p>}
                 </div>
 
                 {/* Descripción */}
@@ -170,19 +184,17 @@ function FormProducts({ cliente_id: clienteProp, rol }) {  // 👈 recibe opcion
                 <div className="w-full px-4 mb-4">
                   <label className="block text-blueGray-600 text-xs font-bold mb-2">IVA</label>
                   <select
-                    className="border-0 px-3 py-3 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full"
+                    className={inputClass("iva_categoria_id")}
                     value={product.iva_categoria_id}
                     onChange={(e) =>
                       setProduct({ ...product, iva_categoria_id: parseInt(e.target.value, 10) })
                     }
-                    required
                   >
                     {taxCategories.map((cat) => (
-                      <option key={cat.id} value={cat.id}>
-                        {cat.nombre}
-                      </option>
+                      <option key={cat.id} value={cat.id}>{cat.nombre}</option>
                     ))}
                   </select>
+                  {errors.iva_categoria_id && <p className="text-red-500 text-xs mt-1">{errors.iva_categoria_id}</p>}
                 </div>
 
                 {/* Cliente */}
@@ -190,12 +202,11 @@ function FormProducts({ cliente_id: clienteProp, rol }) {  // 👈 recibe opcion
                   <div className="w-full px-4 mb-4">
                     <label className="block text-blueGray-600 text-xs font-bold mb-2">Cliente</label>
                     <select
-                      className="border-0 px-3 py-3 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full"
+                      className={inputClass("cliente_id")}
                       value={product.cliente_id || ""}
                       onChange={(e) =>
                         setProduct({ ...product, cliente_id: parseInt(e.target.value, 10) })
                       }
-                      required
                     >
                       <option value="">Seleccione un cliente</option>
                       {clients.map((cli) => (
@@ -204,6 +215,7 @@ function FormProducts({ cliente_id: clienteProp, rol }) {  // 👈 recibe opcion
                         </option>
                       ))}
                     </select>
+                    {errors.cliente_id && <p className="text-red-500 text-xs mt-1">{errors.cliente_id}</p>}
                   </div>
                 ) : (
                   <div className="w-full px-4 mb-4">
@@ -216,7 +228,6 @@ function FormProducts({ cliente_id: clienteProp, rol }) {  // 👈 recibe opcion
                     />
                   </div>
                 )}
-
 
                 <hr className="my-6 border-b-1 border-blueGray-300" />
                 <div className="flex justify-end space-x-3">
