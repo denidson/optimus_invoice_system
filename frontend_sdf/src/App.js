@@ -10,13 +10,15 @@ import ListPreInvoices from "./pages/PreInvoices/ListPreInvoices";
 import FormPreInvoices from "./pages/PreInvoices/FormPreInvoices";
 import ListProducts from "./pages/Products/ListProducts";
 import FormProducts from "./pages/Products/FormProducts";
-import ListTaxes from "./pages/Taxes/ListTaxes";
+import ListTaxes from "./pages/Config/ListTaxes";
+import ListTypeTaxpayer from "./pages/Config/ListTypeTaxpayer";
 import Dashboard from "./pages/Dashboard";
-import Profile from "./pages/Profile"; // 👈 Descomentado
+import Profile from "./pages/Profile";
 import ListInvoices from "./pages/Invoices/ListInvoices";
 // import Invoices from "./pages/Invoices";
 // import InvoiceForm from "./pages/InvoiceForm";
 import PrivateRoute from "./components/PrivateRoute";
+import RoleRoute from "./components/RoleRoute"; // Nuevo
 import '@fortawesome/fontawesome-free/css/all.min.css';
 
 function App() {
@@ -24,10 +26,12 @@ function App() {
     <AuthProvider>
       <Router>
         <Routes>
+          {/* Rutas públicas */}
           <Route path="/" element={<Login />} />
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
 
+          {/* Rutas privadas */}
           <Route
             path="/dashboard"
             element={
@@ -37,7 +41,6 @@ function App() {
             }
           />
 
-          {/* 🔹 Nueva ruta para el perfil */}
           <Route
             path="/profile"
             element={
@@ -47,6 +50,7 @@ function App() {
             }
           />
 
+          {/* Pre-facturación (todos los roles autenticados) */}
           <Route
             path="/preinvoices"
             element={
@@ -72,11 +76,14 @@ function App() {
             }
           />
 
+          {/* Clientes (solo admin) */}
           <Route
             path="/clients"
             element={
               <PrivateRoute>
-                <ListClients />
+                <RoleRoute roles={["admin"]}>
+                  <ListClients />
+                </RoleRoute>
               </PrivateRoute>
             }
           />
@@ -84,7 +91,9 @@ function App() {
             path="/clients/edit"
             element={
               <PrivateRoute>
-                <FormClients />
+                <RoleRoute roles={["admin"]}>
+                  <FormClients />
+                </RoleRoute>
               </PrivateRoute>
             }
           />
@@ -92,16 +101,21 @@ function App() {
             path="/clients/create"
             element={
               <PrivateRoute>
-                <FormClients />
+                <RoleRoute roles={["admin"]}>
+                  <FormClients />
+                </RoleRoute>
               </PrivateRoute>
             }
           />
 
+          {/* Productos y Servicios (solo admin) */}
           <Route
             path="/products"
             element={
               <PrivateRoute>
-                <ListProducts />
+                <RoleRoute roles={["admin","operador"]}>
+                  <ListProducts />
+                </RoleRoute>
               </PrivateRoute>
             }
           />
@@ -109,7 +123,9 @@ function App() {
             path="/products/edit"
             element={
               <PrivateRoute>
-                <FormProducts />
+                <RoleRoute roles={["admin","operador"]}>
+                  <FormProducts />
+                </RoleRoute>
               </PrivateRoute>
             }
           />
@@ -117,18 +133,36 @@ function App() {
             path="/products/create"
             element={
               <PrivateRoute>
-                <FormProducts />
+                <RoleRoute roles={["admin","operador"]}>
+                  <FormProducts />
+                </RoleRoute>
               </PrivateRoute>
             }
           />
+
+          {/* Impuestos y tipos de contribuyentes (solo admin) */}
           <Route
             path="/taxes"
             element={
               <PrivateRoute>
-                <ListTaxes />
+                <RoleRoute roles={["admin","operador"]}>
+                  <ListTaxes />
+                </RoleRoute>
               </PrivateRoute>
             }
           />
+          <Route
+            path="/taxpayer"
+            element={
+              <PrivateRoute>
+                <RoleRoute roles={["admin","operador"]}>
+                  <ListTypeTaxpayer />
+                </RoleRoute>
+              </PrivateRoute>
+            }
+          />
+
+          {/* Facturación (todos los roles autenticados) */}
           <Route
             path="/invoices"
             element={

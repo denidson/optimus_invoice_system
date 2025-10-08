@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { showProduct, editProduct, createProduct } from "../../services/apiProducts"; 
-import { getTaxCategories } from "../../services/apiConfig"; //Importar los impuestos
+import { getTaxCategories } from "../../services/apiConfig";
+import { getClients } from "../../services/api_clients"; // ✅ tu servicio de clientes
 import { decryptText } from "../../services/api"; 
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
-function FormProducts() {
+function FormProducts({ cliente_id: clienteProp, rol }) {  // 👈 recibe opcionalmente el cliente_id y el rol
   const navigate = useNavigate();
   const location = useLocation();
   const queryParams = new URLSearchParams(location.search);
@@ -14,6 +15,7 @@ function FormProducts() {
 
   const [product, setProduct] = useState(null);
   const [taxCategories, setTaxCategories] = useState([]);
+  const [clients, setClients] = useState([]); // 👈 lista de clientes (solo para admin)
   const [loading, setLoading] = useState(true);
   const [buttonDisabled, setButtonDisabled] = useState(false);
   const [error, setError] = useState(null);
@@ -24,10 +26,18 @@ function FormProducts() {
         const categories = await getTaxCategories();
         setTaxCategories(categories);
 
+        // 👇 Si el usuario es admin, traer todos los clientes
+        if (rol === "admin") {
+          const clientsData = await getClients();
+          setClients(clientsData);
+        }
+
+        // 👇 Si estamos editando un producto
         if (productId) {
           const data = await showProduct(decryptText(productId));
           setProduct(data);
         } else {
+          // 👇 Si estamos creando un nuevo producto
           setProduct({
             nombre: "",
             sku: "",
@@ -36,17 +46,19 @@ function FormProducts() {
             iva_categoria_id: categories.length > 0 ? categories[0].id : 1,
             activo: true,
             aplica_iva: true,
-            cliente_id: 1,
+            cliente_id: clienteProp || "", // vacío si es admin
           });
         }
       } catch (err) {
-        setError("Error al cargar el producto o impuestos");
+        console.error(err);
+        setError("Error al cargar el producto, los impuestos o los clientes");
       } finally {
         setLoading(false);
       }
     };
+
     fetchData();
-  }, [productId]);
+  }, [productId, rol, clienteProp]);
 
   if (loading) return <div>Cargando...</div>;
   if (error) return <div>{error}</div>;
@@ -63,43 +75,33 @@ function FormProducts() {
         descripcion: product.descripcion,
         iva_categoria_id: parseInt(product.iva_categoria_id, 10),
         aplica_iva: product.aplica_iva ?? true,
-        cliente_id: product.cliente_id ?? 1,
       };
-      console.log("Submitting product:", body);
+
+      // 👇 Solo enviar cliente_id si existe
+      if (product.cliente_id) {
+        body.cliente_id = product.cliente_id;
+      }
+
       if (!productId) {
-        await createProduct(body); // POST con JSON
+        await createProduct(body);
       } else {
-        await editProduct(decryptText(productId), body); // PUT con JSON
+        await editProduct(decryptText(productId), body);
       }
 
       toast.success("Producto guardado correctamente", {
         onClose: () => navigate("/products"),
       });
     } catch (err) {
-      console.error("Error creating/editing product:", err);
-
-      // Manejo del mensaje de error real del backend
-      if (err.response) {
-        const data = err.response.data;
-
-        if (data && typeof data === "object" && data.error) {
-          // Mostramos el error enviado por el backend
-          toast.error(data.error);
-        } else if (typeof data === "string") {
-          // Si es texto plano
-          toast.error(data);
-        } else {
-          toast.error("Error al guardar el producto");
-        }
-      } else {
-        // Error de red u otro tipo
-        toast.error("Error al guardar el producto");
-      }
+      console.error("Error creando/editando producto:", err);
+      const msg =
+        err.response?.data?.error ||
+        err.response?.data ||
+        "Error al guardar el producto";
+      toast.error(msg);
     } finally {
       setButtonDisabled(false);
     }
   };
-
 
   const redirectToList = () => navigate("/products");
 
@@ -114,6 +116,7 @@ function FormProducts() {
                 {productId ? "Actualizar" : "Crear"} Producto
               </h6>
             </div>
+
             <div className="flex-auto px-4 lg:px-10 py-10 pt-0">
               <form onSubmit={handleSubmit}>
                 {/* SKU */}
@@ -121,7 +124,7 @@ function FormProducts() {
                   <label className="block text-blueGray-600 text-xs font-bold mb-2">SKU</label>
                   <input
                     type="text"
-                    className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full"
+                    className="border-0 px-3 py-3 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full"
                     value={product.sku}
                     onChange={(e) => setProduct({ ...product, sku: e.target.value })}
                     required
@@ -133,7 +136,7 @@ function FormProducts() {
                   <label className="block text-blueGray-600 text-xs font-bold mb-2">Nombre</label>
                   <input
                     type="text"
-                    className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full"
+                    className="border-0 px-3 py-3 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full"
                     value={product.nombre}
                     onChange={(e) => setProduct({ ...product, nombre: e.target.value })}
                     required
@@ -146,7 +149,7 @@ function FormProducts() {
                   <input
                     type="number"
                     step="0.01"
-                    className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full"
+                    className="border-0 px-3 py-3 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full"
                     value={product.precio_base}
                     onChange={(e) => setProduct({ ...product, precio_base: e.target.value })}
                     required
@@ -157,7 +160,7 @@ function FormProducts() {
                 <div className="w-full px-4 mb-4">
                   <label className="block text-blueGray-600 text-xs font-bold mb-2">Descripción</label>
                   <textarea
-                    className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full"
+                    className="border-0 px-3 py-3 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full"
                     value={product.descripcion}
                     onChange={(e) => setProduct({ ...product, descripcion: e.target.value })}
                   />
@@ -167,9 +170,11 @@ function FormProducts() {
                 <div className="w-full px-4 mb-4">
                   <label className="block text-blueGray-600 text-xs font-bold mb-2">IVA</label>
                   <select
-                    className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full"
+                    className="border-0 px-3 py-3 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full"
                     value={product.iva_categoria_id}
-                    onChange={(e) => setProduct({ ...product, iva_categoria_id: parseInt(e.target.value, 10) })}
+                    onChange={(e) =>
+                      setProduct({ ...product, iva_categoria_id: parseInt(e.target.value, 10) })
+                    }
                     required
                   >
                     {taxCategories.map((cat) => (
@@ -179,6 +184,39 @@ function FormProducts() {
                     ))}
                   </select>
                 </div>
+
+                {/* Cliente */}
+                {rol === "admin" ? (
+                  <div className="w-full px-4 mb-4">
+                    <label className="block text-blueGray-600 text-xs font-bold mb-2">Cliente</label>
+                    <select
+                      className="border-0 px-3 py-3 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full"
+                      value={product.cliente_id || ""}
+                      onChange={(e) =>
+                        setProduct({ ...product, cliente_id: parseInt(e.target.value, 10) })
+                      }
+                      required
+                    >
+                      <option value="">Seleccione un cliente</option>
+                      {clients.map((cli) => (
+                        <option key={cli.id} value={cli.id}>
+                          {cli.nombre_empresa} ({cli.rif})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                ) : (
+                  <div className="w-full px-4 mb-4">
+                    <label className="block text-blueGray-600 text-xs font-bold mb-2">Cliente</label>
+                    <input
+                      type="text"
+                      className="border-0 px-3 py-3 bg-gray-100 text-blueGray-600 rounded text-sm shadow w-full"
+                      value={`Cliente #${clienteProp}`}
+                      readOnly
+                    />
+                  </div>
+                )}
+
 
                 <hr className="my-6 border-b-1 border-blueGray-300" />
                 <div className="flex justify-end space-x-3">

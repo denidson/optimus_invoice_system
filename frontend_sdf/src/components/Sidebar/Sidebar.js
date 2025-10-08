@@ -1,14 +1,17 @@
 /* eslint-disable */
-import React from "react";
+import React, { useContext } from "react";
 import { Link, useLocation } from "react-router-dom";
 
 import NotificationDropdown from "../Dropdowns/NotificationDropdown.js";
 import UserDropdown from "../Dropdowns/UserDropdown.js";
 import Logo1 from "../../assets/img/logo1.png";
+import { AuthContext } from "../../context/AuthContext";
 
 export default function Sidebar() {
   const [collapseShow, setCollapseShow] = React.useState("hidden");
   const location = useLocation();
+  const { user } = useContext(AuthContext);
+  const rol = user?.rol || "";
 
   const isActive = (path) =>
     location.pathname.includes(path)
@@ -41,26 +44,26 @@ export default function Sidebar() {
         },
       ],
     },
-    {
-      heading: "Reportes",
-      links: [
-        {
-          to: "/report",
-          icon: "far fa-file-pdf",
-          label: "Libro de Ventas",
-        },
-        {
-          to: "/issued-invoices",
-          icon: "far fa-file-pdf",
-          label: "Facturas Emitidas",
-        },
-        {
-          to: "/taxes-reported",
-          icon: "far fa-file-pdf",
-          label: "Impuestos Facturados",
-        },
-      ],
-    },
+    // {
+    //   heading: "Reportes",
+    //   links: [
+    //     {
+    //       to: "/report",
+    //       icon: "far fa-file-pdf",
+    //       label: "Libro de Ventas",
+    //     },
+    //     {
+    //       to: "/issued-invoices",
+    //       icon: "far fa-file-pdf",
+    //       label: "Facturas Emitidas",
+    //     },
+    //     {
+    //       to: "/taxes-reported",
+    //       icon: "far fa-file-pdf",
+    //       label: "Impuestos Facturados",
+    //     },
+    //   ],
+    // },
     {
       heading: "Configuración",
       links: [
@@ -68,32 +71,36 @@ export default function Sidebar() {
           to: "/clients",
           icon: "fas fa-users",
           label: "Clientes",
+          roles: ["admin"]
         },
-        {
-          to: "/partners",
-          icon: "fas fa-cash-register",
-          label: "Comercios",
-        },
+        // {
+        //   to: "/partners",
+        //   icon: "fas fa-cash-register",
+        //   label: "Comercios",
+        // },
         {
           to: "/products",
           icon: "fas fa-cubes",
           label: "Productos y Servicios",
+          roles: ["admin", "operador"]
         },
         {
-          to: "/product-tags",
+          to: "/taxpayer",
           icon: "fas fa-tags",
-          label: "Categorías de Productos",
+          label: "Tipos de Contribuyentes",
+          roles: ["admin", "operador"]
         },
         {
           to: "/taxes",
           icon: "fas fa-percent",
           label: "Impuestos",
+          roles: ["admin", "operador"]
         },
-        {
-          to: "/settings",
-          icon: "fas fa-shield",
-          label: "Gestión de Seguridad",
-        },
+        // {
+        //   to: "/settings",
+        //   icon: "fas fa-shield",
+        //   label: "Gestión de Seguridad",
+        // },
       ],
     },
   ];
@@ -178,23 +185,25 @@ export default function Sidebar() {
                   {section.heading}
                 </h6>
                 <ul className="md:flex-col md:min-w-full flex flex-col list-none">
-                  {section.links.map((link) => (
-                    <li key={link.to} className="items-center">
-                      <Link
-                        className={`text-xs uppercase py-3 font-bold block ${isActive(link.to)}`}
-                        to={link.to}
-                      >
-                        <i
-                          className={`${link.icon} mr-2 text-sm ${
-                            isActive(link.to).includes("text-sky")
-                              ? "opacity-75"
-                              : "text-slate-300"
-                          }`}
-                        ></i>{" "}
-                        {link.label}
-                      </Link>
-                    </li>
-                  ))}
+                  {section.links
+                    .filter(link => !link.roles || link.roles.includes(rol))
+                    .map((link) => (
+                      <li key={link.to} className="items-center">
+                        <Link
+                          className={`text-xs uppercase py-3 font-bold block ${isActive(link.to)}`}
+                          to={link.to}
+                        >
+                          <i
+                            className={`${link.icon} mr-2 text-sm ${
+                              isActive(link.to).includes("text-sky")
+                                ? "opacity-75"
+                                : "text-slate-300"
+                            }`}
+                          ></i>{" "}
+                          {link.label}
+                        </Link>
+                      </li>
+                    ))}
                 </ul>
               </React.Fragment>
             ))}

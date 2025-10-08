@@ -30,7 +30,11 @@ function FormProductPage() {
 
           {/* Formulario de Productos */}
           <div className="mt-6 md:px-6 w-full">
-            <FormProducts />
+            <FormProducts
+              cliente_id={user?.rol === "operador" ? user?.cliente_id : null}
+              rol={user?.rol}
+            />
+
           </div>
         </main>
       </div>
