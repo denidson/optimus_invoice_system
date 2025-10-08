@@ -10,7 +10,7 @@ export const getPreInvoices = async () => {
       if (rol == 'admin'){
         response = await api.get('/admin/pre-invoices');
       }else{
-        response = await api.get('/pre-invoices');
+        response = await api.get('/pre-invoices/');
       }
       return response.data; // Devuelve los datos de los pre-facturas
     }
