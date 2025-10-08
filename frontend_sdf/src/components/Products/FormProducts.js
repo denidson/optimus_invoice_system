@@ -119,6 +119,7 @@ function FormProducts({ cliente_id: clienteProp, rol }) {
       errors[field] ? "border-red-500 ring-red-200" : "border-gray-200 ring-blue-300"
     }`;
 
+
   return (
     <div className="px-4 md:px-10 mx-auto w-full -m-24">
       <ToastContainer />
@@ -133,45 +134,64 @@ function FormProducts({ cliente_id: clienteProp, rol }) {
 
             <div className="flex-auto px-4 lg:px-10 py-10 pt-0">
               <form onSubmit={handleSubmit}>
-                {/* SKU */}
-                <div className="w-full px-4 mb-4">
-                  <label className="block text-blueGray-600 text-xs font-bold mb-2">SKU</label>
-                  <input
-                    type="text"
-                    className={inputClass("sku")}
-                    value={product.sku}
-                    onChange={(e) => setProduct({ ...product, sku: e.target.value })}
-                  />
-                  {errors.sku && <p className="text-red-500 text-xs mt-1">{errors.sku}</p>}
+                {/* FILA 1: SKU | Nombre */}
+                <div className="flex flex-wrap -mx-2 mb-4">
+                  <div className="w-1/2 px-2">
+                    <label className="block text-blueGray-600 text-xs font-bold mb-2">SKU</label>
+                    <input
+                      type="text"
+                      className={inputClass("sku")}
+                      value={product.sku}
+                      onChange={(e) => setProduct({ ...product, sku: e.target.value })}
+                    />
+                    {errors.sku && <p className="text-red-500 text-xs mt-1">{errors.sku}</p>}
+                  </div>
+
+                  <div className="w-1/2 px-2">
+                    <label className="block text-blueGray-600 text-xs font-bold mb-2">Nombre</label>
+                    <input
+                      type="text"
+                      className={inputClass("nombre")}
+                      value={product.nombre}
+                      onChange={(e) => setProduct({ ...product, nombre: e.target.value })}
+                    />
+                    {errors.nombre && <p className="text-red-500 text-xs mt-1">{errors.nombre}</p>}
+                  </div>
                 </div>
 
-                {/* Nombre */}
-                <div className="w-full px-4 mb-4">
-                  <label className="block text-blueGray-600 text-xs font-bold mb-2">Nombre</label>
-                  <input
-                    type="text"
-                    className={inputClass("nombre")}
-                    value={product.nombre}
-                    onChange={(e) => setProduct({ ...product, nombre: e.target.value })}
-                  />
-                  {errors.nombre && <p className="text-red-500 text-xs mt-1">{errors.nombre}</p>}
-                </div>
+                {/* FILA 2: Precio Base | IVA */}
+                <div className="flex flex-wrap -mx-2 mb-4">
+                  <div className="w-1/2 px-2">
+                    <label className="block text-blueGray-600 text-xs font-bold mb-2">Precio Base</label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      className={inputClass("precio_base")}
+                      value={product.precio_base}
+                      onChange={(e) => setProduct({ ...product, precio_base: e.target.value })}
+                    />
+                    {errors.precio_base && <p className="text-red-500 text-xs mt-1">{errors.precio_base}</p>}
+                  </div>
 
-                {/* Precio Base */}
-                <div className="w-full px-4 mb-4">
-                  <label className="block text-blueGray-600 text-xs font-bold mb-2">Precio Base</label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    className={inputClass("precio_base")}
-                    value={product.precio_base}
-                    onChange={(e) => setProduct({ ...product, precio_base: e.target.value })}
-                  />
-                  {errors.precio_base && <p className="text-red-500 text-xs mt-1">{errors.precio_base}</p>}
+                  <div className="w-1/2 px-2">
+                    <label className="block text-blueGray-600 text-xs font-bold mb-2">IVA</label>
+                    <select
+                      className={inputClass("iva_categoria_id")}
+                      value={product.iva_categoria_id}
+                      onChange={(e) =>
+                        setProduct({ ...product, iva_categoria_id: parseInt(e.target.value, 10) })
+                      }
+                    >
+                      {taxCategories.map((cat) => (
+                        <option key={cat.id} value={cat.id}>{cat.nombre}</option>
+                      ))}
+                    </select>
+                    {errors.iva_categoria_id && <p className="text-red-500 text-xs mt-1">{errors.iva_categoria_id}</p>}
+                  </div>
                 </div>
 
                 {/* Descripción */}
-                <div className="w-full px-4 mb-4">
+                <div className="w-full px-2 mb-4">
                   <label className="block text-blueGray-600 text-xs font-bold mb-2">Descripción</label>
                   <textarea
                     className="border-0 px-3 py-3 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full"
@@ -180,27 +200,10 @@ function FormProducts({ cliente_id: clienteProp, rol }) {
                   />
                 </div>
 
-                {/* IVA */}
-                <div className="w-full px-4 mb-4">
-                  <label className="block text-blueGray-600 text-xs font-bold mb-2">IVA</label>
-                  <select
-                    className={inputClass("iva_categoria_id")}
-                    value={product.iva_categoria_id}
-                    onChange={(e) =>
-                      setProduct({ ...product, iva_categoria_id: parseInt(e.target.value, 10) })
-                    }
-                  >
-                    {taxCategories.map((cat) => (
-                      <option key={cat.id} value={cat.id}>{cat.nombre}</option>
-                    ))}
-                  </select>
-                  {errors.iva_categoria_id && <p className="text-red-500 text-xs mt-1">{errors.iva_categoria_id}</p>}
-                </div>
-
                 {/* Cliente */}
-                {rol === "admin" ? (
-                  <div className="w-full px-4 mb-4">
-                    <label className="block text-blueGray-600 text-xs font-bold mb-2">Cliente</label>
+                <div className="w-full px-2 mb-4">
+                  <label className="block text-blueGray-600 text-xs font-bold mb-2">Cliente</label>
+                  {rol === "admin" ? (
                     <select
                       className={inputClass("cliente_id")}
                       value={product.cliente_id || ""}
@@ -215,19 +218,16 @@ function FormProducts({ cliente_id: clienteProp, rol }) {
                         </option>
                       ))}
                     </select>
-                    {errors.cliente_id && <p className="text-red-500 text-xs mt-1">{errors.cliente_id}</p>}
-                  </div>
-                ) : (
-                  <div className="w-full px-4 mb-4">
-                    <label className="block text-blueGray-600 text-xs font-bold mb-2">Cliente</label>
+                  ) : (
                     <input
                       type="text"
                       className="border-0 px-3 py-3 bg-gray-100 text-blueGray-600 rounded text-sm shadow w-full"
                       value={`Cliente #${clienteProp}`}
                       readOnly
                     />
-                  </div>
-                )}
+                  )}
+                  {errors.cliente_id && <p className="text-red-500 text-xs mt-1">{errors.cliente_id}</p>}
+                </div>
 
                 <hr className="my-6 border-b-1 border-blueGray-300" />
                 <div className="flex justify-end space-x-3">
