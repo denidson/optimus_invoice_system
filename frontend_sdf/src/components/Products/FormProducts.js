@@ -34,14 +34,17 @@ function FormProducts({ cliente_id: clienteProp, rol }) {
 
         if (productId) {
           const data = await showProduct(decryptText(productId));
-          setProduct(data);
+          setProduct({
+            ...data,
+            iva_categoria_id: data.iva_categoria_id || "", // asegurar que sea "" si no tiene valor
+          });
         } else {
           setProduct({
             nombre: "",
             sku: "",
             precio_base: "",
             descripcion: "",
-            iva_categoria_id: categories.length > 0 ? categories[0].id : 1,
+            iva_categoria_id: "", // inicio vacío para que el select no venga seleccionado
             activo: true,
             aplica_iva: true,
             cliente_id: clienteProp || "",
@@ -119,7 +122,6 @@ function FormProducts({ cliente_id: clienteProp, rol }) {
       errors[field] ? "border-red-500 ring-red-200" : "border-gray-200 ring-blue-300"
     }`;
 
-
   return (
     <div className="px-4 md:px-10 mx-auto w-full -m-24">
       <ToastContainer />
@@ -179,11 +181,16 @@ function FormProducts({ cliente_id: clienteProp, rol }) {
                       className={inputClass("iva_categoria_id")}
                       value={product.iva_categoria_id}
                       onChange={(e) =>
-                        setProduct({ ...product, iva_categoria_id: parseInt(e.target.value, 10) })
+                        setProduct({ ...product, iva_categoria_id: e.target.value })
                       }
                     >
+                      <option value="" disabled>
+                        -- Seleccione IVA --
+                      </option>
                       {taxCategories.map((cat) => (
-                        <option key={cat.id} value={cat.id}>{cat.nombre}</option>
+                        <option key={cat.id} value={cat.id}>
+                          {cat.nombre}
+                        </option>
                       ))}
                     </select>
                     {errors.iva_categoria_id && <p className="text-red-500 text-xs mt-1">{errors.iva_categoria_id}</p>}

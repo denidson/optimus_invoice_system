@@ -1,23 +1,23 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { useNavigate } from "react-router-dom";
 import { getProducts, deleteProduct, showProduct, createProduct, activateProduct } from '../../services/apiProducts';
+import { getTaxCategories } from "../../services/apiConfig";
+import { getClients, showProfileClient } from "../../services/api_clients";
+import { AuthContext } from "../../context/AuthContext";
 import { encryptText } from '../../services/api';
 import ModalConfirmation from "../Modals/ModalConfirmation";
 import ModalProducts from "./ModalProducts";
+import ModalImportPreview from "../Modals/ModalImportPreview";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import $ from "jquery";
 import DataTable from "datatables.net-react";
 import DT from "datatables.net-dt";
-
-// Import DataTables styles
 import "datatables.net-dt/css/dataTables.dataTables.css";
-// Export extensions
 import "datatables.net-buttons/js/dataTables.buttons";
 import "datatables.net-buttons-dt/css/buttons.dataTables.css";
 import "datatables.net-buttons/js/buttons.html5";
 import "datatables.net-buttons/js/buttons.print";
-
 import JSZip from "jszip";
 import pdfMake from "pdfmake/build/pdfmake";
 import pdfFonts from "pdfmake/build/vfs_fonts";
@@ -29,20 +29,45 @@ DataTable.use(DT);
 
 function ListProducts() {
   const navigate = useNavigate();
+  const { user } = useContext(AuthContext);
+  const cliente_id = user?.cliente_id;
+  const rol = user?.rol;
+
   const [modalOpen, setModalOpen] = useState(false);
   const [modalOpenProducts, setModalOpenProducts] = useState(false);
-  const [productIdToAction, setProductIdToAction] = useState(null); // Estado para almacenar ID y acción del producto
+  const [productIdToAction, setProductIdToAction] = useState(null);
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [previewData, setPreviewData] = useState([]);
+  const [clienteAsignado, setClienteAsignado] = useState(null); // Para operador
 
+  // -------------------------------------------------
+  // Consultar cliente asignado si es operador
+  // -------------------------------------------------
+  useEffect(() => {
+    const fetchCliente = async () => {
+      if (rol === "operador" && cliente_id) {
+        try {
+          const cliente = await showProfileClient(cliente_id);
+          setClienteAsignado(cliente);
+        } catch (err) {
+          console.error("Error al obtener el cliente asignado:", err);
+        }
+      }
+    };
+    fetchCliente();
+  }, [rol, cliente_id]);
+
+  // -------------------------------------------------
+  // Inicialización de eventos DataTable
+  // -------------------------------------------------
   useEffect(() => {
     const table = $("#ListProductDt").DataTable();
 
-    // Edit button
     $("#ListProductDt tbody").on("click", "button.btn-edit", function () {
       const id = $(this).data("id");
       redirectToEdit(id);
     });
 
-    // Delete or activate button
     $("#ListProductDt tbody").on("click", "button.btn-delete", function () {
       const id = $(this).data("id");
       const nombre = $(this).data("nombre");
@@ -50,7 +75,6 @@ function ListProducts() {
       handleOpenModal(id, nombre, action);
     });
 
-    // View button
     $("#ListProductDt tbody").on("click", "button.btn-view", function () {
       const id = $(this).data("id");
       handleOpenModalProducts(id);
@@ -68,9 +92,7 @@ function ListProducts() {
     navigate(`/products/edit?id=${encodeURIComponent(hash)}`);
   };
 
-  const redirectToCreate = () => {
-    navigate(`/products/create`);
-  };
+  const redirectToCreate = () => navigate(`/products/create`);
 
   const handleAction = async (id, action) => {
     try {
@@ -80,12 +102,8 @@ function ListProducts() {
       } else {
         data = await activateProduct(id);
       }
-
       toast.success(data.mensaje || 'Acción realizada con éxito', {
-        onClose: () => {
-          // 🔹 Recarga el DataTable directamente:
-          $('#ListProductDt').DataTable().ajax.reload(null, false);
-        },
+        onClose: () => refreshProducts(),
       });
     } catch (err) {
       console.error(err);
@@ -93,14 +111,17 @@ function ListProducts() {
     }
   };
 
-
+  // Recargar productos en DataTable
   const refreshProducts = async () => {
     try {
       const data = await getProducts();
-      // Aquí podrías actualizar un estado si tu tabla dependiera de él
-      console.log("Productos recargados:", data);
+      const table = $('#ListProductDt').DataTable();
+      table.clear();
+      table.rows.add(data);
+      table.draw();
     } catch (error) {
-      console.error("Error loading products:", error);
+      console.error("Error cargando productos:", error);
+      toast.error("Error al recargar la lista de productos");
     }
   };
 
@@ -118,30 +139,39 @@ function ListProducts() {
 
   const handleCloseModal = () => setModalOpen(false);
 
-  // 🔹 Manejo de carga de archivos
+  // -------------------------------------------------
+  // Importación de productos con previsualización
+  // -------------------------------------------------
   const handleFileUpload = (e) => {
     const file = e.target.files[0];
     if (!file) return;
 
     const extension = file.name.split('.').pop().toLowerCase();
 
+    const processData = (data) => {
+      if (data.length === 0) {
+        toast.warn("El archivo está vacío o no tiene formato válido.");
+        return;
+      }
+      setPreviewData(data);
+      setPreviewOpen(true);
+    };
+
     if (extension === 'csv') {
       Papa.parse(file, {
         header: true,
         skipEmptyLines: true,
-        complete: async (results) => {
-          await uploadProducts(results.data);
-        },
+        complete: (results) => processData(results.data),
       });
     } else if (extension === 'xlsx' || extension === 'xls') {
       const reader = new FileReader();
-      reader.onload = async (evt) => {
+      reader.onload = (evt) => {
         const bstr = evt.target.result;
         const workbook = read(bstr, { type: 'binary' });
         const sheetName = workbook.SheetNames[0];
         const sheet = workbook.Sheets[sheetName];
         const data = utils.sheet_to_json(sheet);
-        await uploadProducts(data);
+        processData(data);
       };
       reader.readAsBinaryString(file);
     } else {
@@ -149,14 +179,17 @@ function ListProducts() {
     }
   };
 
-  // 🔹 Subida de productos
-  const uploadProducts = async (productsArray) => {
+  const handleConfirmImport = async (cleanedData) => {
     try {
-      for (let product of productsArray) {
+      for (let product of cleanedData) {
         await createProduct(product);
       }
-      toast.success('Productos importados exitosamente');
-      refreshProducts();
+
+      const count = cleanedData.length;
+      const label = count === 1 ? "producto" : "productos";
+      toast.success(`Se importó ${count} ${label} exitosamente`);
+
+      await refreshProducts();
     } catch (err) {
       console.error(err);
       toast.error('Error importando productos');
@@ -173,9 +206,7 @@ function ListProducts() {
     }
   };
 
-  const handleCloseModalProducts = () => {
-    setModalOpenProducts(false);
-  };
+  const handleCloseModalProducts = () => setModalOpenProducts(false);
 
   return (
     <div className="md:px-10 mx-auto w-full -m-24">
@@ -192,6 +223,15 @@ function ListProducts() {
                   onClick={redirectToCreate}>
                   Crear Producto
                 </button>
+                <label className="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded cursor-pointer">
+                  Importar Productos Excel/CSV
+                  <input
+                    type="file"
+                    accept=".csv,.xlsx,.xls"
+                    className="hidden"
+                    onChange={handleFileUpload}
+                  />
+                </label>
               </div>
             </div>
 
@@ -199,7 +239,7 @@ function ListProducts() {
             <div className="block w-full overflow-x-auto px-4 py-4">
               <DataTable
                 id="ListProductDt"
-                className="table-auto w-full text-left items-center w-full bg-transparent border-collapse"
+                className="table-auto w-full text-left items-center bg-transparent border-collapse"
                 columns={[
                   { title: "SKU", data: "sku" },
                   { title: "Nombre", data: "nombre" },
@@ -213,63 +253,24 @@ function ListProducts() {
                   {
                     title: "Condición",
                     data: "activo",
-                    render: (data) => {
-                      return data
-                        ? '<label class="bg-emerald-400 text-white py-1 px-3 rounded-full text-center">Activo</label>'
-                        : '<label class="bg-red-400 text-white py-1 px-3 rounded-full text-center">Inactivo</label>';
-                    }
+                    render: (data) => data
+                      ? '<label class="bg-emerald-400 text-white py-1 px-3 rounded-full text-center">Activo</label>'
+                      : '<label class="bg-red-400 text-white py-1 px-3 rounded-full text-center">Inactivo</label>'
                   },
-                  // {
-                  //   title: "Acciones",
-                  //   data: 'activo',
-                  //   orderable: false,
-                  //   searchable: false,
-                  //   render: (data, type, row) => {
-                  //     if (data) {
-                  //       return `
-                  //         <button class="btn-view px-3 py-1 ml-2 mr-0" data-id="${row.id}"><i class="fa-solid fa-lg fa-expand"></i></button>
-                  //         <button class="btn-edit px-3 py-1 mx-0 text-blue-600" data-id="${row.id}"><i class="fa-solid fa-lg fa-pen-to-square"></i></button>
-                  //         <button class="btn-delete px-3 py-1 ml-0 mr-2 text-red-600" data-id="${row.id}" data-nombre="${row.nombre}" data-action="delete"><i class="fa-regular fa-rectangle-xmark fa-lg"></i></button>`;
-                  //     } else {
-                  //       return `
-                  //         <button class="btn-view px-3 py-1 ml-2 mr-0" data-id="${row.id}"><i class="fa-solid fa-lg fa-expand"></i></button>
-                  //         <button class="btn-edit px-3 py-1 mx-0 text-blue-600" data-id="${row.id}"><i class="fa-solid fa-lg fa-pen-to-square"></i></button>
-                  //         <button class="btn-delete px-3 py-1 ml-0 mr-2 text-green-600" data-id="${row.id}" data-nombre="${row.nombre}" data-action="active"><i class="fa-regular fa-square-check fa-lg"></i></button>`;
-                  //     }
-                  //   }
-                  // }
                   {
                     title: "Acciones",
                     data: 'activo',
                     orderable: false,
                     searchable: false,
                     render: (data, type, row) => {
-                      const viewBtn = `
-                        <button class="btn-view px-2 py-1 text-gray-700" data-id="${row.id}">
-                          <i class="fa-solid fa-lg fa-expand"></i>
-                        </button>`;
-                      const editBtn = `
-                        <button class="btn-edit px-2 py-1 text-blue-600" data-id="${row.id}">
-                          <i class="fa-solid fa-lg fa-pen-to-square"></i>
-                        </button>`;
+                      const viewBtn = `<button class="btn-view px-2 py-1 text-gray-700" data-id="${row.id}"><i class="fa-solid fa-lg fa-expand"></i></button>`;
+                      const editBtn = `<button class="btn-edit px-2 py-1 text-blue-600" data-id="${row.id}"><i class="fa-solid fa-lg fa-pen-to-square"></i></button>`;
                       const toggleBtn = data
-                        ? `<button class="btn-delete px-2 py-1 text-red-600" data-id="${row.id}" data-nombre="${row.nombre}" data-action="delete">
-                            <i class="fa-regular fa-rectangle-xmark fa-lg"></i>
-                          </button>`
-                        : `<button class="btn-delete px-2 py-1 text-green-600" data-id="${row.id}" data-nombre="${row.nombre}" data-action="active">
-                            <i class="fa-regular fa-square-check fa-lg"></i>
-                          </button>`;
-
-                      // 🔹 Contenedor flex y nowrap para mantener todo alineado horizontalmente
-                      return `
-                        <div style="display: flex; justify-content: center; align-items: center; gap: 0.25rem; white-space: nowrap;">
-                          ${viewBtn}
-                          ${editBtn}
-                          ${toggleBtn}
-                        </div>`;
+                        ? `<button class="btn-delete px-2 py-1 text-red-600" data-id="${row.id}" data-nombre="${row.nombre}" data-action="delete"><i class="fa-regular fa-rectangle-xmark fa-lg"></i></button>`
+                        : `<button class="btn-delete px-2 py-1 text-green-600" data-id="${row.id}" data-nombre="${row.nombre}" data-action="active"><i class="fa-regular fa-square-check fa-lg"></i></button>`;
+                      return `<div style="display:flex;justify-content:center;align-items:center;gap:0.25rem;white-space:nowrap;">${viewBtn}${editBtn}${toggleBtn}</div>`;
                     }
                   }
-
                 ]}
                 options={{
                   dom:
@@ -325,27 +326,46 @@ function ListProducts() {
                 }}
               />
 
-              {/* Modal de confirmación */}
+              {/* Modales */}
               <ModalConfirmation
                 isOpen={modalOpen}
                 onClose={handleCloseModal}
                 onConfirm={handleConfirm}
-                message={
-                  `¿Estás seguro de que deseas ${
-                    productIdToAction && productIdToAction.action === 'delete'
-                      ? 'desactivar'
-                      : 'activar'
-                  } al producto ${
-                    productIdToAction ? productIdToAction.nombre : ''
-                  }?`
-                }
+                message={`¿Estás seguro de que deseas ${
+                  productIdToAction?.action === 'delete' ? 'desactivar' : 'activar'
+                } al producto ${productIdToAction?.nombre || ''}?`}
               />
 
-              {/* Modal de vista de producto */}
               <ModalProducts
                 isOpen={modalOpenProducts}
                 onClose={handleCloseModalProducts}
                 product={productIdToAction}
+              />
+
+              {/* Modal para previsualizacion de datos a importar */}
+              <ModalImportPreview
+                isOpen={previewOpen}
+                onClose={() => setPreviewOpen(false)}
+                data={previewData}
+                onConfirm={handleConfirmImport}
+                cliente_id={cliente_id}
+                rol={rol}
+                apiSelects={{
+                  iva_categoria: getTaxCategories,
+                  cliente_id: rol === "admin"
+                    ? getClients
+                    : async () => clienteAsignado ? [clienteAsignado] : []
+                }}
+                validationRules={{
+                  nombre: (value) => ({ valid: !!value, message: "Debe ingresar un nombre de producto" }),
+                  sku: (value) => ({ valid: !!value, message: "Debe ingresar un SKU" }),
+                  precio_base: (value) => ({
+                    valid: !isNaN(value) && value !== "",
+                    message: "Precio Base inválido"
+                  }),
+                  iva_categoria: (value) => ({ valid: !!value, message: "Debe seleccionar una categoría de IVA" }),
+                  cliente_id: (value) => ({ valid: !!value, message: "Debe seleccionar un cliente" })
+                }}
               />
             </div>
           </div>

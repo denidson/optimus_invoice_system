@@ -38,7 +38,7 @@ api.interceptors.response.use(
         import("react-toastify").then(({ toast }) => {
           toast.error("Tu sesión ha expirado. Por favor inicia sesión nuevamente.", {
             position: "top-center",
-            autoClose: 3000,
+            autoClose: 2000,
             onClose: () => {
               localStorage.removeItem("authData");
               window._sessionExpired = false;
