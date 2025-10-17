@@ -9,134 +9,106 @@ const ModalImportPreview = ({
   rol,
   cliente_id,
   apiSelects = {},
-  validationRules = {}
+  validationRules = {},
+  clienteAsignado
 }) => {
   const [tableData, setTableData] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [selectOptions, setSelectOptions] = useState({});
   const rowsPerPage = 10;
 
-  // Inicializar datos base del Excel
-  useEffect(() => {
-    if (isOpen && data.length) {
-      const initializedData = data.map((row) => {
-        const processedRow = { ...row };
-
-        processedRow.cliente_id =
-          rol === "operador" ? parseInt(cliente_id, 10) : row.cliente_id || "";
-
-        processedRow.iva_categoria =
-          row.iva_categoria !== undefined && row.iva_categoria !== null
-            ? String(row.iva_categoria).replace("%", "").trim()
-            : "";
-
-        return processedRow;
-      });
-
-      setTableData(initializedData);
-      setCurrentPage(1);
-    }
-  }, [isOpen, data, rol, cliente_id]);
-
-  // Cargar selects dinámicos y emparejar IDs
+  // Cargar selects desde API
   useEffect(() => {
     const fetchSelects = async () => {
       const results = {};
       for (const key in apiSelects) {
-        try {
-          results[key] = await apiSelects[key]();
-        } catch (err) {
-          console.error(`Error cargando select ${key}`, err);
-          results[key] = [];
-        }
+        try { results[key] = await apiSelects[key](); }
+        catch { results[key] = []; }
       }
       setSelectOptions(results);
-
-      // Asignar IVA por coincidencia
-      if (results.iva_categoria) {
-        setTableData((prev) =>
-          prev.map((row) => {
-            if (row.iva_categoria) {
-              const excelIva = Number(String(row.iva_categoria).replace("%", "").trim());
-              const match = results.iva_categoria.find(
-                (opt) =>
-                  Number(opt.tasa_porcentaje) === excelIva ||
-                  opt.nombre?.includes(`${excelIva}`)
-              );
-              if (match) {
-                return {
-                  ...row,
-                  iva_categoria_id: match.id,
-                  iva_categoria: match.nombre
-                };
-              }
-            }
-            return row;
-          })
-        );
-      }
-
-      // Emparejar cliente si es admin
-      if (rol === "admin" && results.cliente_id?.length) {
-        setTableData((prev) =>
-          prev.map((row) => {
-            if (row.cliente_id && isNaN(row.cliente_id)) {
-              const match = results.cliente_id.find(
-                (c) =>
-                  c.rif?.trim().toLowerCase() === row.cliente_id.trim().toLowerCase() ||
-                  c.nombre_empresa?.trim().toLowerCase() === row.cliente_id.trim().toLowerCase()
-              );
-              if (match) {
-                return {
-                  ...row,
-                  cliente_id: match.id,
-                  cliente_nombre: match.nombre_empresa || match.nombre
-                };
-              }
-            }
-            return row;
-          })
-        );
-      }
-
-      // Operador: asignar cliente fijo
-      if (rol === "operador" && results.cliente_id?.length) {
-        setTableData((prev) =>
-          prev.map((row) => ({
-            ...row,
-            cliente_id: results.cliente_id[0].id,
-            cliente_nombre: results.cliente_id[0].nombre_empresa || results.cliente_id[0].nombre
-          }))
-        );
-      }
     };
 
     if (isOpen) fetchSelects();
-  }, [isOpen, apiSelects, rol, cliente_id]);
+  }, [isOpen, apiSelects]);
+
+  // Inicializar datos con cliente e IVA
+  useEffect(() => {
+    if (!isOpen || !data.length) return;
+
+    const initializedData = data.map(row => {
+      const ivaClean = row.iva_categoria ? String(row.iva_categoria).replace("%","").trim() : "";
+
+      // Asignar id de IVA si ya tenemos opciones cargadas
+      let ivaId = null;
+      if (selectOptions.iva_categoria?.length) {
+        const opt = selectOptions.iva_categoria.find(o => o.nombre === ivaClean);
+        ivaId = opt?.id || null;
+      }
+
+      // Cliente fijo para operador
+      const cliId = rol === "operador" ? cliente_id || "" : row.cliente_id || "";
+      const cliNombre = rol === "operador"
+        ? clienteAsignado?.nombre_empresa || clienteAsignado?.nombre || ""
+        : row.cliente_nombre || "";
+
+      return {
+        ...row,
+        iva_categoria: ivaClean,
+        iva_categoria_id: ivaId,
+        cliente_id: cliId,
+        cliente_nombre: cliNombre
+      };
+    });
+
+    setTableData(initializedData);
+    setCurrentPage(1);
+  }, [isOpen, data, rol, cliente_id, clienteAsignado, selectOptions.iva_categoria]);
+
+  // Actualizar cliente admin si coincide con Excel
+  useEffect(() => {
+    if (!isOpen || rol !== "admin" || !selectOptions.cliente_id?.length) return;
+
+    setTableData(prev =>
+      prev.map(row => {
+        if (!row.cliente_id) return row;
+        const match = selectOptions.cliente_id.find(
+          c => String(c.id) === String(row.cliente_id)
+            || c.rif?.trim().toLowerCase() === row.cliente_id?.trim().toLowerCase()
+            || c.nombre_empresa?.trim().toLowerCase() === row.cliente_id?.trim().toLowerCase()
+        );
+        return match
+          ? { ...row, cliente_id: match.id, cliente_nombre: match.nombre_empresa || match.nombre }
+          : row;
+      })
+    );
+  }, [isOpen, rol, selectOptions.cliente_id]);
 
   if (!isOpen) return null;
 
-  // Filtrar headers visibles
-  const headers = Object.keys(tableData[0] || {}).filter(
-    (h) => !["iva_categoria_id", "cliente_id"].includes(h)
-  );
+  // Columnas visibles según rol
+  const headers = ["sku", "nombre", "descripcion", "precio_base", "iva_categoria"];
+  if (rol === "operador") headers.push("cliente_nombre");
+  if (rol === "admin") headers.push("cliente_id");
 
   const totalPages = Math.ceil(tableData.length / rowsPerPage);
   const startIndex = (currentPage - 1) * rowsPerPage;
   const visibleRows = tableData.slice(startIndex, startIndex + rowsPerPage);
 
+  // Manejo de cambios en inputs/selects
   const handleInputChange = (index, field, value) => {
     const updated = [...tableData];
     updated[index][field] = value;
 
-    if (field === "iva_categoria" && selectOptions.iva_categoria) {
-      const opt = selectOptions.iva_categoria.find((o) => o.nombre === value);
-      if (opt) updated[index].iva_categoria_id = opt.id;
+    // Actualizar id de IVA siempre que se cambie
+    if (selectOptions.iva_categoria?.length) {
+      const ivaOpt = selectOptions.iva_categoria.find(o => o.nombre === updated[index].iva_categoria);
+      updated[index].iva_categoria_id = ivaOpt?.id || null;
     }
 
-    if (field === "cliente_nombre" && selectOptions.cliente_id) {
-      const opt = selectOptions.cliente_id.find((o) => (o.nombre_empresa || o.nombre) === value);
-      if (opt) updated[index].cliente_id = opt.id;
+    // Actualizar nombre de cliente si admin cambia cliente_id
+    if (field === "cliente_id" && selectOptions.cliente_id?.length) {
+      const cliOpt = selectOptions.cliente_id.find(o => o.id === Number(value));
+      updated[index].cliente_nombre = cliOpt?.nombre_empresa || cliOpt?.nombre || "";
     }
 
     setTableData(updated);
@@ -155,11 +127,7 @@ const ModalImportPreview = ({
       for (const field in validationRules) {
         const rule = validationRules[field];
         const { valid: fieldValid, message } = rule(row[field], row);
-        if (!fieldValid) {
-          toast.error(`Fila ${i + 1}: ${message}`);
-          valid = false;
-          break;
-        }
+        if (!fieldValid) { toast.error(`Fila ${i + 1}: ${message}`); valid = false; break; }
       }
     });
     return valid;
@@ -167,14 +135,7 @@ const ModalImportPreview = ({
 
   const handleConfirm = () => {
     if (!validateData()) return;
-
-    const cleanedData = tableData.map((r) => ({
-      ...r,
-      iva_categoria_id: r.iva_categoria_id,
-      cliente_id: r.cliente_id
-    }));
-
-    onConfirm(cleanedData);
+    onConfirm(tableData.map(r => ({ ...r, iva_categoria_id: r.iva_categoria_id, cliente_id: r.cliente_id })));
     toast.success("Datos listos para importar");
     onClose();
   };
@@ -183,7 +144,7 @@ const ModalImportPreview = ({
     <div className="fixed inset-0 flex items-center justify-center z-50">
       <div className="absolute inset-0 bg-black bg-opacity-50" onClick={onClose}></div>
       <div className="relative bg-white rounded-lg shadow-lg w-11/12 md:w-5/6 lg:w-4/5 xl:w-3/4 max-h-[95vh] overflow-hidden">
-        
+
         {/* Header */}
         <div className="flex justify-between items-center px-6 py-4 border-b">
           <h2 className="text-lg font-bold text-gray-800">Previsualización de Importación</h2>
@@ -195,11 +156,7 @@ const ModalImportPreview = ({
           <table className="min-w-full border border-gray-200 text-sm">
             <thead className="bg-gray-100 sticky top-0">
               <tr>
-                {headers.map((header) => (
-                  <th key={header} className="border px-3 py-2 text-left text-gray-600 font-semibold">
-                    {header}
-                  </th>
-                ))}
+                {headers.map(h => <th key={h} className="border px-3 py-2 text-left text-gray-600 font-semibold">{h}</th>)}
                 <th className="border px-3 py-2 text-center text-gray-600 font-semibold w-16">Acción</th>
               </tr>
             </thead>
@@ -208,37 +165,35 @@ const ModalImportPreview = ({
                 const actualIndex = startIndex + rowIndex;
                 return (
                   <tr key={actualIndex} className="hover:bg-gray-50">
-                    {headers.map((field) => (
+                    {headers.map(field => (
                       <td key={field} className="border px-2 py-1">
                         {field === "iva_categoria" ? (
                           <select
                             className="w-full border rounded px-2 py-1 focus:ring-1 focus:ring-blue-400"
-                            value={row[field]}
+                            value={row[field] || ""}
                             onChange={(e) => handleInputChange(actualIndex, field, e.target.value)}
-                            disabled={rol === "operador" && !selectOptions.iva_categoria}
                           >
-                            {selectOptions.iva_categoria?.map((opt) => (
+                            {selectOptions.iva_categoria?.map(opt => (
                               <option key={opt.id} value={opt.nombre}>
                                 {opt.nombre} ({opt.tasa_porcentaje}%)
                               </option>
                             ))}
                           </select>
-                        ) : field === "cliente_nombre" ? (
-                          rol === "admin" ? (
-                            <select
-                              className="w-full border rounded px-2 py-1 focus:ring-1 focus:ring-blue-400"
-                              value={row[field]}
-                              onChange={(e) => handleInputChange(actualIndex, field, e.target.value)}
-                            >
-                              {selectOptions.cliente_id?.map((c) => (
-                                <option key={c.id} value={c.nombre_empresa || c.nombre}>
-                                  {c.nombre_empresa || c.nombre} {c.rif ? `(${c.rif})` : ""}
-                                </option>
-                              ))}
-                            </select>
-                          ) : (
-                            <div>{row[field]}</div>
-                          )
+                        ) : field === "cliente_nombre" && rol === "operador" ? (
+                          <div>{row.cliente_nombre}</div>
+                        ) : field === "cliente_id" && rol === "admin" ? (
+                          <select
+                            className="w-full border rounded px-2 py-1 focus:ring-1 focus:ring-blue-400"
+                            value={row.cliente_id || ""}
+                            onChange={(e) => handleInputChange(actualIndex, "cliente_id", e.target.value)}
+                          >
+                            <option value="">Seleccione un cliente</option>
+                            {selectOptions.cliente_id?.map(c => (
+                              <option key={c.id} value={c.id}>
+                                {c.nombre_empresa || c.nombre} {c.rif ? `(${c.rif})` : ""}
+                              </option>
+                            ))}
+                          </select>
                         ) : (
                           <input
                             type="text"
@@ -250,11 +205,7 @@ const ModalImportPreview = ({
                       </td>
                     ))}
                     <td className="border text-center">
-                      <button
-                        onClick={() => handleDeleteRow(actualIndex)}
-                        className="text-red-500 hover:text-red-700"
-                        title="Eliminar fila"
-                      >
+                      <button onClick={() => handleDeleteRow(actualIndex)} className="text-red-500 hover:text-red-700" title="Eliminar fila">
                         <i className="fa-regular fa-rectangle-xmark fa-lg"></i>
                       </button>
                     </td>
@@ -269,10 +220,10 @@ const ModalImportPreview = ({
         <div className="flex justify-between items-center px-6 py-3 border-t bg-gray-50 text-sm">
           <span>Página {currentPage} de {totalPages}</span>
           <div className="flex space-x-1">
-            <button onClick={() => setCurrentPage(1)} disabled={currentPage === 1} className="px-2 py-1 bg-gray-200 rounded disabled:opacity-50">«</button>
-            <button onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))} disabled={currentPage === 1} className="px-2 py-1 bg-gray-200 rounded disabled:opacity-50">‹</button>
-            <button onClick={() => setCurrentPage((p) => Math.min(p + 1, totalPages))} disabled={currentPage === totalPages} className="px-2 py-1 bg-gray-200 rounded disabled:opacity-50">›</button>
-            <button onClick={() => setCurrentPage(totalPages)} disabled={currentPage === totalPages} className="px-2 py-1 bg-gray-200 rounded disabled:opacity-50">»</button>
+            <button onClick={() => setCurrentPage(1)} disabled={currentPage===1} className="px-2 py-1 bg-gray-200 rounded disabled:opacity-50">«</button>
+            <button onClick={() => setCurrentPage(p => Math.max(p-1,1))} disabled={currentPage===1} className="px-2 py-1 bg-gray-200 rounded disabled:opacity-50">‹</button>
+            <button onClick={() => setCurrentPage(p => Math.min(p+1,totalPages))} disabled={currentPage===totalPages} className="px-2 py-1 bg-gray-200 rounded disabled:opacity-50">›</button>
+            <button onClick={() => setCurrentPage(totalPages)} disabled={currentPage===totalPages} className="px-2 py-1 bg-gray-200 rounded disabled:opacity-50">»</button>
           </div>
         </div>
 
@@ -281,6 +232,7 @@ const ModalImportPreview = ({
           <button onClick={onClose} className="px-4 py-2 bg-gray-300 text-gray-800 rounded hover:bg-gray-400 transition">Cancelar</button>
           <button onClick={handleConfirm} className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition">Guardar Importación</button>
         </div>
+
       </div>
     </div>
   );

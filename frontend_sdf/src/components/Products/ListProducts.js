@@ -38,11 +38,8 @@ function ListProducts() {
   const [productIdToAction, setProductIdToAction] = useState(null);
   const [previewOpen, setPreviewOpen] = useState(false);
   const [previewData, setPreviewData] = useState([]);
-  const [clienteAsignado, setClienteAsignado] = useState(null); // Para operador
+  const [clienteAsignado, setClienteAsignado] = useState(null);
 
-  // -------------------------------------------------
-  // Consultar cliente asignado si es operador
-  // -------------------------------------------------
   useEffect(() => {
     const fetchCliente = async () => {
       if (rol === "operador" && cliente_id) {
@@ -57,9 +54,6 @@ function ListProducts() {
     fetchCliente();
   }, [rol, cliente_id]);
 
-  // -------------------------------------------------
-  // Inicialización de eventos DataTable
-  // -------------------------------------------------
   useEffect(() => {
     const table = $("#ListProductDt").DataTable();
 
@@ -97,21 +91,16 @@ function ListProducts() {
   const handleAction = async (id, action) => {
     try {
       let data;
-      if (action === 'delete') {
-        data = await deleteProduct(id);
-      } else {
-        data = await activateProduct(id);
-      }
-      toast.success(data.mensaje || 'Acción realizada con éxito', {
-        onClose: () => refreshProducts(),
-      });
+      if (action === 'delete') data = await deleteProduct(id);
+      else data = await activateProduct(id);
+
+      toast.success(data.mensaje || 'Acción realizada con éxito', { onClose: refreshProducts });
     } catch (err) {
       console.error(err);
       toast.error("Error al actualizar el producto");
     }
   };
 
-  // Recargar productos en DataTable
   const refreshProducts = async () => {
     try {
       const data = await getProducts();
@@ -139,60 +128,56 @@ function ListProducts() {
 
   const handleCloseModal = () => setModalOpen(false);
 
-  // -------------------------------------------------
-  // Importación de productos con previsualización
-  // -------------------------------------------------
   const handleFileUpload = (e) => {
     const file = e.target.files[0];
     if (!file) return;
-
-    const extension = file.name.split('.').pop().toLowerCase();
+    const ext = file.name.split('.').pop().toLowerCase();
 
     const processData = (data) => {
-      if (data.length === 0) {
-        toast.warn("El archivo está vacío o no tiene formato válido.");
-        return;
-      }
+      if (!data.length) return toast.warn("El archivo está vacío o no tiene formato válido.");
       setPreviewData(data);
       setPreviewOpen(true);
     };
 
-    if (extension === 'csv') {
-      Papa.parse(file, {
-        header: true,
-        skipEmptyLines: true,
-        complete: (results) => processData(results.data),
-      });
-    } else if (extension === 'xlsx' || extension === 'xls') {
+    if (ext === "csv") {
+      Papa.parse(file, { header: true, skipEmptyLines: true, complete: (res) => processData(res.data) });
+    } else if (ext === "xlsx" || ext === "xls") {
       const reader = new FileReader();
       reader.onload = (evt) => {
         const bstr = evt.target.result;
-        const workbook = read(bstr, { type: 'binary' });
-        const sheetName = workbook.SheetNames[0];
-        const sheet = workbook.Sheets[sheetName];
-        const data = utils.sheet_to_json(sheet);
-        processData(data);
+        const workbook = read(bstr, { type: "binary" });
+        const sheet = workbook.Sheets[workbook.SheetNames[0]];
+        processData(utils.sheet_to_json(sheet));
       };
       reader.readAsBinaryString(file);
-    } else {
-      toast.error('Archivo no soportado. Solo CSV o Excel.');
-    }
+    } else toast.error("Archivo no soportado. Solo CSV o Excel.");
   };
 
   const handleConfirmImport = async (cleanedData) => {
     try {
+      const ivaList = await getTaxCategories();
+      const clientList = rol === "admin" ? await getClients() : clienteAsignado ? [clienteAsignado] : [];
+
       for (let product of cleanedData) {
-        await createProduct(product);
+        const ivaCategoria = product.iva_categoria
+          ? ivaList.find(
+              i => i.nombre.toLowerCase() === String(product.iva_categoria).toLowerCase() ||
+              i.tasa_porcentaje === Number(product.iva_categoria)
+            )
+          : null;
+
+        let clienteFinal = product.cliente_id;
+        if (!clienteFinal && rol === "operador" && clienteAsignado) clienteFinal = clienteAsignado.id;
+
+        await createProduct({ ...product, iva_categoria_id: ivaCategoria?.id || null, cliente_id: clienteFinal });
       }
 
       const count = cleanedData.length;
-      const label = count === 1 ? "producto" : "productos";
-      toast.success(`Se importó ${count} ${label} exitosamente`);
-
+      toast.success(`Se importó ${count} ${count > 1 ? "productos" : "producto"} exitosamente`);
       await refreshProducts();
     } catch (err) {
       console.error(err);
-      toast.error('Error importando productos');
+      toast.error("Error importando productos");
     }
   };
 
@@ -201,7 +186,7 @@ function ListProducts() {
       const data = await showProduct(id);
       setProductIdToAction(data);
       setModalOpenProducts(true);
-    } catch (err) {
+    } catch {
       toast.error("Error al obtener detalles del producto.");
     }
   };
@@ -214,23 +199,17 @@ function ListProducts() {
       <div className="flex flex-wrap">
         <div className="w-full lg:w-12/12">
           <div className="relative flex flex-col min-w-0 break-words w-full mb-6 shadow-lg rounded-lg bg-blueGray-100 border-0">
+
             {/* Header Card */}
             <div className="rounded-t bg-white mb-0 px-6 py-6 flex justify-between items-center border-b">
               <h6 className="text-blueGray-700 text-xl font-bold">Lista de Productos</h6>
               <div className="flex items-center space-x-3">
-                <button
-                  className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded"
-                  onClick={redirectToCreate}>
+                <button className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded" onClick={redirectToCreate}>
                   Crear Producto
                 </button>
                 <label className="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded cursor-pointer">
                   Importar Productos Excel/CSV
-                  <input
-                    type="file"
-                    accept=".csv,.xlsx,.xls"
-                    className="hidden"
-                    onChange={handleFileUpload}
-                  />
+                  <input type="file" accept=".csv,.xlsx,.xls" className="hidden" onChange={handleFileUpload} />
                 </label>
               </div>
             </div>
@@ -245,23 +224,12 @@ function ListProducts() {
                   { title: "Nombre", data: "nombre" },
                   { title: "Descripción", data: "descripcion" },
                   { title: "Precio Base", data: "precio_base" },
-                  {
-                    title: "IVA",
-                    data: "iva_categoria",
-                    render: (data) => data ? `${data.tasa_porcentaje}%` : "N/A"
-                  },
-                  {
-                    title: "Condición",
-                    data: "activo",
-                    render: (data) => data
+                  { title: "IVA", data: "iva_categoria", render: d => d ? `${d.tasa_porcentaje}%` : "N/A" },
+                  { title: "Condición", data: "activo", render: d => d
                       ? '<label class="bg-emerald-400 text-white py-1 px-3 rounded-full text-center">Activo</label>'
                       : '<label class="bg-red-400 text-white py-1 px-3 rounded-full text-center">Inactivo</label>'
                   },
-                  {
-                    title: "Acciones",
-                    data: 'activo',
-                    orderable: false,
-                    searchable: false,
+                  { title: "Acciones", data: "activo", orderable: false, searchable: false,
                     render: (data, type, row) => {
                       const viewBtn = `<button class="btn-view px-2 py-1 text-gray-700" data-id="${row.id}"><i class="fa-solid fa-lg fa-expand"></i></button>`;
                       const editBtn = `<button class="btn-edit px-2 py-1 text-blue-600" data-id="${row.id}"><i class="fa-solid fa-lg fa-pen-to-square"></i></button>`;
@@ -289,9 +257,7 @@ function ListProducts() {
                         recordsFiltered: response.length,
                         data: response
                       });
-                    } catch (err) {
-                      console.error(err);
-                    }
+                    } catch (err) { console.error(err); }
                   },
                   paging: true,
                   searching: true,
@@ -299,29 +265,23 @@ function ListProducts() {
                   info: true,
                   responsive: true,
                   pageLength: 10,
-                  lengthMenu: [5, 10, 25, 50, 100],
+                  lengthMenu: [5,10,25,50,100],
                   buttons: [
-                    { extend: "copyHtml5", text: "Copiar", title: "Lista de productos" },
-                    { extend: "excelHtml5", text: "Excel", title: "Lista de productos", filename: "Lista_productos" },
-                    { extend: "csvHtml5", text: "CSV", title: "Lista de productos", filename: "Lista_productos" },
-                    { extend: "pdfHtml5", text: "PDF", title: "Lista de productos", filename: "Lista_productos" },
-                    { extend: "print", text: "Imprimir", title: "Lista de productos" }
+                    { extend:"copyHtml5", text:"Copiar", title:"Lista de productos" },
+                    { extend:"excelHtml5", text:"Excel", title:"Lista de productos", filename:"Lista_productos" },
+                    { extend:"csvHtml5", text:"CSV", title:"Lista de productos", filename:"Lista_productos" },
+                    { extend:"pdfHtml5", text:"PDF", title:"Lista de productos", filename:"Lista_productos" },
+                    { extend:"print", text:"Imprimir", title:"Lista de productos" }
                   ],
                   language: {
-                    decimal: ",",
-                    thousands: ".",
-                    lengthMenu: "Mostrar _MENU_ registros por página",
-                    zeroRecords: "No se encontraron resultados",
-                    info: "Mostrando de _START_ a _END_ de _TOTAL_ registros",
-                    infoEmpty: "No hay registros disponibles",
-                    infoFiltered: "(filtrado de _MAX_ registros totales)",
-                    search: "Buscar:",
-                    paginate: {
-                      first: "Primero",
-                      last: "Último",
-                      next: "Siguiente",
-                      previous: "Anterior"
-                    }
+                    decimal:",", thousands:".",
+                    lengthMenu:"Mostrar _MENU_ registros por página",
+                    zeroRecords:"No se encontraron resultados",
+                    info:"Mostrando de _START_ a _END_ de _TOTAL_ registros",
+                    infoEmpty:"No hay registros disponibles",
+                    infoFiltered:"(filtrado de _MAX_ registros totales)",
+                    search:"Buscar:",
+                    paginate:{ first:"Primero", last:"Último", next:"Siguiente", previous:"Anterior" }
                   }
                 }}
               />
@@ -331,9 +291,7 @@ function ListProducts() {
                 isOpen={modalOpen}
                 onClose={handleCloseModal}
                 onConfirm={handleConfirm}
-                message={`¿Estás seguro de que deseas ${
-                  productIdToAction?.action === 'delete' ? 'desactivar' : 'activar'
-                } al producto ${productIdToAction?.nombre || ''}?`}
+                message={`¿Estás seguro de que deseas ${productIdToAction?.action === 'delete' ? 'desactivar' : 'activar'} al producto ${productIdToAction?.nombre || ''}?`}
               />
 
               <ModalProducts
@@ -342,7 +300,6 @@ function ListProducts() {
                 product={productIdToAction}
               />
 
-              {/* Modal para previsualizacion de datos a importar */}
               <ModalImportPreview
                 isOpen={previewOpen}
                 onClose={() => setPreviewOpen(false)}
@@ -350,21 +307,17 @@ function ListProducts() {
                 onConfirm={handleConfirmImport}
                 cliente_id={cliente_id}
                 rol={rol}
+                clienteAsignado={clienteAsignado}
                 apiSelects={{
                   iva_categoria: getTaxCategories,
-                  cliente_id: rol === "admin"
-                    ? getClients
-                    : async () => clienteAsignado ? [clienteAsignado] : []
+                  cliente_id: rol === "admin" ? getClients : async () => clienteAsignado ? [clienteAsignado] : []
                 }}
                 validationRules={{
-                  nombre: (value) => ({ valid: !!value, message: "Debe ingresar un nombre de producto" }),
-                  sku: (value) => ({ valid: !!value, message: "Debe ingresar un SKU" }),
-                  precio_base: (value) => ({
-                    valid: !isNaN(value) && value !== "",
-                    message: "Precio Base inválido"
-                  }),
-                  iva_categoria: (value) => ({ valid: !!value, message: "Debe seleccionar una categoría de IVA" }),
-                  cliente_id: (value) => ({ valid: !!value, message: "Debe seleccionar un cliente" })
+                  nombre: v => ({ valid: !!v, message:"Debe ingresar un nombre de producto" }),
+                  sku: v => ({ valid: !!v, message:"Debe ingresar un SKU" }),
+                  precio_base: v => ({ valid: !isNaN(v) && v !== "", message:"Precio Base inválido" }),
+                  iva_categoria: v => ({ valid: !!v, message:"Debe seleccionar una categoría de IVA" }),
+                  cliente_id: v => ({ valid: !!v, message:"Debe seleccionar un cliente" })
                 }}
               />
             </div>
