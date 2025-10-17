@@ -82,7 +82,7 @@ export default function Sidebar() {
           to: "/products",
           icon: "fas fa-cubes",
           label: "Productos y Servicios",
-          roles: ["admin", "operador"]
+          roles: ["operador"]
         },
         {
           to: "/taxpayer",
@@ -95,6 +95,12 @@ export default function Sidebar() {
           icon: "fas fa-percent",
           label: "Impuestos",
           roles: ["admin", "operador"]
+        },
+        {
+          to: "/auditlogs",
+          icon: "fa-solid fa-list-ul",
+          label: "Registro de auditoria",
+          roles: ["admin"]
         },
         // {
         //   to: "/settings",
