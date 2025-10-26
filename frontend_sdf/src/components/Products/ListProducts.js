@@ -7,7 +7,7 @@ import { AuthContext } from "../../context/AuthContext";
 import { encryptText } from '../../services/api';
 import ModalConfirmation from "../Modals/ModalConfirmation";
 import ModalProducts from "./ModalProducts";
-import ModalImportPreview from "../Modals/ModalImportPreview";
+import ModalImportPreview from "../Modals/ModalImportPreviewProducts";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import $ from "jquery";
@@ -151,6 +151,7 @@ function ListProducts() {
       };
       reader.readAsBinaryString(file);
     } else toast.error("Archivo no soportado. Solo CSV o Excel.");
+    e.target.value = "";
   };
 
   const handleConfirmImport = async (cleanedData) => {
@@ -176,8 +177,24 @@ function ListProducts() {
       toast.success(`Se importó ${count} ${count > 1 ? "productos" : "producto"} exitosamente`);
       await refreshProducts();
     } catch (err) {
-      console.error(err);
-      toast.error("Error importando productos");
+        console.error("Error al importar productos:", err);
+        // Detectar mensajes devueltos por el backend
+        let backendMsg =
+          err?.response?.data?.message ||
+          err?.response?.data?.error ||
+          err?.message ||
+          "Error desconocido al importar productos";
+  
+        if (Array.isArray(err?.response?.data)) {
+          backendMsg = err.response.data
+            .map((e, i) => `Fila ${i + 1}: ${e.message || e.error || JSON.stringify(e)}`)
+            .join("\n");
+        }
+  
+        toast.error(backendMsg, {
+          autoClose: 3000,
+          style: { whiteSpace: "pre-line" },
+        });
     }
   };
 
@@ -302,7 +319,10 @@ function ListProducts() {
 
               <ModalImportPreview
                 isOpen={previewOpen}
-                onClose={() => setPreviewOpen(false)}
+                onClose={() => {
+                  setIsImportModalOpen(false);
+                  setImportData([]);
+                }}
                 data={previewData}
                 onConfirm={handleConfirmImport}
                 cliente_id={cliente_id}
