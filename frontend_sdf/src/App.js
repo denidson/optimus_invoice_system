@@ -15,6 +15,7 @@ import ListTypeTaxpayer from "./pages/Config/ListTypeTaxpayer";
 import Dashboard from "./pages/Dashboard";
 import Profile from "./pages/Profile";
 import ListInvoices from "./pages/Invoices/ListInvoices";
+import ListAuditLogs from "./pages/Config/ListAuditLogs";
 // import Invoices from "./pages/Invoices";
 // import InvoiceForm from "./pages/InvoiceForm";
 import PrivateRoute from "./components/PrivateRoute";
@@ -113,7 +114,7 @@ function App() {
             path="/products"
             element={
               <PrivateRoute>
-                <RoleRoute roles={["admin","operador"]}>
+                <RoleRoute roles={["operador"]}>
                   <ListProducts />
                 </RoleRoute>
               </PrivateRoute>
@@ -123,7 +124,7 @@ function App() {
             path="/products/edit"
             element={
               <PrivateRoute>
-                <RoleRoute roles={["admin","operador"]}>
+                <RoleRoute roles={["operador"]}>
                   <FormProducts />
                 </RoleRoute>
               </PrivateRoute>
@@ -133,7 +134,7 @@ function App() {
             path="/products/create"
             element={
               <PrivateRoute>
-                <RoleRoute roles={["admin","operador"]}>
+                <RoleRoute roles={["operador"]}>
                   <FormProducts />
                 </RoleRoute>
               </PrivateRoute>
@@ -168,6 +169,18 @@ function App() {
             element={
               <PrivateRoute>
                 <ListInvoices />
+              </PrivateRoute>
+            }
+          />
+
+          {/* Auditoria (solo admin) */}
+          <Route
+            path="/auditlogs"
+            element={
+              <PrivateRoute>
+                <RoleRoute roles={["admin"]}>
+                  <ListAuditLogs />
+                </RoleRoute>
               </PrivateRoute>
             }
           />
