@@ -82,7 +82,7 @@ export default function Sidebar() {
           to: "/products",
           icon: "fas fa-cubes",
           label: "Productos y Servicios",
-          roles: ["operador"]
+          roles: ["admin", "operador"]
         },
         {
           to: "/taxpayer",
