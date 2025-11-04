@@ -91,7 +91,7 @@ function ModalPreinvoices({ isOpen, onClose, message }) {
                     message.items.map((item) => (
                       <div key={item.id} class="px-5 text-center flex justify-between border-b py-1 border-solid">
                         <div className="lg:w-4/12 text-start">
-                          <label className="text-blueGray-700">{item.descripcion}</label>
+                          <label className="text-blueGray-700">{item.producto ? item.producto.sku + '-' + item.producto.nombre : 'N/A' }</label>
                         </div>
                         <div className="lg:w-4/12 text-center">
                           <label className="text-blueGray-700">

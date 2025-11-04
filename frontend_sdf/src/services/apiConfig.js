@@ -12,9 +12,20 @@ export const getTaxCategories = async () => {
 };
 
 // Get registros de auditoria
-export const getAuditLogs = async () => {
+/*export const getAuditLogs = async () => {
   try {
     const response = await api.get("/admin/logs");
+    return response.data; // Retorna los datos directamente
+  } catch (error) {
+    console.error("Error fetching audit logs:", error);
+    throw error; // Lanzamos el error para que el componente lo maneje
+  }
+};*/
+
+// Get registros de auditoria
+export const getAuditLogs = async ({ page = 1, per_page = 20 } = {}) => {
+  try {
+    const response = await api.get(`/admin/logs?page=${page}&per_page=${per_page}`);
     return response.data; // Retorna los datos directamente
   } catch (error) {
     console.error("Error fetching audit logs:", error);
