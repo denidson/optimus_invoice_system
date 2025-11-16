@@ -15,42 +15,50 @@ function ModalPreinvoices({ isOpen, onClose, message }) {
                 </div>
                 <hr class="my-6 border-b-1 border-blueGray-300"/>
                 <div class="px-5 text-center flex justify-between">
-                  <div className="lg:w-3/12 text-start">
-                    <label class="text-blueGray-700 lg:w-4/12 font-bold me-3">Fecha de Factura:</label>
+                  <div className="lg:w-2/12 text-start">
+                    <label class="text-blueGray-700 lg:w-4/12 font-bold me-3">Fecha de Factura:</label><br/>
                     <label class="text-blueGray-700 lg:w-8/12">{message.fecha_factura ? message.fecha_factura.replace('T',' ').substr(0, 19) : ''}</label>
                   </div>
                   <div className="lg:w-3/12 text-start">
-                    <label class="text-blueGray-700 lg:w-6/12 font-bold me-3">Número de control:</label>
+                    <label class="text-blueGray-700 lg:w-6/12 font-bold me-3">Número de control:</label><br/>
                     <label class="text-blueGray-700 lg:w-8/12">{message.numero_control}</label>
                   </div>
                   <div className="lg:w-3/12 text-start">
-                    <label class="text-blueGray-700 lg:w-6/12 font-bold me-3">Correlativo:</label>
+                    <label class="text-blueGray-700 lg:w-6/12 font-bold me-3">Número de factura:</label><br/>
+                    <label class="text-blueGray-700 lg:w-8/12">{(message.numero_factura ? message.numero_factura.toUpperCase():'')}</label>
+                  </div>
+                  <div className="lg:w-2/12 text-start">
+                    <label class="text-blueGray-700 lg:w-6/12 font-bold me-3">Correlativo:</label><br/>
                     <label class="text-blueGray-700 lg:w-8/12">{message.correlativo_interno}</label>
                   </div>
-                  <div className="lg:w-3/12 text-start">
-                    <label class="text-blueGray-700 lg:w-6/12 font-bold me-3">Serial:</label>
+                  <div className="lg:w-2/12 text-start">
+                    <label class="text-blueGray-700 lg:w-6/12 font-bold me-3">Serial:</label><br/>
                     <label class="text-blueGray-700 lg:w-8/12">{(message.serial ? message.serial.toUpperCase():'')}</label>
                   </div>
                 </div>
                 <hr class="my-6 border-b-1 border-blueGray-300"/>
                 <div class="px-5 text-center flex justify-between">
                   <div className="lg:w-2/12 text-start">
-                    <label class="text-blueGray-700 lg:w-4/12 font-bold me-3">RIF:</label>
+                    <label class="text-blueGray-700 lg:w-4/12 font-bold me-3">RIF:</label><br/>
                     <label class="text-blueGray-700 lg:w-8/12">{message.cliente_final_rif}</label>
                   </div>
-                  <div className="lg:w-5/12 text-start">
-                    <label class="text-blueGray-700 lg:w-6/12 font-bold me-3">Razón Social:</label>
+                  <div className="lg:w-4/12 text-start">
+                    <label class="text-blueGray-700 lg:w-6/12 font-bold me-3">Razón Social:</label><br/>
                     <label class="text-blueGray-700 lg:w-8/12">{message.cliente_final_nombre}</label>
                   </div>
-                  <div className="lg:w-5/12 text-start">
-                    <label class="text-blueGray-700 lg:w-6/12 font-bold me-3">Dirección:</label>
-                    <label class="text-blueGray-700 lg:w-8/12">{(message.zona ? message.zona.toUpperCase():'')}</label>
+                  <div className="lg:w-4/12 text-start">
+                    <label class="text-blueGray-700 lg:w-6/12 font-bold me-3">Dirección:</label><br/>
+                    <label class="text-blueGray-700 lg:w-8/12">{(message.cliente_final_direccion ? message.cliente_final_direccion.toUpperCase():'')}</label>
+                  </div>
+                  <div className="lg:w-2/12 text-start">
+                    <label class="text-blueGray-700 lg:w-6/12 font-bold me-3">Télefono:</label><br/>
+                    <label class="text-blueGray-700 lg:w-8/12">{message.cliente_final_telefono ? message.cliente_final_telefono : ''}</label>
                   </div>
                 </div>
                 <hr class="mx-3 my-6 border-b-1 border-blueGray-300"/>
                 <div class="px-5 text-center flex justify-between">
                   <div className="lg:w-6/12 text-start">
-                    <label class="text-blueGray-700 lg:w-4/12 font-bold me-3">Tipo de documento:</label>
+                    <label class="text-blueGray-700 lg:w-4/12 font-bold me-3">Tipo de documento:</label><br/>
                     <label class="text-blueGray-700 lg:w-8/12">{message.tipo_documento == 'FC' ?
                         ('FACTURA')
                         :
@@ -62,7 +70,7 @@ function ModalPreinvoices({ isOpen, onClose, message }) {
                       }</label>
                   </div>
                   <div className="lg:w-6/12 text-start">
-                    <label class="text-blueGray-700 lg:w-6/12 font-bold me-3">Estado:</label>
+                    <label class="text-blueGray-700 lg:w-6/12 font-bold me-3">Estado:</label><br/>
                     <label class="text-blueGray-700 lg:w-8/12">{message.estatus.toUpperCase()}</label>
                   </div>
                 </div>
