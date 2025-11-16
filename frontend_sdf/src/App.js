@@ -17,6 +17,7 @@ import Profile from "./pages/Profile";
 import ListInvoices from "./pages/Invoices/ListInvoices";
 import ListAuditLogs from "./pages/Config/ListAuditLogs";
 import ListWithholdings from "./pages/Config/ListWithholdings";
+import ListCompanyUsers from "./pages/CompanyUsers/ListCompanyUsers";
 // import Invoices from "./pages/Invoices";
 // import InvoiceForm from "./pages/InvoiceForm";
 import PrivateRoute from "./components/PrivateRoute";
@@ -115,7 +116,7 @@ function App() {
             path="/products"
             element={
               <PrivateRoute>
-                <RoleRoute roles={["operador"]}>
+                <RoleRoute roles={["operador_admin"]}>
                   <ListProducts />
                 </RoleRoute>
               </PrivateRoute>
@@ -125,7 +126,7 @@ function App() {
             path="/products/edit"
             element={
               <PrivateRoute>
-                <RoleRoute roles={["operador"]}>
+                <RoleRoute roles={["operador_admin"]}>
                   <FormProducts />
                 </RoleRoute>
               </PrivateRoute>
@@ -135,7 +136,7 @@ function App() {
             path="/products/create"
             element={
               <PrivateRoute>
-                <RoleRoute roles={["operador"]}>
+                <RoleRoute roles={["operador_admin"]}>
                   <FormProducts />
                 </RoleRoute>
               </PrivateRoute>
@@ -147,7 +148,7 @@ function App() {
             path="/taxes"
             element={
               <PrivateRoute>
-                <RoleRoute roles={["admin","operador"]}>
+                <RoleRoute roles={["admin","operador_admin"]}>
                   <ListTaxes />
                 </RoleRoute>
               </PrivateRoute>
@@ -157,17 +158,18 @@ function App() {
             path="/taxpayer"
             element={
               <PrivateRoute>
-                <RoleRoute roles={["admin","operador"]}>
+                <RoleRoute roles={["admin","operador_admin"]}>
                   <ListTypeTaxpayer />
                 </RoleRoute>
               </PrivateRoute>
             }
           />
+          {/* Retenciones */}
           <Route
             path="/withholdings"
             element={
               <PrivateRoute>
-                <RoleRoute roles={["admin","operador"]}>
+                <RoleRoute roles={["admin","operador_admin"]}>
                   <ListWithholdings />
                 </RoleRoute>
               </PrivateRoute>
@@ -190,6 +192,17 @@ function App() {
               <PrivateRoute>
                 <RoleRoute roles={["admin"]}>
                   <ListAuditLogs />
+                </RoleRoute>
+              </PrivateRoute>
+            }
+          />
+          {/* Usuarios de la empresa */}
+          <Route
+            path="/company-users"
+            element={
+              <PrivateRoute>
+                <RoleRoute roles={["operador_admin"]}>
+                  <ListCompanyUsers />
                 </RoleRoute>
               </PrivateRoute>
             }
