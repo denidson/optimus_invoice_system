@@ -21,7 +21,7 @@ export const getPreInvoices = async (params = {}) => {
 
     const endpoint = rol === 'admin'
       ? '/admin/pre-invoices'
-      : '/api/pre-invoices';
+      : '/api/pre-invoices/';
 
     const query = new URLSearchParams({
       page,
