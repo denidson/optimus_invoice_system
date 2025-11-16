@@ -1,125 +1,129 @@
-import React from "react";
-import Chart from "chart.js";
+import React, { useEffect, useState, useContext } from "react";
+import { Chart, registerables } from "chart.js";
+import { getSalesOverTime } from "../../services/apiReports";
+import { AuthContext } from "../../context/AuthContext";
+
+Chart.register(...registerables);
 
 export default function CardBarChart() {
-  React.useEffect(() => {
-    let config = {
+  const { user } = useContext(AuthContext);
+  const cliente_id = user?.cliente_id;
+
+  const [chartData, setChartData] = useState([]);
+
+  useEffect(() => {
+    async function loadData() {
+      try {
+        const response = await getSalesOverTime(cliente_id);
+
+        const labels = response.data.map((item) => {
+          const date = new Date(item.periodo);
+          return date.toLocaleString("es-ES", { month: "long" });
+        });
+
+        const values = response.data.map((item) => parseFloat(item.neto_total));
+
+        setChartData({ labels, values });
+      } catch (error) {
+        console.error("Error cargando gráfico:", error);
+      }
+    }
+
+    loadData();
+  }, [cliente_id]);
+
+  useEffect(() => {
+    if (!chartData.labels) return;
+
+    const ctx = document.getElementById("bar-chart").getContext("2d");
+
+    if (window.salesChart) {
+      window.salesChart.destroy();
+    }
+
+    window.salesChart = new Chart(ctx, {
       type: "bar",
       data: {
-        labels: [
-          "January",
-          "February",
-          "March",
-          "April",
-          "May",
-          "June",
-          "July",
-        ],
+        labels: chartData.labels,
         datasets: [
           {
-            label: new Date().getFullYear(),
-            backgroundColor: "#ed64a6",
-            borderColor: "#ed64a6",
-            data: [30, 78, 56, 34, 100, 45, 13],
-            fill: false,
-            barThickness: 8,
-          },
-          {
-            label: new Date().getFullYear() - 1,
-            fill: false,
-            backgroundColor: "#4c51bf",
-            borderColor: "#4c51bf",
-            data: [27, 68, 86, 74, 10, 4, 87],
-            barThickness: 8,
+            label: "Monto Neto",
+            data: chartData.values,
+            backgroundColor: "rgba(66, 153, 225, 0.7)", // azul estilo Notus
+            borderRadius: 6,
+            maxBarThickness: 18,
           },
         ],
       },
       options: {
-        maintainAspectRatio: false,
         responsive: true,
-        title: {
-          display: false,
-          text: "Orders Chart",
+        maintainAspectRatio: false,
+
+        animation: {
+          duration: 1200,
+          easing: "easeOutQuart",
         },
-        tooltips: {
-          mode: "index",
-          intersect: false,
-        },
-        hover: {
-          mode: "nearest",
-          intersect: true,
-        },
-        legend: {
-          labels: {
-            fontColor: "rgba(0,0,0,.4)",
+
+        plugins: {
+          legend: {
+            display: false,
           },
-          align: "end",
-          position: "bottom",
+          tooltip: {
+            backgroundColor: "#fff",
+            titleColor: "#1a202c",
+            bodyColor: "#2d3748",
+            borderColor: "rgba(0,0,0,0.1)",
+            borderWidth: 1,
+            padding: 12,
+            displayColors: false,
+          },
         },
+
         scales: {
-          xAxes: [
-            {
-              display: false,
-              scaleLabel: {
-                display: true,
-                labelString: "Month",
-              },
-              gridLines: {
-                borderDash: [2],
-                borderDashOffset: [2],
-                color: "rgba(33, 37, 41, 0.3)",
-                zeroLineColor: "rgba(33, 37, 41, 0.3)",
-                zeroLineBorderDash: [2],
-                zeroLineBorderDashOffset: [2],
-              },
+          x: {
+            ticks: {
+              color: "#4a5568",
+              font: { size: 12 },
             },
-          ],
-          yAxes: [
-            {
-              display: true,
-              scaleLabel: {
-                display: false,
-                labelString: "Value",
-              },
-              gridLines: {
-                borderDash: [2],
-                drawBorder: false,
-                borderDashOffset: [2],
-                color: "rgba(33, 37, 41, 0.2)",
-                zeroLineColor: "rgba(33, 37, 41, 0.15)",
-                zeroLineBorderDash: [2],
-                zeroLineBorderDashOffset: [2],
-              },
+            grid: { display: false },
+          },
+          y: {
+            ticks: {
+              color: "#4551f7",
+              font: { size: 12 },
+              beginAtZero: true,
             },
-          ],
+            grid: {
+              color: "rgba(0,0,0,0.05)",
+              drawBorder: false,
+            },
+          },
         },
       },
-    };
-    let ctx = document.getElementById("bar-chart").getContext("2d");
-    window.myBar = new Chart(ctx, config);
-  }, []);
+    });
+  }, [chartData]);
+
   return (
-    <>
-      <div className="relative flex flex-col min-w-0 break-words bg-white w-full mb-6 shadow-lg rounded">
-        <div className="rounded-t mb-0 px-4 py-3 bg-transparent">
-          <div className="flex flex-wrap items-center">
-            <div className="relative w-full max-w-full flex-grow flex-1">
-              <h6 className="uppercase text-blueGray-400 mb-1 text-xs font-semibold">
-                Performance
-              </h6>
-              <h2 className="text-blueGray-700 text-xl font-semibold">
-                Total orders
-              </h2>
-            </div>
-          </div>
-        </div>
-        <div className="p-4 flex-auto">
-          {/* Chart */}
-          <div className="relative h-350-px">
-            <canvas id="bar-chart"></canvas>
+    <div className="relative flex flex-col min-w-0 break-words bg-white w-full mb-6 shadow-lg rounded">
+      <div className="rounded-t mb-0 px-4 py-3 bg-transparent">
+        <div className="flex flex-wrap items-center">
+          <div className="w-full">
+            <h6 className="uppercase text-[#4551f7] mb-1 text-xs font-semibold">
+              Análisis
+            </h6>
+            <h2 className="text-slate-700 text-xl font-semibold">
+              Ventas por Periodo
+            </h2>
           </div>
         </div>
       </div>
-    </>
+
+      <div className="p-4 flex-auto">
+        <div className="relative h-96">
+          <canvas id="bar-chart"></canvas>
+        </div>
+      </div>
+    </div>
   );
+
 }
