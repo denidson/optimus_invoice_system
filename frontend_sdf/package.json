@@ -12,6 +12,7 @@
     "@mui/x-data-grid": "^8.11.3",
     "@popperjs/core": "^2.11.8",
     "axios": "^1.6.7",
+    "babel-loader": "^10.0.0",
     "chart.js": "^4.5.0",
     "crypto-browserify": "^3.12.1",
     "crypto-js": "^4.2.0",

@@ -92,10 +92,6 @@ function ListPreInvoices() {
     $("#ListPreInvoicesDt").DataTable().ajax.reload();
   };
 
-  const handleAction = async (id) => {
-  // ----------------------
-  // Acciones de pre-facturas
-  // ----------------------
   const refreshPreInvoices = async () => {
     try {
       location.reload(true);
@@ -104,6 +100,9 @@ function ListPreInvoices() {
     }
   };
 
+  // ----------------------
+  // Acciones de pre-facturas
+  // ----------------------
   const handleAction = async (id) => {
     try {
       const data = await deletePreInvoice(id);
