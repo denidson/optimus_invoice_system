@@ -20,7 +20,8 @@ import "datatables.net-buttons/js/buttons.print";
 import JSZip from "jszip";
 import pdfMake from "pdfmake/build/pdfmake";
 import pdfFonts from "pdfmake/build/vfs_fonts";
-import { read, utils } from 'xlsx';
+import { read, utils, writeFileXLSX } from 'xlsx';
+import * as XLSX from "xlsx";
 import Papa from 'papaparse';
 
 window.JSZip = JSZip;
@@ -128,19 +129,35 @@ function ListAuditLogs() {
                     "<'row'<'col-sm-6 text-end'l><'col-sm-6'f>>" +
                     "<'row'<'col-sm-12'tr>>" +
                     "<'row'<'col-sm-5 text-start'i><'col-sm-7 text-end'p>>",
-                  serverSide: false,
+                  serverSide: true, // <--- importante
                   processing: true,
                   ajax: async (dataTablesParams, callback) => {
                     try {
-                      const response = await getAuditLogs();
+                      // DataTables usa start y length, los convertimos a page y per_page
+                      const page = Math.floor(dataTablesParams.start / dataTablesParams.length) + 1;
+                      const per_page = dataTablesParams.length;
+
+                      // Llamamos a tu servicio pasando los parámetros de paginación
+                      const response = await getAuditLogs({ page, per_page });
+
+                      // Aseguramos que la estructura esperada esté presente
+                      const { data, total } = response;
+
+                      // Retornamos a DataTables con la estructura esperada
                       callback({
                         draw: dataTablesParams.draw,
-                        recordsTotal: response.data.length,
-                        recordsFiltered: response.data.length,
-                        data: response.data
+                        recordsTotal: total,
+                        recordsFiltered: total,
+                        data: data,
                       });
                     } catch (err) {
-                      console.error(err);
+                      console.error("Error cargando auditorías:", err);
+                      callback({
+                        draw: dataTablesParams.draw,
+                        recordsTotal: 0,
+                        recordsFiltered: 0,
+                        data: [],
+                      });
                     }
                   },
                   paging: true,
@@ -148,14 +165,73 @@ function ListAuditLogs() {
                   ordering: true,
                   info: true,
                   responsive: true,
-                  pageLength: 10,
-                  lengthMenu: [5, 10, 25, 50, 100],
+                  pageLength: 20, // se sincroniza con per_page del backend
+                  lengthMenu: [20, 50, 100], //[10, 20, 50, 100]
                   buttons: [
-                    { extend: "copyHtml5", text: "Copiar", title: "Registro de auditoria" },
-                    { extend: "excelHtml5", text: "Excel", title: "Registro de auditoria", filename: "Registro_de_auditoria" },
-                    { extend: "csvHtml5", text: "CSV", title: "Registro de auditoria", filename: "Registro_de_auditoria" },
-                    { extend: "pdfHtml5", text: "PDF", title: "Registro de auditoria", filename: "Registro_de_auditoria" },
-                    { extend: "print", text: "Imprimir", title: "Registro de auditoria" }
+                    { extend: "copyHtml5", text: "Copiar", title: "Registro de auditoría" },
+                    { extend: "excelHtml5", text: "Excel", title: "Registro de auditoría", filename: "Registro_de_auditoria" },
+                    { extend: "csvHtml5", text: "CSV", title: "Registro de auditoría", filename: "Registro_de_auditoria" },
+                    { extend: "pdfHtml5", text: "PDF", title: "Registro de auditoría", filename: "Registro_de_auditoria" },
+                    { extend: "print", text: "Imprimir", title: "Registro de auditoría" },
+                    {
+                      text: "Exportar todo (Excel)",
+                      action: async function (e, dt, node, config) {
+                        const exportButton = node;
+                        try {
+                          const allData = [];
+                          let page = 1;
+                          let totalPages = 1;
+
+                          // Mostrar mensaje de progreso
+                          $(exportButton).text("Cargando...").prop("disabled", true).attr("style", "pointer-events: none;");
+
+                          // Cargar todas las páginas hasta completar total_pages
+                          do {
+                            const response = await getAuditLogs({ page, per_page: 100 });
+                            const { data, total_pages } = response;
+
+                            allData.push(...data);
+                            totalPages = total_pages;
+                            page++;
+                          } while (page <= totalPages);
+
+                          // Convertimos a Excel con xlsx
+                          const wb = utils.book_new();
+                          const ws = utils.json_to_sheet(allData.map(item => ({
+                            Fecha: item.timestamp.replace("T", " ").slice(0, 19),
+                            Servicio: item.endpoint,
+                            Acción:
+                              item.method === "GET"
+                                ? "CONSULTA"
+                                : item.method === "POST"
+                                ? (item.endpoint === "/api/login" ? "INICIO DE SESIÓN" : "CREACIÓN")
+                                : item.method === "PUT"
+                                ? "ACTUALIZACIÓN"
+                                : "DESACTIVACIÓN/ACTIVACIÓN",
+                            Origen: item.request_ip,
+                            Respuesta: item.response_status_code,
+                            "Duración (ms)": item.duration_ms,
+                            Usuario: item.usuario?.email || "",
+                          })));
+
+                          utils.book_append_sheet(wb, ws, "Auditoría");
+
+                          const wbout = XLSX.write(wb, { bookType: "xlsx", type: "array" });
+                          const blob = new Blob([wbout], { type: "application/octet-stream" });
+                          const link = document.createElement("a");
+                          link.href = URL.createObjectURL(blob);
+                          link.download = "Registro_de_auditoria.xlsx";
+                          link.click();
+
+                          $(exportButton).text("Exportar todo (Excel)").prop("disabled", false).attr("style", "pointer-events: auto;");;
+                          toast.success("Archivo exportado correctamente.");
+                        } catch (error) {
+                          $(exportButton).text("Exportar todo (Excel)").prop("disabled", false).attr("style", "pointer-events: auto;");;
+                          console.error("Error al exportar:", error);
+                          toast.error("Error al exportar los datos.");
+                        }
+                      }
+                    }
                   ],
                   language: {
                     decimal: ",",

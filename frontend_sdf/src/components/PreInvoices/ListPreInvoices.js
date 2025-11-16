@@ -333,20 +333,17 @@ function ListPreInvoices() {
                           <i class="fa-solid fa-lg fa-expand"></i>
                         </button>`;
                       }
-                      if (row.estatus?.toUpperCase() !== "FACTURADA") {
-                        return `
-                          <button class="btn-view px-1 py-1 mx-0" data-id="${row.id}">
-                            <i class="fa-solid fa-lg fa-expand"></i>
-                          </button>
-                          <button class="btn-invoice px-1 py-1 mx-0 text-green-600" 
-                            data-id="${row.id}" 
-                            data-correlativo_interno="${row.correlativo_interno}">
-                            <i class="fa-solid fa-file-invoice fa-lg"></i>
-                          </button>`;
-                      }
-                      return `<button class="btn-view px-1 py-1 mx-0" data-id="${row.id}">
-                        <i class="fa-solid fa-lg fa-expand"></i>
-                      </button>`;
+                      if (row.estatus.toUpperCase() != 'FACTURADA'){
+                          return `
+                            <button class="btn-view px-1 py-1 mx-0" data-id="${row.id}"><i class="fa-solid fa-lg fa-expand"></i></button>
+                            <button class="btn-invoice px-1 py-1 mx-0 text-green-600" data-id="${row.id}" data-correlativo_interno="${row.correlativo_interno}"><i class="fa-solid fa-file-invoice fa-lg"></i></button>
+                            <button class="btn-edit px-1 py-1 mx-0 text-blue-600" data-id="${row.id}"><i class="fa-solid fa-lg fa-pen-to-square"></i></button>`;
+                            //<button class="btn-delete px-1 py-1 mx-0 text-red-600" data-id="${row.id}" data-nombre="${row.cliente_final_nombre}"><i class="fa-regular fa-rectangle-xmark fa-lg"></i></button>
+                        }else{
+                          return `
+                            <button class="btn-view px-1 py-1 mx-0" data-id="${row.id}"><i class="fa-solid fa-lg fa-expand"></i></button>
+                          `;
+                        }
                     },
                   },
                 ]}

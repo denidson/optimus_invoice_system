@@ -86,6 +86,7 @@ function FormPreInvoices() {
   //Campos del DataGrid
   const columns = [
     { field: "id", headerName: "ID", editable: false },
+    { field: "nueva_linea", headerName: "Nueva Linea", editable: false },
     //{ field: 'producto_id', headerName: 'Producto', flex: 4, editable: true },
     {
       field: "producto_id",
@@ -343,23 +344,36 @@ function FormPreInvoices() {
     console.log("preInvoiceId:", preInvoiceId);
     try {
       var data;
+      var action;
       if (preInvoice.id == '#'){
         delete preInvoice.id;
+        action = 'create';
         //preInvoice.total = totalAmount;
         console.log("preInvoice(F):", preInvoice);
         var preInvoiceList = [preInvoice];
         data = await createPreInvoice(preInvoiceList); // Llamamos a createClient con el ID
         console.log("preInvoice(F)-data:", data);
       }else{
+        action = 'update';
         data = await editPreInvoice(decryptText(preInvoiceId), preInvoice); // Llamamos a editPreInvoice con el ID
       }
       //console.log('editPreInvoice-data: ', data);
       //setPreInvoice(data.resultados[0]); // Guardamos los datos del preInvoice en el estado
       // Mostrar una notificación de éxito
-      console.log('editPreInvoice-status: ', data.resultados[0].status);
-      if (data.resultados[0].status == 'creada'){
-        console.log('editPreInvoice-toast:==>');
+      console.log('editPreInvoice-status: ', data);
+      if (action == 'create' && data.resultados[0].status == 'creada'){
+        console.log('CreatePreInvoice-toast:==>');
         toast.success('Pre-Factura creada satisfactoriamente.', {
+          onClose: () => {
+            // Espera a que la notificación se cierre para redirigir
+            setTimeout(() => {
+              navigate("/preinvoices");  // Redirige a la lista de pre-facturas
+            }, 2000); // El tiempo debe ser el mismo o ligeramente mayor que la duración de la notificación
+          },
+        });
+      } else if (action == 'update' && ((data.items != undefined && data.items.length) > 0 || data.mensaje == 'No se enviaron campos modificables o los valores son iguales.')){
+        console.log('EditPreInvoice-toast:==>');
+        toast.success('Pre-Factura actualizada satisfactoriamente.', {
           onClose: () => {
             // Espera a que la notificación se cierre para redirigir
             setTimeout(() => {
@@ -393,7 +407,7 @@ function FormPreInvoices() {
         ? Math.max(...preInvoice.items.map((r) => r.id)) + 1
         : 1;
     console.log('newId: ', newId);
-    const newRow = { id: newId, producto_id: "", cantidad: 1, precio_unitario: 0, iva_categoria_id: "", tasa_porcentaje: "", descuento_porcentaje: 0 };
+    const newRow = { id: newId, nueva_linea: true, producto_id: "", cantidad: 1, precio_unitario: 0, iva_categoria_id: "", tasa_porcentaje: "", descuento_porcentaje: 0 };
 
     setPreInvoice((prev) => {
       const updated = {
@@ -619,6 +633,7 @@ const processRowUpdate = (newRow, oldRow) => {
                       processRowUpdate={processRowUpdate}
                       columnVisibilityModel={{
                         id: false, // oculta la columna "id"
+                        nueva_linea: false, // oculta la columna "nueva_linea"
                         iva_categoria_id: false, // oculta la columna "iva_categoria_id"
                       }}
                       rowHeight={30}

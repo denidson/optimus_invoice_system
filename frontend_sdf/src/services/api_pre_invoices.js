@@ -10,7 +10,7 @@ export const getPreInvoices = async () => {
       if (rol == 'admin'){
         response = await api.get('/admin/pre-invoices');
       }else{
-        response = await api.get(`/pre-invoices`);
+        response = await api.get(`/api/pre-invoices/`);
       }
       return response.data; // Devuelve los datos de los pre-facturas
     }
@@ -31,7 +31,7 @@ export const showPreInvoice = async (id) => {
         response = await api.get(`/admin/pre-invoices/${id}`);
         //response = await api.get(`/pre-invoices/${id}`);
       }else{
-        response = await api.get(`/pre-invoices/${id}`);
+        response = await api.get(`/api/pre-invoices/${id}`);
       }
       return response.data;
     }
@@ -56,8 +56,31 @@ export const convertInInvoice = async (body) => {
 // Editar un pre-facturas
 export const editPreInvoice = async (id, body) => {
   try {
-    const response = await api.put(`/pre-invoices/${id}/`, body);
-    return response.data;
+    const authData = localStorage.getItem("authData");
+    if (authData) {
+      const { rol } = JSON.parse(authData);
+      var response;
+      var response_i;
+      if (rol == 'admin'){
+        response = await api.get(`/admin/pre-invoices/${id}`);
+        //response = await api.get(`/pre-invoices/${id}`);
+      }else{
+        var items = body.items;
+        console.log('body: ', body);
+        console.log('items: ', items);
+        delete body.items;
+        response = await api.put(`/api/pre-invoices/${id}`, body);
+        for (var i = 0; i < items.length; i++){
+          if (items[i].nueva_linea == true){
+            delete items[i].id;
+          }
+        }
+        console.log('items(F): ', items);
+        response_i = await api.put(`/api/pre-invoices/${id}/items:bulk_upsert`, items);
+        console.log('response_i: ', response_i);
+      }
+      return response.data;
+    }
   } catch (error) {
     console.error("Error al editar el pre-facturas:", error);
     throw error;
