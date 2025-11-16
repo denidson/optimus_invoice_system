@@ -17,7 +17,6 @@ export default function Profile() {
 
   useEffect(() => {
     if (!user?.cliente_id) return;
-    console.log(user)
     const fetchData = async () => {
       try {
         const data = await showProfileClient(user.cliente_id);
