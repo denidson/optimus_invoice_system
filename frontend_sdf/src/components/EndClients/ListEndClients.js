@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { useNavigate } from "react-router-dom";
-import { getEndClients, deleteEndClients, showEndClients, createEndClients } from '../../services/api_end_clients';
+import { getEndClients, deleteEndClient, showEndClient, createEndClient } from '../../services/api_end_clients';
 import { AuthContext } from "../../context/AuthContext";
 import { getTypeTaxpayer } from "../../services/api_type_taxpayer";
 import { encryptText } from '../../services/api';
@@ -101,7 +101,9 @@ function ListEndClients() {
 
   const handleOpenModalClients = async (id) => {
     try {
+      console.log('handleOpenModalClients-id: ', id);
       const data = await showEndClient(id);
+      console.log('handleOpenModalClients-data: ', data);
       setClientIdToDeactivate(data);
       setModalOpenClients(true);
     } catch {
