@@ -1,7 +1,7 @@
 {
   "name": "frontend-sfd",
   "version": "1.0.0",
-  "proxy": "http://95.215.204.79:51500",
+  "proxy": "https://optimusinvoice.ddns.net/",
   "private": true,
   "dependencies": {
     "@emotion/react": "^11.14.0",

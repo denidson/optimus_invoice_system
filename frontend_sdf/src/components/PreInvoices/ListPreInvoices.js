@@ -33,6 +33,7 @@ function ListPreInvoices() {
   const [modalOpenInInvoices, setModalOpenInInvoices] = useState(false); // Estado para manejar la visibilidad de la modal
   const [preInvoicesIdToDeactivate, setPreInvoicesIdToDeactivate] = useState(null); // Estado para almacenar el ID de la pre-factura a eliminar
   const [preInvoicesIdInInvoices, setPreInvoicesIdInInvoices] = useState(null); // Estado para almacenar el ID de la pre-factura a Facturar
+  const [filterType, setFilterType] = useState("");
   const authData = localStorage.getItem("authData");
   var rol;
   if (authData) {
@@ -49,7 +50,7 @@ function ListPreInvoices() {
       redirectToEdit(id);
     });
 
-    // Click Convertir en factura
+    // Click convertir en factura
     $("#ListPreInvoicesDt tbody").on("click", "button.btn-invoice", function () {
       const id = $(this).data("id");
       const correlativo_interno = $(this).data("correlativo_interno");
@@ -70,13 +71,30 @@ function ListPreInvoices() {
       handleOpenModalPreinvoices(id, nombre);
     });
 
+    // === FILTRO LOCAL DEL BUSCADOR SIN AJAX ===
+    $("#ListPreInvoicesDt_filter input")
+      .off()
+      .on("input", function () {
+        // Desactivar serverSide mientras se filtra
+        table.settings()[0].oFeatures.bServerSide = false;
+
+        // Búsqueda local
+        table.search(this.value).draw();
+
+        // Reactivar serverSide después de 300ms
+        clearTimeout(window.restoreServerSideTimeout);
+        window.restoreServerSideTimeout = setTimeout(() => {
+          table.settings()[0].oFeatures.bServerSide = true;
+        }, 300);
+      });
+
     return () => {
-      // limpiar eventos para evitar duplicados
       $("#ListPreInvoicesDt tbody").off("click", "button.btn-edit");
       $("#ListPreInvoicesDt tbody").off("click", "button.btn-delete");
       $("#ListPreInvoicesDt tbody").off("click", "button.btn-view");
     };
-  }, []); // Se ejecuta solo una vez al montar el componente
+  }, []);
+ // Se ejecuta solo una vez al montar el componente
 
   const redirectToEdit = (id) => {
     const hash = encryptText(id.toString());
@@ -85,6 +103,10 @@ function ListPreInvoices() {
 
   const redirectToCreate = () => {
     navigate(`/preinvoices/create`);
+  };
+
+  const actionSearch = () => {
+    $("#ListPreInvoicesDt").DataTable().ajax.reload();
   };
 
   const handleAction = async (id) => {
@@ -252,6 +274,39 @@ function ListPreInvoices() {
 
             {/* DataTable */}
             <div className="block w-full overflow-x-auto px-4 py-4">
+              <div className="flex space-x-2 mb-3">
+                <h3 class="text-blueGray-700 font-bold me-3">Buscar por:</h3><br/>
+                {/* SELECT PRINCIPAL */}
+                <select id="filter_type" className="border p-2 rounded" value={filterType} onChange={(e) => setFilterType(e.target.value)}>
+                  <option value=""> - </option>
+                  <option value="estatus">Estado</option>
+                  <option value="zona">Zona</option>
+                  <option value="correlativo_interno">Correlativo Interno</option>
+                  <option value="cliente_final_rif">RIF del cliente</option>
+                  <option value="rango_fecha">Rango de fecha</option>
+                </select>
+                {filterType === "estatus" && (
+                  <select id="filtro_estatus" className="border p-2 rounded">
+                    <option value="">Todos</option>
+                    <option value="borrador">Borrador</option>
+                    <option value="facturada">Facturada</option>
+                  </select>
+                )}
+                {(filterType === "zona" || filterType === "correlativo_interno" || filterType === "cliente_final_rif") && (
+                  <input id="filtro_text" className="border p-2 rounded" placeholder="Buscar..."/>
+                )}
+                {filterType === "rango_fecha" && (
+                  <>
+                    <input id="filtro_desde" type="date" className="border p-2 rounded" />
+                    <input id="filtro_hasta" type="date" className="border p-2 rounded" />
+                  </>
+                )}
+                <button
+                  className="bg-slate-700 hover:bg-slate-600 text-white font-bold py-2 px-4 rounded"
+                  onClick={actionSearch}>
+                  Buscar
+                </button>
+              </div>
               <DataTable
                 id="ListPreInvoicesDt"
                 className="table-auto w-full text-left"
@@ -386,7 +441,7 @@ function ListPreInvoices() {
                     title: "Estado",
                     data: "estatus",
                     orderable: true,
-                    searchable: false,
+                    searchable: true,
                     render: (data, type, row) => {
                       return data ? data.toUpperCase():'';
                     }
@@ -425,29 +480,66 @@ function ListPreInvoices() {
                     "<'row'<'col-sm-6 text-end'l><'col-sm-6'f>>" +    // Fila 1: lengthMenu izquierda, filtro derecha
                     "<'row'<'col-sm-12'tr>>" +               // Fila 3: tabla
                     "<'row'<'col-sm-5 text-start'i><'col-sm-7 text-end'p>>",     // Fila 4: info izquierda, paginación derecha
-                  serverSide: false, // si es true la paginación se debe controlar a traves del servidor
+                  serverSide: true, // si es true la paginación se debe controlar a traves del servidor
                   processing: true,
                   ajax: async (dataTablesParams, callback) => {
                     try {
-                      const response = await getPreInvoices();
+
+                      // DataTables usa start y length, los convertimos a page y per_page
+                      const page = Math.floor(dataTablesParams.start / dataTablesParams.length) + 1;
+                      const per_page = dataTablesParams.length;
+                      const query = {
+                        page,
+                        per_page
+                      };
+
+                      // Añadir filtros según filtro activo
+                      if ($('#filter_type option:selected').val() === "estatus" && $('#filtro_estatus option:selected').val()) query.estatus = $('#filtro_estatus option:selected').val();
+
+                      if ($('#filter_type option:selected').val() === "zona" && $("#filtro_text").val()) query.zona = $("#filtro_text").val();
+
+                      if ($('#filter_type option:selected').val() === "correlativo_interno" && $("#filtro_text").val())
+                        query.correlativo_interno = $("#filtro_text").val();
+
+                      if ($('#filter_type option:selected').val() === "cliente_final_rif" && $("#filtro_text").val())
+                        query.cliente_final_rif = $("#filtro_text").val();
+
+                      if ($('#filter_type option:selected').val() === "rango_fecha" && $('#filtro_desde').val() && $('#filtro_hasta').val()) {
+                        query.desde = $('#filtro_desde').val();
+                        query.hasta = $('#filtro_hasta').val();
+                      }
+
+                      // Pasamos los filtros al servicio
+                      const response = await getPreInvoices(query);
+
+                      // Aseguramos que la estructura esperada esté presente
+                      const { data, total } = response;
+
+                      // Retornamos a DataTables con la estructura esperada
                       callback({
                         draw: dataTablesParams.draw,
-                        recordsTotal: response.length,
-                        recordsFiltered: response.length,
-                        data: response
+                        recordsTotal: total,
+                        recordsFiltered: total,
+                        data: data,
                       });
                     } catch (err) {
-                      console.error(err);
+                      console.error("Error cargando Pre-Factura:", err);
+                      callback({
+                        draw: dataTablesParams.draw,
+                        recordsTotal: 0,
+                        recordsFiltered: 0,
+                        data: [],
+                      });
                     }
                   },
                   paging: true,
-                  searching: true,
+                  searching: false,
                   ordering: true,
                   info: true,
                   scrollx: true,
                   responsive: true,
-                  pageLength: 10,         // cantidad inicial por página
-                  lengthMenu: [5, 10, 25, 50, 100], // opciones en el desplegable, false para oculta el selector
+                  pageLength: 20,         // cantidad inicial por página
+                  lengthMenu: [20, 50, 100], // opciones en el desplegable, false para oculta el selector
                   //dom: "Blfrtip",
                   buttons: [
                     {
@@ -479,6 +571,86 @@ function ListPreInvoices() {
                       extend: "print",
                       text: "Imprimir",
                       title: "Lista de Pre-Facturas"
+                    },
+                    {
+                      text: "Exportar todo (Excel)",
+                      action: async function (e, dt, node, config) {
+                        const exportButton = node;
+                        try {
+                          const allData = [];
+                          let page = 1;
+                          let totalPages = 1;
+
+                          // Mostrar mensaje de progreso
+                          $(exportButton).text("Cargando...").prop("disabled", true).attr("style", "pointer-events: none;");
+                          const query = {
+                            page,
+                            per_page
+                          };
+
+                          // Añadir filtros según filtro activo
+                          if ($('#filter_type option:selected').val() === "estatus" && $('#filtro_estatus option:selected').val()) query.estatus = $('#filtro_estatus option:selected').val();
+
+                          if ($('#filter_type option:selected').val() === "zona" && $("#filtro_text").val()) query.zona = $("#filtro_text").val();
+
+                          if ($('#filter_type option:selected').val() === "correlativo_interno" && $("#filtro_text").val())
+                            query.correlativo_interno = $("#filtro_text").val();
+
+                          if ($('#filter_type option:selected').val() === "cliente_final_rif" && $("#filtro_text").val())
+                            query.cliente_final_rif = $("#filtro_text").val();
+
+                          if ($('#filter_type option:selected').val() === "rango_fecha" && $('#filtro_desde').val() && $('#filtro_hasta').val()) {
+                            query.desde = $('#filtro_desde').val();
+                            query.hasta = $('#filtro_hasta').val();
+                          }
+                          // Cargar todas las páginas hasta completar total_pages
+                          do {
+                            query.page = page;
+                            query.per_page = 100;
+                            const response = await getPreInvoices(query);
+                            const { data, total_pages } = response;
+
+                            allData.push(...data);
+                            totalPages = total_pages;
+                            page++;
+                          } while (page <= totalPages);
+
+                          // Convertimos a Excel con xlsx
+                          const wb = utils.book_new();
+                          const ws = utils.json_to_sheet(allData.map(item => ({
+                            Fecha: item.timestamp.replace("T", " ").slice(0, 19),
+                            Servicio: item.endpoint,
+                            Acción:
+                              item.method === "GET"
+                                ? "CONSULTA"
+                                : item.method === "POST"
+                                ? (item.endpoint === "/api/login" ? "INICIO DE SESIÓN" : "CREACIÓN")
+                                : item.method === "PUT"
+                                ? "ACTUALIZACIÓN"
+                                : "DESACTIVACIÓN/ACTIVACIÓN",
+                            Origen: item.request_ip,
+                            Respuesta: item.response_status_code,
+                            "Duración (ms)": item.duration_ms,
+                            Usuario: item.usuario?.email || "",
+                          })));
+
+                          utils.book_append_sheet(wb, ws, "Auditoría");
+
+                          const wbout = XLSX.write(wb, { bookType: "xlsx", type: "array" });
+                          const blob = new Blob([wbout], { type: "application/octet-stream" });
+                          const link = document.createElement("a");
+                          link.href = URL.createObjectURL(blob);
+                          link.download = "Pre-Facturas.xlsx";
+                          link.click();
+
+                          $(exportButton).text("Exportar todo (Excel)").prop("disabled", false).attr("style", "pointer-events: auto;");;
+                          toast.success("Archivo exportado correctamente.");
+                        } catch (error) {
+                          $(exportButton).text("Exportar todo (Excel)").prop("disabled", false).attr("style", "pointer-events: auto;");;
+                          console.error("Error al exportar:", error);
+                          toast.error("Error al exportar los datos.");
+                        }
+                      }
                     }
                   ],
                   language: {

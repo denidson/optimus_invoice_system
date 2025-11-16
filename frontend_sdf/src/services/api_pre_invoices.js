@@ -1,19 +1,52 @@
 import api from "./axiosConfig"; // Importa la configuración centralizada de axios
 
 // Obtener todos los pre-facturas
-export const getPreInvoices = async () => {
+export const getPreInvoices = async (params = {}) => {
   try {
     const authData = localStorage.getItem("authData");
-    if (authData) {
+    const {
+      page = 1,
+      per_page = 20,
+      estatus,
+      zona,
+      correlativo_interno,
+      cliente_final_rif,
+      desde,
+      hasta,
+    } = params;
+
+    if (!authData) return;
+
+    const { rol } = JSON.parse(authData);
+
+    const endpoint = rol === 'admin'
+      ? '/admin/pre-invoices'
+      : '/api/pre-invoices';
+
+    const query = new URLSearchParams({
+      page,
+      per_page,
+      ...(estatus && { estatus }),
+      ...(zona && { zona }),
+      ...(correlativo_interno && { correlativo_interno }),
+      ...(cliente_final_rif && { cliente_final_rif }),
+      ...(desde && { desde }),
+      ...(hasta && { hasta }),
+    });
+    console.log('params: ', params);
+    console.log('query: ', query);
+    const response = await api.get(`${endpoint}?${query.toString()}`);
+    return response.data; // {data, total, total_pages}
+    /*if (authData) {
       const { rol } = JSON.parse(authData);
       var response;
       if (rol == 'admin'){
-        response = await api.get('/admin/pre-invoices');
+        response = await api.get(`/admin/pre-invoices?page=${page}&per_page=${per_page}`);
       }else{
-        response = await api.get(`/api/pre-invoices/`);
+        response = await api.get(`/api/pre-invoices?page=${page}&per_page=${per_page}`);
       }
-      return response.data; // Devuelve los datos de los pre-facturas
-    }
+      return response.data.data; // Devuelve los datos de los pre-facturas
+    }*/
   } catch (error) {
     console.error("Error al obtener las pre-facturas:", error);
     throw error;

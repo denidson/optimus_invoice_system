@@ -13,7 +13,7 @@ export const getInvoices = async () => {
       }else{
         response = await api.get('/api/invoices/');
       }
-      return response.data; // Devuelve los datos de los pre-facturas
+      return response.data.data; // Devuelve los datos de los pre-facturas
     }
   } catch (error) {
     console.error("Error al obtener las pre-facturas:", error);
