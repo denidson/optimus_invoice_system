@@ -96,12 +96,3 @@ export const activateClient = async (id) => {
   }
 };
 
-export const showProfileClient = async (id) => {
-  try {
-    const response = await api.get(`/api/clients/${id}`);
-    return response.data;
-  } catch (error) {
-    console.error("Error al consultar el cliente:", error);
-    throw error;
-  }
-};
