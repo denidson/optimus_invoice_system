@@ -97,6 +97,12 @@ export default function Sidebar() {
           roles: ["admin", "operador"]
         },
         {
+          to: "/withholdings",
+          icon: "fas fa-percent",
+          label: "Retenciones",
+          roles: ["admin", "operador"]
+        },
+        {
           to: "/auditlogs",
           icon: "fa-solid fa-list-ul",
           label: "Registro de auditoria",

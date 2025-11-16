@@ -43,3 +43,13 @@ export const showAuditLogs = async (id) => {
     throw error;
   }
 };
+
+export const getWithholdings = async () => {
+  try {
+    const response = await api.get("/api/config/retenciones");
+    return response.data; // Retorna los datos directamente
+  } catch (error) {
+    console.error("Error fetching retenciones:", error);
+    throw error; // Lanzamos el error para que el componente lo maneje
+  }
+};

@@ -16,6 +16,7 @@ import Dashboard from "./pages/Dashboard";
 import Profile from "./pages/Profile";
 import ListInvoices from "./pages/Invoices/ListInvoices";
 import ListAuditLogs from "./pages/Config/ListAuditLogs";
+import ListWithholdings from "./pages/Config/ListWithholdings";
 // import Invoices from "./pages/Invoices";
 // import InvoiceForm from "./pages/InvoiceForm";
 import PrivateRoute from "./components/PrivateRoute";
@@ -162,7 +163,16 @@ function App() {
               </PrivateRoute>
             }
           />
-
+          <Route
+            path="/withholdings"
+            element={
+              <PrivateRoute>
+                <RoleRoute roles={["admin","operador"]}>
+                  <ListWithholdings />
+                </RoleRoute>
+              </PrivateRoute>
+            }
+          />
           {/* Facturación (todos los roles autenticados) */}
           <Route
             path="/invoices"
