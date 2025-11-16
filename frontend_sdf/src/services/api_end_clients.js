@@ -1,37 +1,37 @@
 import api from "./axiosConfig"; // Importa la configuración centralizada de axios
 
 // Obtener todos los clientes
-export const getClients = async () => {
+export const getEndClients = async () => {
   try {
     const authData = localStorage.getItem("authData");
     if (authData) {
       const { rol } = JSON.parse(authData);
       var response;
-      if (rol == 'admin'){
-        response = await api.get('/admin/clients');
-      }else{
-        response = await api.get('/api/clients/');
-      }
+      //if (rol == 'admin'){
+        //response = await api.get('/admin/clients');
+      //}else{
+      response = await api.get('/api/final-clients/');
+      //}
       return response.data.data;
     }
   } catch (error) {
-    console.error("Error al obtener los clientes:", error);
+    console.error("Error al obtener los final-clients:", error);
     throw error;
   }
 };
 
 // Consultar un cliente por ID
-export const showClient = async (id) => {
+export const showEndClient = async (id) => {
   try {
     const authData = localStorage.getItem("authData");
     if (authData) {
       const { rol } = JSON.parse(authData);
       var response;
-      if (rol == 'admin'){
+      /*if (rol == 'admin'){
         response = await api.get(`/admin/clients/${id}`);
-      }else{
-        response = await api.get(`/api/clients/${id}`);
-      }
+      }else{*/
+      response = await api.get(`/api/final-clients/${id}`);
+      //}
       return response.data;
     }
   } catch (error) {
@@ -41,17 +41,17 @@ export const showClient = async (id) => {
 };
 
 // Editar un cliente
-export const editClient = async (id, body) => {
+export const editEndClient = async (id, body) => {
   try {
     const authData = localStorage.getItem("authData");
     if (authData) {
       const { rol } = JSON.parse(authData);
       var response;
-      if (rol == 'admin'){
+      /*if (rol == 'admin'){
         response = await api.put(`/admin/clients/${id}`, body);
-      }else{
-        response = await api.put(`/api/clients/${id}`, body);
-      }
+      }else{*/
+      response = await api.put(`/api/final-clients/${id}`, body);
+      //}
       return response.data;
     }
   } catch (error) {
@@ -61,10 +61,10 @@ export const editClient = async (id, body) => {
 };
 
 // Crear un cliente
-export const createClient = async (body) => {
+export const createEndClient = async (body) => {
   try {
-    const response = await api.post(`/api/clients`, body);
-    console.log('createClient-response: ', response);
+    const response = await api.post(`/api/final-clients/`, body);
+    console.log('createEndClient-response: ', response);
     return response.data;
   } catch (error) {
     console.error("Error al crear el cliente:", error);
@@ -73,10 +73,10 @@ export const createClient = async (body) => {
 };
 
 // Desactivar un cliente
-export const deleteClient = async (id) => {
+export const deleteEndClient = async (id) => {
   try {
-    const response = await api.delete(`/api/clients/${id}`);
-    console.log('deleteClient-response: ', response);
+    const response = await api.delete(`/api/final-clients/${id}`);
+    console.log('deleteEndClient-response: ', response);
     return response.data;
   } catch (error) {
     console.error("Error al eliminar el cliente:", error);
@@ -85,13 +85,13 @@ export const deleteClient = async (id) => {
 };
 
 // Activar un cliente
-export const activateClient = async (id) => {
+export const searchEndClient = async (rif) => {
   try {
-    const response = await api.put(`/api/clients/${id}/activar`);
-    console.log('deleteClient-response: ', response);
+    const response = await api.put(`/api/final-clients/?rif=${rif}`);
+    console.log('searchEndClient-response: ', response);
     return response.data;
   } catch (error) {
-    console.error("Error al eliminar el cliente:", error);
+    console.error("Error al consultar el cliente:", error);
     throw error;
   }
 };

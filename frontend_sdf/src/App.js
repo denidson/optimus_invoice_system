@@ -6,6 +6,8 @@ import Login from "./pages/Login";
 import Signup from "./pages/Signup";
 import ListClients from "./pages/Clients/ListClients";
 import FormClients from "./pages/Clients/FormClients";
+import ListEndClients from "./pages/EndClients/ListEndClients";
+import FormEndClients from "./pages/EndClients/FormEndClients";
 import ListPreInvoices from "./pages/PreInvoices/ListPreInvoices";
 import FormPreInvoices from "./pages/PreInvoices/FormPreInvoices";
 import ListProducts from "./pages/Products/ListProducts";
@@ -106,6 +108,38 @@ function App() {
               <PrivateRoute>
                 <RoleRoute roles={["admin"]}>
                   <FormClients />
+                </RoleRoute>
+              </PrivateRoute>
+            }
+          />
+
+        {/* Clientes (solo operador) */}
+          <Route
+            path="/endClients"
+            element={
+              <PrivateRoute>
+                <RoleRoute roles={["operador_admin"]}>
+                  <ListEndClients />
+                </RoleRoute>
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/endClients/edit"
+            element={
+              <PrivateRoute>
+                <RoleRoute roles={["operador_admin"]}>
+                  <FormEndClients />
+                </RoleRoute>
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/endClients/create"
+            element={
+              <PrivateRoute>
+                <RoleRoute roles={["operador_admin"]}>
+                  <FormEndClients />
                 </RoleRoute>
               </PrivateRoute>
             }
