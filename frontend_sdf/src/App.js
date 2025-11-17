@@ -118,7 +118,7 @@ function App() {
             path="/endClients"
             element={
               <PrivateRoute>
-                <RoleRoute roles={["operador_admin"]}>
+                <RoleRoute roles={["operador_admin", "operador"]}>
                   <ListEndClients />
                 </RoleRoute>
               </PrivateRoute>
@@ -128,7 +128,7 @@ function App() {
             path="/endClients/edit"
             element={
               <PrivateRoute>
-                <RoleRoute roles={["operador_admin"]}>
+                <RoleRoute roles={["operador_admin", "operador"]}>
                   <FormEndClients />
                 </RoleRoute>
               </PrivateRoute>
@@ -138,7 +138,7 @@ function App() {
             path="/endClients/create"
             element={
               <PrivateRoute>
-                <RoleRoute roles={["operador_admin"]}>
+                <RoleRoute roles={["operador_admin", "operador"]}>
                   <FormEndClients />
                 </RoleRoute>
               </PrivateRoute>
@@ -150,7 +150,7 @@ function App() {
             path="/products"
             element={
               <PrivateRoute>
-                <RoleRoute roles={["operador_admin"]}>
+                <RoleRoute roles={["operador_admin", "operador"]}>
                   <ListProducts />
                 </RoleRoute>
               </PrivateRoute>
@@ -160,7 +160,7 @@ function App() {
             path="/products/edit"
             element={
               <PrivateRoute>
-                <RoleRoute roles={["operador_admin"]}>
+                <RoleRoute roles={["operador_admin", "operador"]}>
                   <FormProducts />
                 </RoleRoute>
               </PrivateRoute>
@@ -170,7 +170,7 @@ function App() {
             path="/products/create"
             element={
               <PrivateRoute>
-                <RoleRoute roles={["operador_admin"]}>
+                <RoleRoute roles={["operador_admin", "operador"]}>
                   <FormProducts />
                 </RoleRoute>
               </PrivateRoute>

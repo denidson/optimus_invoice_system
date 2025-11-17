@@ -67,7 +67,7 @@ function ListEndClients() {
     navigate(`/endclients/edit?id=${encodeURIComponent(hash)}`);
   };
 
-  const redirectToCreate = () => navigate(`/clients/create`);
+  const redirectToCreate = () => navigate(`/endClients/create`);
 
   const handleAction = async (id, action) => {
     try {

@@ -26,11 +26,11 @@ function FormEndClients() {
     const fetchClient = async () => {
       try {
         const datattp = await getTypeTaxpayer();
-        console.log('datattp: ', datattp);
+        //console.log('datattp: ', datattp);
         setTypeTaxpayer(datattp);
         if (clientId != null){
           const data = await showEndClient(decryptText(clientId)); // Llamamos a showClient con el ID
-          console.log('data: ', data);
+          //console.log('data: ', data);
           setClient(data); // Guardamos los datos del client en el estado
         }else{
           setClient({
@@ -40,6 +40,7 @@ function FormEndClients() {
             telefono: "",
             email: "",
             direccion: "",
+            activo: true,
             //tipo_contribuyente_id: 1,
           })
         }
@@ -66,9 +67,10 @@ function FormEndClients() {
       if (client.id == '#'){
         delete client.id;
         console.log("Client(F): ", client);
-        var clientList = [client];
-        console.log("clientList(F): ", clientList);
-        data = await createEndClient(clientList); // Llamamos a createClient con el ID
+        data = await createEndClient(client);
+        //var clientList = [client];
+        //console.log("clientList(F): ", clientList);
+        //data = await createEndClient(clientList); // Llamamos a createClient con el ID
         //console.log("Client(F)-data: ", data);
         message = '!Creación de cliente realizada correctamente!';
       }else{
@@ -135,8 +137,42 @@ function FormEndClients() {
                       <input
                         type="text"
                         className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
-                        value={client.rif}
-                        onChange={(e) => setClient({ ...client, rif: e.target.value })}
+                        value={client.rif} placeholder="V-12345678-9" onChange={(e) => {
+                          let value = e.target.value.toUpperCase();
+
+                          // Elimina caracteres no válidos (solo letras, números y guiones)
+                          value = value.replace(/[^A-Z0-9-]/g, "");
+
+                          // Forzar el patrón paso a paso
+                          if (value.length === 1) {
+                            // Primera posición → solo letras válidas
+                            if (!/[VJEPG123456789]/.test(value)) value = "";
+                          } else if (value.length === 2) {
+                              // Solo agregar guion si comienza con letra válida
+                              if (/[VJEPG]/.test(value[0]) && !value.includes("-")) {
+                                value = value[0] + "-" + value[1];
+                              }
+                            } else if (value.length > 2) {
+                            // Nuevo: permitir solo números (hasta 8)
+                            const matchSoloNumeros = value.match(/^\d{0,8}$/);
+
+                            if (matchSoloNumeros) {
+                              value = matchSoloNumeros[0];
+                            } else {
+                              // Caso RIF tradicional
+                              const match = value.match(/^([VJEPG])-(\d{0,8})-?(\d{0,1})?$/);
+
+                              if (match) {
+                                const [, letra, numeros, verificador] = match;
+                                value = `${letra}-${numeros}${numeros.length === 8 ? "-" : ""}${verificador || ""}`;
+                              } else {
+                                value = client.rif;
+                              }
+                            }
+                          }
+
+                          setClient({ ...client, rif: value });
+                        }}
                       />
                     </div>
                   </div>
@@ -147,7 +183,7 @@ function FormEndClients() {
                         type="text"
                         className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
                         value={client.nombre}
-                        onChange={(e) => setClient({ ...client, nombre: e.target.value })}
+                        onChange={(e) => setClient({ ...client, nombre: e.target.value.toUpperCase() })}
                       />
                       </div>
                   </div>
@@ -169,7 +205,7 @@ function FormEndClients() {
                         type="text"
                         className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
                         value={client.email}
-                        onChange={(e) => setClient({ ...client, email: e.target.value })}
+                        onChange={(e) => setClient({ ...client, email: e.target.value.toUpperCase() })}
                       />
                     </div>
                   </div>
@@ -198,7 +234,7 @@ function FormEndClients() {
                         type="text"
                         className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
                         value={client.direccion}
-                        onChange={(e) => setClient({ ...client, direccion: e.target.value })}
+                        onChange={(e) => setClient({ ...client, direccion: e.target.value.toUpperCase() })}
                       />
                     </div>
                   </div>

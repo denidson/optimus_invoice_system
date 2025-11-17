@@ -42,8 +42,8 @@ export default function Sidebar() {
       heading: "Configuración",
       links: [
         { to: "/clients", icon: "fas fa-users", label: "Clientes", roles: ["admin"] },
-        { to: "/endClients", icon: "fas fa-users", label: "Clientes", roles: ["operador_admin"] },
-        { to: "/products", icon: "fas fa-cubes", label: "Productos y Servicios", roles: ["admin", "operador_admin"] },
+        { to: "/endClients", icon: "fas fa-users", label: "Clientes", roles: ["operador_admin", "operador"] },
+        { to: "/products", icon: "fas fa-cubes", label: "Productos y Servicios", roles: ["admin", "operador_admin", "operador"] },
         { to: "/taxpayer", icon: "fas fa-tags", label: "Tipos de Contribuyentes", roles: ["admin", "operador_admin"] },
         { to: "/taxes", icon: "fas fa-percent", label: "Impuestos", roles: ["admin", "operador_admin"] },
         { to: "/withholdings", icon: "fas fa-percent", label: "Retenciones", roles: ["admin", "operador_admin"] },

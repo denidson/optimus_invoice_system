@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo, useRef } from "react";
 import { useParams } from "react-router-dom";
 import { getPreInvoices, showPreInvoice, createPreInvoice, editPreInvoice } from '../../services/api_pre_invoices'; // Importa el servicio
 import { getProducts, showProduct, createProduct } from '../../services/apiProducts'; // Importa el servicio
+import { getEndClients, showEndClient, createEndClient } from '../../services/api_end_clients'; // Importa el servicio
 import { useNavigate } from "react-router-dom"; // Para la redirección
 import { decryptText } from '../../services/api'; // Importa el servicio para encriptar/desencriptar parametros
 import { useLocation } from "react-router-dom"; // Para la obtener el parametro de la url
@@ -67,6 +68,7 @@ function ProductoEditCell({ params, products }) {
 function FormPreInvoices() {
   const navigate = useNavigate(); // Hook para redirección
   const [products, setProducts] = useState(null);
+  const [endClients, setEndClients] = useState(null);
   // Obtener los query parameters con `useLocation`
   const location = useLocation();
   const queryParams = new URLSearchParams(location.search);
@@ -220,6 +222,8 @@ function FormPreInvoices() {
       try {
         const datapts = await getProducts();
         setProducts(datapts);
+        const datacls = await getEndClients();
+        setEndClients(datacls);
         if (preInvoiceId != null){
           const data = await showPreInvoice(decryptText(preInvoiceId)); // Llamamos a showPreInvoice con el ID
           if (data.igtf_monto > 0){

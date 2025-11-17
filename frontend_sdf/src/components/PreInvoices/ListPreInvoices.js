@@ -299,7 +299,7 @@ function ListPreInvoices() {
               <h6 className="text-blueGray-700 text-xl font-bold">
                 Lista de Pre-Facturas
               </h6>
-              {rol === "operador" && (
+              {rol != "admin" && (
                 <div className="flex items-center space-x-3">
                   <button
                     className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded"

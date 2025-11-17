@@ -138,8 +138,33 @@ function FormClients() {
                       <input
                         type="text"
                         className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
-                        value={client.rif}
-                        onChange={(e) => setClient({ ...client, rif: e.target.value })}
+                        value={client.rif} placeholder="V-12345678-9" onChange={(e) => {
+                          let value = e.target.value.toUpperCase();
+
+                          // Elimina caracteres no válidos (solo letras, números y guiones)
+                          value = value.replace(/[^A-Z0-9-]/g, "");
+
+                          // Forzar el patrón paso a paso
+                          if (value.length === 1) {
+                            // Primera posición → solo letras válidas
+                            if (!/[VJEPG]/.test(value)) value = "";
+                          } else if (value.length === 2) {
+                            // Después de la letra → añadir guion automáticamente
+                            if (!value.includes("-")) value = value[0] + "-" + value[1];
+                          } else if (value.length > 2) {
+                            // Asegurar que los 8 números estén bien colocados
+                            const match = value.match(/^([VJEPG])-(\d{0,8})-?(\d{0,1})?$/);
+                            if (match) {
+                              const [, letra, numeros, verificador] = match;
+                              value = `${letra}-${numeros}${numeros.length === 8 ? "-" : ""}${verificador || ""}`;
+                            } else {
+                              // Si el formato se sale de control, lo limpiamos
+                              value = client.rif;
+                            }
+                          }
+
+                          setClient({ ...client, rif: value });
+                        }}
                       />
                     </div>
                   </div>
@@ -150,7 +175,7 @@ function FormClients() {
                         type="text"
                         className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
                         value={client.nombre_empresa}
-                        onChange={(e) => setClient({ ...client, nombre_empresa: e.target.value })}
+                        onChange={(e) => setClient({ ...client, nombre_empresa: e.target.value.toUpperCase() })}
                       />
                       </div>
                   </div>
@@ -172,7 +197,7 @@ function FormClients() {
                         type="text"
                         className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
                         value={client.email}
-                        onChange={(e) => setClient({ ...client, email: e.target.value })}
+                        onChange={(e) => setClient({ ...client, email: e.target.value.toUpperCase() })}
                       />
                     </div>
                   </div>
@@ -201,7 +226,7 @@ function FormClients() {
                         type="text"
                         className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
                         value={client.direccion}
-                        onChange={(e) => setClient({ ...client, direccion: e.target.value })}
+                        onChange={(e) => setClient({ ...client, direccion: e.target.value.toUpperCase() })}
                       />
                     </div>
                   </div>
@@ -279,7 +304,7 @@ function FormClients() {
                         type="text"
                         className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
                         value={client.zona}
-                        onChange={(e) => setClient({ ...client, zona: e.target.value })}
+                        onChange={(e) => setClient({ ...client, zona: e.target.value.toUpperCase() })}
                       />
                     </div>
                   </div>
