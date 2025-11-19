@@ -103,6 +103,13 @@ function FormEndClients() {
     navigate(`/clients`);
   };
 
+  const reduceRif = (rif) => {
+    setClient((prev) => ({
+      ...prev,
+      rif: rif || '',
+    }));
+  };
+
   return (
     <div className="px-4 md:px-10 mx-auto w-full -m-24">
       <div className="flex flex-wrap">
@@ -172,6 +179,14 @@ function FormEndClients() {
                           }
 
                           setClient({ ...client, rif: value });
+                        }}
+                        onKeyDown={(e) => {
+                          // Si el usuario presiona Backspace
+                          if (e.key === "Backspace") {
+                            if (client.rif.substr(client.rif.length - 1, client.rif.length) == '-'){
+                              reduceRif(client.rif.substr(0, client.rif.length - 1));
+                            }
+                          }
                         }}
                       />
                     </div>

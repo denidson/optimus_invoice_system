@@ -274,16 +274,39 @@ function ListEndClients() {
                   },
                 ]}
                 options={{
-                  serverSide: false,
-                  ajax: async (params, callback) => {
-                    const response = await getEndClients();
-                    callback({
-                      data: response,
-                      recordsTotal: response.length,
-                      recordsFiltered: response.length,
-                    });
+                  serverSide: true, // <--- importante
+                  processing: true,
+                  ajax: async (dataTablesParams, callback) => {
+                    try {
+                      // DataTables usa start y length, los convertimos a page y per_page
+                      const page = Math.floor(dataTablesParams.start / dataTablesParams.length) + 1;
+                      const per_page = dataTablesParams.length;
+
+                      // Llamamos a tu servicio pasando los parámetros de paginación
+                      const response = await getEndClients({ page, per_page });
+
+                      // Aseguramos que la estructura esperada esté presente
+                      const { data, total } = response;
+
+                      // Retornamos a DataTables con la estructura esperada
+                      callback({
+                        draw: dataTablesParams.draw,
+                        recordsTotal: total,
+                        recordsFiltered: total,
+                        data: data,
+                      });
+                    } catch (err) {
+                      console.error("Error cargando auditorías:", err);
+                      callback({
+                        draw: dataTablesParams.draw,
+                        recordsTotal: 0,
+                        recordsFiltered: 0,
+                        data: [],
+                      });
+                    }
                   },
-                  pageLength: 10,
+                  pageLength: 20, // se sincroniza con per_page del backend
+                  lengthMenu: [20, 50, 100], //[10, 20, 50, 100]
                   language: {
                     lengthMenu: "Mostrar _MENU_ registros",
                     zeroRecords: "No se encontraron resultados",

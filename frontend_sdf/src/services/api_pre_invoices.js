@@ -33,8 +33,7 @@ export const getPreInvoices = async (params = {}) => {
       ...(desde && { desde }),
       ...(hasta && { hasta }),
     });
-    console.log('params: ', params);
-    console.log('query: ', query);
+
     const response = await api.get(`${endpoint}?${query.toString()}`);
     return response.data; // {data, total, total_pages}
     /*if (authData) {

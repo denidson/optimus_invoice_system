@@ -1,7 +1,7 @@
 import api from "./axiosConfig"; // Importa la configuración centralizada de axios
 
 // Obtener todos los clientes
-export const getEndClients = async () => {
+export const getEndClients = async ({ page = 1, per_page = 20, request_type=false } = {}) => {
   try {
     const authData = localStorage.getItem("authData");
     if (authData) {
@@ -10,15 +10,25 @@ export const getEndClients = async () => {
       //if (rol == 'admin'){
         //response = await api.get('/admin/clients');
       //}else{
-      response = await api.get('/api/final-clients/');
+      response = await api.get(`/api/final-clients/?page=${page}&per_page=${per_page}` + (request_type != false ? `?request_type=${request_type}` : ``));
       //}
-      return response.data.data;
+      return response.data;
     }
   } catch (error) {
     console.error("Error al obtener los final-clients:", error);
     throw error;
   }
 };
+
+export const getAuditLogs = async ({ page = 1, per_page = 20 } = {}) => {
+    try {
+      const response = await api.get(`/admin/logs?page=${page}&per_page=${per_page}`);
+      return response.data; // Retorna los datos directamente
+    } catch (error) {
+      console.error("Error fetching audit logs:", error);
+      throw error; // Lanzamos el error para que el componente lo maneje
+    }
+  };
 
 // Consultar un cliente por ID
 export const showEndClient = async (id) => {

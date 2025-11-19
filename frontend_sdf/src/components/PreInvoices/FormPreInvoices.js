@@ -69,6 +69,9 @@ function FormPreInvoices() {
   const navigate = useNavigate(); // Hook para redirección
   const [products, setProducts] = useState(null);
   const [endClients, setEndClients] = useState(null);
+  const [filterResults, setFilterResults] = useState([]);
+  const [showResults, setShowResults] = useState(false);
+
   // Obtener los query parameters con `useLocation`
   const location = useLocation();
   const queryParams = new URLSearchParams(location.search);
@@ -222,8 +225,8 @@ function FormPreInvoices() {
       try {
         const datapts = await getProducts();
         setProducts(datapts);
-        const datacls = await getEndClients();
-        setEndClients(datacls);
+        const datacls = await getEndClients({ page: 1, per_page: 20, request_type: 'export' });
+        setEndClients(datacls.data);
         if (preInvoiceId != null){
           const data = await showPreInvoice(decryptText(preInvoiceId)); // Llamamos a showPreInvoice con el ID
           if (data.igtf_monto > 0){
@@ -235,8 +238,12 @@ function FormPreInvoices() {
         }else{
           setPreInvoice({
             id: "#",
+            cliente_final_id: "",
             cliente_final_nombre: "",
             cliente_final_rif: "",
+            cliente_final_telefono: "",
+            cliente_final_email: "",
+            cliente_final_direccion: "",
             cliente_id: authclientId,
             items: [],
             correlativo_interno: "",
@@ -351,6 +358,9 @@ function FormPreInvoices() {
       var action;
       if (preInvoice.id == '#'){
         delete preInvoice.id;
+        if (preInvoice.cliente_final_id == '#'){
+          delete preInvoice.cliente_final_id;
+        }
         action = 'create';
         //preInvoice.total = totalAmount;
         console.log("preInvoice(F):", preInvoice);
@@ -365,7 +375,7 @@ function FormPreInvoices() {
       //setPreInvoice(data.resultados[0]); // Guardamos los datos del preInvoice en el estado
       // Mostrar una notificación de éxito
       console.log('editPreInvoice-status: ', data);
-      if (action == 'create' && data.resultados[0].status == 'creada'){
+      if (action == 'create' && data.resultados[0].status == 'prefactura_creada'){
         console.log('CreatePreInvoice-toast:==>');
         toast.success('Pre-Factura creada satisfactoriamente.', {
           onClose: () => {
@@ -470,6 +480,97 @@ const processRowUpdate = (newRow, oldRow) => {
   return updatedRow; // obligatorio retornar la fila actualizada
 };
 
+const handleSearchRif = (value) => {
+  console.log('handleSearchRif-value: ', value);
+  value = value.toUpperCase();
+
+  // Elimina caracteres no válidos (solo letras, números y guiones)
+  value = value.replace(/[^A-Z0-9-]/g, "");
+
+  // Forzar el patrón paso a paso
+  if (value.length === 1) {
+    // Primera posición → solo letras válidas
+    if (!/[VJEPG123456789]/.test(value)) value = "";
+  } else if (value.length === 2) {
+      // Solo agregar guion si comienza con letra válida
+      if (/[VJEPG]/.test(value[0]) && !value.includes("-")) {
+        value = value[0] + "-" + value[1];
+      }
+    } else if (value.length > 2) {
+    // Nuevo: permitir solo números (hasta 8)
+    const matchSoloNumeros = value.match(/^\d{0,8}$/);
+
+    if (matchSoloNumeros) {
+      value = matchSoloNumeros[0];
+    } else {
+      // Caso RIF tradicional
+      const match = value.match(/^([VJEPG])-(\d{0,8})-?(\d{0,1})?$/);
+
+      if (match) {
+        const [, letra, numeros, verificador] = match;
+        value = `${letra}-${numeros}${numeros.length === 8 ? "-" : ""}${verificador || ""}`;
+      } else {
+        value = preInvoice.cliente_final_rif;
+      }
+    }
+  }
+
+  // Actualiza el campo
+  setPreInvoice((prev) => ({ ...prev, cliente_final_rif: value }));
+
+  if (value.length < 2) {
+    setFilterResults([]);
+    setShowResults(false);
+    return;
+  }
+
+  const results = endClients.filter((c) =>
+    c.rif.toUpperCase().includes(value) ||
+    c.nombre.toUpperCase().includes(value)
+  );
+  console.log('handleSearchRif-results.length: ', results.length);
+  if (results.length == 0){
+    $('#div_none_endclients').attr('style', "width: 600px;");
+    $('.form-client-complement').addClass('mt-10');
+    setPreInvoice((prev) => ({
+    ...prev,
+      cliente_final_id: '#',
+      //cliente_final_rif: '',
+      cliente_final_nombre: '',
+      cliente_final_telefono: '',
+      cliente_final_email: '',
+      cliente_final_direccion: '',
+    }));
+  }else{
+    $('#div_none_endclients').removeAttr('style');
+    $('.form-client-complement').removeClass('mt-10');
+  }
+  setFilterResults(results);
+  setShowResults(true);
+};
+
+const selectClient = (client) => {
+  setPreInvoice((prev) => ({
+    ...prev,
+    cliente_final_id: client.id || '#',
+    cliente_final_rif: client.rif || '',
+    cliente_final_nombre: client.nombre || '',
+    cliente_final_telefono: client.telefono || '',
+    cliente_final_email: client.email || '',
+    cliente_final_direccion: client.direccion || '',
+  }));
+
+  setFilterResults([]);
+  setShowResults(false);
+};
+
+const reduceRif = (rif) => {
+  setPreInvoice((prev) => ({
+    ...prev,
+    cliente_final_rif: rif || '',
+  }));
+};
+
   return (
     <div className="px-4 md:px-10 mx-auto w-full -m-24">
       <div className="flex flex-wrap">
@@ -512,37 +613,103 @@ const processRowUpdate = (newRow, oldRow) => {
                   <div className="w-full lg:w-2/12 px-4">
                     <div className="relative w-full mb-3">
                       <label className="block text-blueGray-600 text-xs font-bold mb-2">RIF</label>
-                      <input type="text" maxLength={12} // V-12345678-9 → 12 caracteres
-                        className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
-                        value={preInvoice.cliente_final_rif} placeholder="V-12345678-9" onChange={(e) => {
-                          let value = e.target.value.toUpperCase();
-
-                          // Elimina caracteres no válidos (solo letras, números y guiones)
-                          value = value.replace(/[^A-Z0-9-]/g, "");
-
-                          // Forzar el patrón paso a paso
-                          if (value.length === 1) {
-                            // Primera posición → solo letras válidas
-                            if (!/[VJEPG]/.test(value)) value = "";
-                          } else if (value.length === 2) {
-                            // Después de la letra → añadir guion automáticamente
-                            if (!value.includes("-")) value = value[0] + "-";
-                          } else if (value.length > 2) {
-                            // Asegurar que los 8 números estén bien colocados
-                            const match = value.match(/^([VJEPG])-(\d{0,8})-?(\d{0,1})?$/);
-                            if (match) {
-                              const [, letra, numeros, verificador] = match;
-                              value = `${letra}-${numeros}${numeros.length === 8 ? "-" : ""}${verificador || ""}`;
-                            } else {
-                              // Si el formato se sale de control, lo limpiamos
-                              value = preInvoice.cliente_final_rif;
-                            }
-                          }
-
-                          setPreInvoice({ ...preInvoice, cliente_final_rif: value });
-                        }}
+                      <input
+                        type="text"
+                        className="hidden border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
+                        value={preInvoice.cliente_final_id}
+                        onChange={(e) => setPreInvoice({ ...preInvoice, cliente_final_id: e.target.value })}
                       />
+                      <div className="relative">
+                        {/*<input
+                          type="text"
+                          maxLength={12}
+                          className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full"
+                          placeholder="V-12345678-9"
+                          value={preInvoice.cliente_final_rif}
+                          onChange={(e) => handleSearchRif(e.target.value)}
+                          onKeyDown={(e) => {
+                            console.log('e.key: ', e.key);
+                            if (e.key === "ArrowDown") {
+                              $('.li_search_client').focus()
+                            }
+                            // Si el usuario presiona Backspace
+                            if (e.key === "Backspace") {
+                              if (preInvoice.cliente_final_rif.substr(preInvoice.cliente_final_rif.length - 1, preInvoice.cliente_final_rif.length) == '-'){
+                                reduceRif(preInvoice.cliente_final_rif.substr(0, preInvoice.cliente_final_rif.length - 1));
+                              }
+                            }
+                            // Si el usuario presiona Enter y hay resultados
+                            if (e.key === "Enter") {
+                              e.preventDefault(); // evita submit del formulario
 
+                              if (filterResults.length > 0) {
+                                selectClient(filterResults[0]); // selecciona el primer resultado
+                              } else {
+                                // si no hay resultados se oculta la lista igual
+                                setShowResults(false);
+                              }
+                            }
+                          }}
+                        />*/}
+                        <Autocomplete
+                            freeSolo
+                            options={endClients || []}
+                            getOptionLabel={(opt) =>
+                              opt?.rif ? `${opt.rif} — ${opt.nombre}` : ""
+                            }
+                            filterOptions={(options) => options} // usamos tu propio filtro manual
+                            inputValue={preInvoice.cliente_final_rif}
+                            onInputChange={(e, value) => handleSearchRif(value)}
+                            onChange={(event, newValue) => {
+                              if (newValue) selectClient(newValue);
+                            }}
+                            renderInput={(params) => (
+                              <TextField
+                                {...params}
+                                label="RIF"
+                                placeholder="V-12345678-9"
+                                variant="outlined"
+                                size="small"
+                                onKeyDown={(e) => {
+                                  // Si el usuario presiona Backspace
+                                  if (e.key === "Backspace") {
+                                    if (preInvoice.cliente_final_rif.substr(preInvoice.cliente_final_rif.length - 1, preInvoice.cliente_final_rif.length) == '-'){
+                                      reduceRif(preInvoice.cliente_final_rif.substr(0, preInvoice.cliente_final_rif.length - 1));
+                                    }
+                                  }
+                                  // ENTER para seleccionar primer elemento si no se ha elegido uno
+                                  if (e.key === "Enter") {
+                                    if (filterResults.length > 0) {
+                                      e.preventDefault();
+                                      selectClient(filterResults[0]);
+                                    }
+                                  }
+                                }}
+                              />
+                            )}
+                          />
+
+                        {/*
+                        {showResults && filterResults.length > 0 && (
+                          <ul className="absolute z-50 bg-white border border-gray-300 rounded w-full mt-1 max-h-48 overflow-y-auto shadow-lg ul_search_client">
+                            {filterResults.map((c) => (
+                              <li
+                                key={c.id}
+                                className="px-3 py-2 hover:bg-gray-200 cursor-pointer li_search_client"
+                                onClick={() => selectClient(c)}
+                              >
+                                <strong>{c.rif}</strong> — {c.nombre}
+                              </li>
+                            ))}
+                          </ul>
+                        )}
+
+                        {showResults && filterResults.length === 0 && (
+                          <div id="div_none_endclients" className="absolute z-50 bg-white border border-gray-300 rounded w-full mt-1 px-3 py-2 text-gray-500">
+                            No se encontraron resultados, se creara un nuevo cliente con los datos enviados.
+                          </div>
+                        )}*/}
+                      </div>
                     </div>
                   </div>
                   <div className="w-full lg:w-8/12 px-4">
@@ -553,6 +720,39 @@ const processRowUpdate = (newRow, oldRow) => {
                         className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
                         value={preInvoice.cliente_final_nombre}
                         onChange={(e) => setPreInvoice({ ...preInvoice, cliente_final_nombre: e.target.value.toString().toUpperCase() })}
+                      />
+                    </div>
+                  </div>
+                  <div className="w-full lg:w-2/12 px-4 form-client-complement">
+                    <div className="relative w-full mb-3">
+                      <label className="block text-blueGray-600 text-xs font-bold mb-2">Telefono</label>
+                      <input
+                        type="text"
+                        className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
+                        value={preInvoice.cliente_final_telefono}
+                        onChange={(e) => setPreInvoice({ ...preInvoice, cliente_final_telefono: e.target.value.toString().toUpperCase() })}
+                      />
+                    </div>
+                  </div>
+                  <div className="w-full lg:w-4/12 px-4 form-client-complement">
+                    <div className="relative w-full mb-3">
+                      <label className="block text-blueGray-600 text-xs font-bold mb-2">Correo electronico</label>
+                      <input
+                        type="text"
+                        className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
+                        value={preInvoice.cliente_final_email}
+                        onChange={(e) => setPreInvoice({ ...preInvoice, cliente_final_email: e.target.value.toString().toUpperCase() })}
+                      />
+                    </div>
+                  </div>
+                  <div className="w-full lg:w-6/12 px-4 form-client-complement">
+                    <div className="relative w-full mb-3">
+                      <label className="block text-blueGray-600 text-xs font-bold mb-2">Dirección</label>
+                      <input
+                        type="text"
+                        className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
+                        value={preInvoice.cliente_final_direccion}
+                        onChange={(e) => setPreInvoice({ ...preInvoice, cliente_final_direccion: e.target.value.toString().toUpperCase() })}
                       />
                     </div>
                   </div>
@@ -608,7 +808,7 @@ const processRowUpdate = (newRow, oldRow) => {
                   </div>
                   <div className="w-full lg:w-6/12 px-4">
                     <div className="relative w-full mb-3">
-                      <label className="block text-blueGray-600 text-xs font-bold mb-2">Dirección</label>
+                      <label className="block text-blueGray-600 text-xs font-bold mb-2">Zona</label>
                       <input
                         type="text"
                         className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
