@@ -22,30 +22,36 @@ const ModalImportPreviewProducts = ({
     const fetchSelects = async () => {
       const results = {};
       for (const key in apiSelects) {
-        try { results[key] = await apiSelects[key](); }
-        catch { results[key] = []; }
+        try {
+          results[key] = await apiSelects[key]();
+        } catch {
+          results[key] = [];
+        }
       }
       setSelectOptions(results);
     };
-
     if (isOpen) fetchSelects();
   }, [isOpen, apiSelects]);
 
   // Inicializar datos con cliente e IVA
   useEffect(() => {
-    if (!isOpen || !data.length) return;
+    if (!isOpen || !data.length || !selectOptions.iva_categoria) return;
 
     const initializedData = data.map(row => {
-      const ivaClean = row.iva_categoria ? String(row.iva_categoria).replace("%","").trim() : "";
+      // Extraer número de IVA del texto
+      let ivaNum = 0;
+      if (row.iva_categoria) {
+        const match = String(row.iva_categoria).match(/(\d+(\.\d+)?)/);
+        ivaNum = match ? parseFloat(match[1]) : 0;
+      }
 
-      // Asignar id de IVA si ya tenemos opciones cargadas
+      // Buscar el ID del IVA correspondiente
       let ivaId = null;
       if (selectOptions.iva_categoria?.length) {
-        const opt = selectOptions.iva_categoria.find(o => o.nombre === ivaClean);
+        const opt = selectOptions.iva_categoria.find(o => Number(o.tasa_porcentaje) === ivaNum);
         ivaId = opt?.id || null;
       }
 
-      // Cliente fijo para operador
       const cliId = rol === "operador" ? cliente_id || "" : row.cliente_id || "";
       const cliNombre = rol === "operador"
         ? clienteAsignado?.nombre_empresa || clienteAsignado?.nombre || ""
@@ -53,7 +59,7 @@ const ModalImportPreviewProducts = ({
 
       return {
         ...row,
-        iva_categoria: ivaClean,
+        iva_categoria: ivaNum,
         iva_categoria_id: ivaId,
         cliente_id: cliId,
         cliente_nombre: cliNombre
@@ -85,7 +91,6 @@ const ModalImportPreviewProducts = ({
 
   if (!isOpen) return null;
 
-  // Columnas visibles según rol
   const headers = ["sku", "nombre", "descripcion", "precio_base", "iva_categoria"];
   if (rol === "operador") headers.push("cliente_nombre");
   if (rol === "admin") headers.push("cliente_id");
@@ -94,21 +99,25 @@ const ModalImportPreviewProducts = ({
   const startIndex = (currentPage - 1) * rowsPerPage;
   const visibleRows = tableData.slice(startIndex, startIndex + rowsPerPage);
 
-  // Manejo de cambios en inputs/selects
   const handleInputChange = (index, field, value) => {
     const updated = [...tableData];
-    updated[index][field] = value;
 
-    // Actualizar id de IVA siempre que se cambie
-    if (selectOptions.iva_categoria?.length) {
-      const ivaOpt = selectOptions.iva_categoria.find(o => o.nombre === updated[index].iva_categoria);
-      updated[index].iva_categoria_id = ivaOpt?.id || null;
-    }
+    if (field === "iva_categoria") {
+      // Extraer número del texto
+      const match = String(value).match(/(\d+(\.\d+)?)/);
+      const ivaNum = match ? parseFloat(match[1]) : 0;
+      updated[index].iva_categoria = ivaNum;
 
-    // Actualizar nombre de cliente si admin cambia cliente_id
-    if (field === "cliente_id" && selectOptions.cliente_id?.length) {
-      const cliOpt = selectOptions.cliente_id.find(o => o.id === Number(value));
+      if (selectOptions.iva_categoria?.length) {
+        const ivaOpt = selectOptions.iva_categoria.find(o => Number(o.tasa_porcentaje) === ivaNum);
+        updated[index].iva_categoria_id = ivaOpt?.id || null;
+      }
+    } else if (field === "cliente_id" && selectOptions.cliente_id?.length) {
+      updated[index].cliente_id = value;
+      const cliOpt = selectOptions.cliente_id.find(o => String(o.id) === String(value));
       updated[index].cliente_nombre = cliOpt?.nombre_empresa || cliOpt?.nombre || "";
+    } else {
+      updated[index][field] = value;
     }
 
     setTableData(updated);
@@ -127,7 +136,11 @@ const ModalImportPreviewProducts = ({
       for (const field in validationRules) {
         const rule = validationRules[field];
         const { valid: fieldValid, message } = rule(row[field], row);
-        if (!fieldValid) { toast.error(`Fila ${i + 1}: ${message}`); valid = false; break; }
+        if (!fieldValid) {
+          toast.error(`Fila ${i + 1}: ${message}`);
+          valid = false;
+          break;
+        }
       }
     });
     return valid;
@@ -135,7 +148,13 @@ const ModalImportPreviewProducts = ({
 
   const handleConfirm = () => {
     if (!validateData()) return;
-    onConfirm(tableData.map(r => ({ ...r, iva_categoria_id: r.iva_categoria_id, cliente_id: r.cliente_id })));
+    onConfirm(
+      tableData.map(r => ({
+        ...r,
+        iva_categoria_id: r.iva_categoria_id,
+        cliente_id: r.cliente_id
+      }))
+    );
     toast.success("Datos listos para importar");
     onClose();
   };
@@ -144,7 +163,6 @@ const ModalImportPreviewProducts = ({
     <div className="fixed inset-0 flex items-center justify-center z-50">
       <div className="absolute inset-0 bg-black bg-opacity-50" onClick={onClose}></div>
       <div className="relative bg-white rounded-lg shadow-lg w-11/12 md:w-5/6 lg:w-4/5 xl:w-3/4 max-h-[95vh] overflow-hidden">
-
         {/* Header */}
         <div className="flex justify-between items-center px-6 py-4 border-b">
           <h2 className="text-lg font-bold text-gray-800">Previsualización de Importación</h2>
@@ -156,7 +174,9 @@ const ModalImportPreviewProducts = ({
           <table className="min-w-full border border-gray-200 text-sm">
             <thead className="bg-gray-100 sticky top-0">
               <tr>
-                {headers.map(h => <th key={h} className="border px-3 py-2 text-left text-gray-600 font-semibold">{h}</th>)}
+                {headers.map(h => (
+                  <th key={h} className="border px-3 py-2 text-left text-gray-600 font-semibold">{h}</th>
+                ))}
                 <th className="border px-3 py-2 text-center text-gray-600 font-semibold w-16">Acción</th>
               </tr>
             </thead>
@@ -174,7 +194,7 @@ const ModalImportPreviewProducts = ({
                             onChange={(e) => handleInputChange(actualIndex, field, e.target.value)}
                           >
                             {selectOptions.iva_categoria?.map(opt => (
-                              <option key={opt.id} value={opt.nombre}>
+                              <option key={opt.id} value={opt.tasa_porcentaje}>
                                 {opt.nombre} ({opt.tasa_porcentaje}%)
                               </option>
                             ))}
@@ -205,7 +225,11 @@ const ModalImportPreviewProducts = ({
                       </td>
                     ))}
                     <td className="border text-center">
-                      <button onClick={() => handleDeleteRow(actualIndex)} className="text-red-500 hover:text-red-700" title="Eliminar fila">
+                      <button
+                        onClick={() => handleDeleteRow(actualIndex)}
+                        className="text-red-500 hover:text-red-700"
+                        title="Eliminar fila"
+                      >
                         <i className="fa-regular fa-rectangle-xmark fa-lg"></i>
                       </button>
                     </td>

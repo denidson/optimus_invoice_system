@@ -179,19 +179,18 @@ function ListProducts() {
       await refreshProducts();
     } catch (err) {
         console.error("Error al importar productos:", err);
-        // Detectar mensajes devueltos por el backend
         let backendMsg =
           err?.response?.data?.message ||
           err?.response?.data?.error ||
           err?.message ||
           "Error desconocido al importar productos";
-  
+
         if (Array.isArray(err?.response?.data)) {
           backendMsg = err.response.data
             .map((e, i) => `Fila ${i + 1}: ${e.message || e.error || JSON.stringify(e)}`)
             .join("\n");
         }
-  
+
         toast.error(backendMsg, {
           autoClose: 3000,
           style: { whiteSpace: "pre-line" },
@@ -321,8 +320,8 @@ function ListProducts() {
               <ModalImportPreview
                 isOpen={previewOpen}
                 onClose={() => {
-                  setIsImportModalOpen(false);
-                  setImportData([]);
+                  setPreviewOpen(false);
+                  setPreviewData([]);
                 }}
                 data={previewData}
                 onConfirm={handleConfirmImport}
