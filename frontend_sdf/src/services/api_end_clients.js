@@ -97,7 +97,7 @@ export const deleteEndClient = async (id) => {
 // Activar un cliente
 export const searchEndClient = async (rif) => {
   try {
-    const response = await api.put(`/api/final-clients/?rif=${rif}`);
+    const response = await api.get(`/api/final-clients/search?rif=${rif}`);
     console.log('searchEndClient-response: ', response);
     return response.data;
   } catch (error) {

@@ -41,6 +41,10 @@ function ListPreInvoices() {
 
   const authData = localStorage.getItem("authData");
   const rol = authData ? JSON.parse(authData)["rol"] : "";
+  var authclientId;
+  if (authData) {
+    authclientId = JSON.parse(authData)['cliente_id'];
+  }
 
   // ----------------------
   // DataTable event listeners
@@ -179,13 +183,23 @@ function ListPreInvoices() {
           if (!acc[key]) {
             acc[key] = {
               prefactura: {
-                correlativo_interno: row.correlativo_interno || "",
-                cliente_final_rif: row.cliente_final_rif || "",
+                id: "#",  // o row.id si viene del Excel
+                cliente_final_id: row.cliente_final_id || "",
                 cliente_final_nombre: row.cliente_final_nombre || "",
-                fecha_factura: row.fecha_factura || "",
-                tipo_documento: row.tipo_documento || "FC",
-                serial: row.serial || "",
+                cliente_final_rif: row.cliente_final_rif || "",
+                cliente_final_telefono: row.cliente_final_telefono || "",
+                cliente_final_email: row.cliente_final_email || "",
+                cliente_final_direccion: row.cliente_final_direccion || "",
+                cliente_id: authclientId, // puedes asignar luego al confirmar importación
+                correlativo_interno: row.correlativo_interno || "",
                 zona: row.direccion || row.zona || "",
+                aplica_igtf: row.aplica_igtf || false,
+                monto_pagado_divisas: Number(row.monto_pagado_divisas) || 0,
+                igtf_porcentaje: Number(row.igtf_porcentaje) || 3.0,
+                igtf_monto: Number(row.igtf_monto) || 0,
+                tipo_documento: row.tipo_documento || "FC",
+                fecha_factura: row.fecha_factura || formattedDate,
+                serial: row.serial || "",
               },
               items: [],
             };
@@ -233,28 +247,16 @@ function ListPreInvoices() {
   const handleConfirmImport = async (prefacturasEditadas) => {
     try {
       const authData = localStorage.getItem("authData");
-      let cliente_id = null;
-      if (authData) {
-        cliente_id = JSON.parse(authData)["cliente_id"];
-      }
+      const cliente_id = authData ? JSON.parse(authData).cliente_id : null;
+
+      console.log("👷 Cliente ID autenticado:", cliente_id);
+      console.log("🚀 Prefacturas a importar:", prefacturasEditadas);
 
       let errores = 0;
 
       for (let pre of prefacturasEditadas) {
-        const payload = {
-          prefactura: {
-            ...pre,
-            cliente_id, // ✅ agrega el cliente del usuario autenticado
-          },
-          items: pre.items.map((item) => ({
-            producto_sku: item.producto_sku,
-            cantidad: item.cantidad,
-            precio_unitario: item.precio_unitario,
-            descuento_porcentaje: item.descuento_porcentaje,
-            iva_categoria_id: item.iva_categoria_id,
-            descripcion: item.descripcion,
-          })),
-        };
+        // Asignamos cliente_id del usuario autenticado
+        const payload = { ...pre, cliente_id };
 
         try {
           await createPreInvoice(payload);
@@ -265,25 +267,15 @@ function ListPreInvoices() {
       }
 
       if (errores === 0) {
-        toast.success("✅ Pre-facturas importadas correctamente", {
-          autoClose: 2000,
-          onClose: () => {
-            setModalImportOpen(false);
-            setPreInvoicesToImport([]);
-            setTimeout(() => refreshPreInvoices(), 500);
-          },
-        });
+        toast.success("✅ Pre-facturas importadas correctamente", { autoClose: 2000 });
       } else {
-        toast.warn(`⚠️ ${errores} pre-factura(s) no se pudieron guardar. Revisa la consola.`, {
-          autoClose: 4000,
-        });
+        toast.warn(`⚠️ ${errores} pre-factura(s) no se pudieron guardar. Revisa la consola.`, { autoClose: 4000 });
       }
     } catch (err) {
       console.error("Error al importar:", err);
       toast.error("❌ Error inesperado al importar pre-facturas");
     }
   };
-
 
   // ----------------------
   // Render
