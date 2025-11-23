@@ -18,8 +18,10 @@ import Dashboard from "./pages/Dashboard";
 import Profile from "./pages/Profile";
 import ListInvoices from "./pages/Invoices/ListInvoices";
 import ListAuditLogs from "./pages/Config/ListAuditLogs";
-import ListWithholdings from "./pages/Config/ListWithholdings";
+import ListConfigWithholdings from "./pages/Config/ListConfigWithholdings";
 import ListCompanyUsers from "./pages/CompanyUsers/ListCompanyUsers";
+import ListWithholdings from "./pages/Withholdings/ListWithholding";
+import FormWithholding from "./pages/Withholdings/FormWithholding";
 // import Invoices from "./pages/Invoices";
 // import InvoiceForm from "./pages/InvoiceForm";
 import PrivateRoute from "./components/PrivateRoute";
@@ -192,7 +194,7 @@ function App() {
             path="/taxpayer"
             element={
               <PrivateRoute>
-                <RoleRoute roles={["admin","operador_admin"]}>
+                <RoleRoute roles={["admin","operador_admin", "operador"]}>
                   <ListTypeTaxpayer />
                 </RoleRoute>
               </PrivateRoute>
@@ -200,11 +202,11 @@ function App() {
           />
           {/* Retenciones */}
           <Route
-            path="/withholdings"
+            path="/config-withholdings"
             element={
               <PrivateRoute>
-                <RoleRoute roles={["admin","operador_admin"]}>
-                  <ListWithholdings />
+                <RoleRoute  roles={["admin","operador_admin", "operador"]}>
+                  <ListConfigWithholdings />
                 </RoleRoute>
               </PrivateRoute>
             }
@@ -215,6 +217,25 @@ function App() {
             element={
               <PrivateRoute>
                 <ListInvoices />
+              </PrivateRoute>
+            }
+          />
+          {/* Retenciones */}
+          <Route
+            path="/withholdings"
+            element={
+              <PrivateRoute>
+                <RoleRoute roles={["admin","operador_admin","operador"]}>
+                  <ListWithholdings />
+                </RoleRoute>
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/withholdings/create"
+            element={
+              <PrivateRoute>
+                <FormWithholding />
               </PrivateRoute>
             }
           />

@@ -30,6 +30,7 @@ export default function Sidebar() {
       links: [
         { to: "/preinvoices", icon: "fas fa-file-import", label: "Pre-Facturación" },
         { to: "/invoices", icon: "fas fa-file-invoice", label: "Facturación" },
+        { to: "/withholdings", icon: "fas fa-file-invoice", label: "Retenciones" },
       ],
     },
     {
@@ -46,7 +47,7 @@ export default function Sidebar() {
         { to: "/products", icon: "fas fa-cubes", label: "Productos y Servicios", roles: ["admin", "operador_admin", "operador"] },
         { to: "/taxpayer", icon: "fas fa-tags", label: "Tipos de Contribuyentes", roles: ["admin", "operador_admin"] },
         { to: "/taxes", icon: "fas fa-percent", label: "Impuestos", roles: ["admin", "operador_admin"] },
-        { to: "/withholdings", icon: "fas fa-percent", label: "Retenciones", roles: ["admin", "operador_admin"] },
+        { to: "/config-withholdings", icon: "fas fa-percent", label: "Retenciones", roles: ["admin", "operador_admin"] },
         { to: "/auditlogs", icon: "fa-solid fa-list-ul", label: "Registro de auditoria", roles: ["admin"] },
       ],
     },
