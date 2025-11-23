@@ -12,9 +12,9 @@ import { createWithholding, showWithholding } from "../../services/apiWithholdin
 import { showProfileClient } from "../../services/apiProfile";
 import { decryptText } from "../../services/api";
 
-// **********************************************************
+// ******************************************************************
 // COMPONENTE EDITOR DE RETENCIÓN EN DATAGRID
-// **********************************************************
+// ******************************************************************
 function WithholdingEditCell({ params, withholdings, onChange }) {
   const inputRef = useRef(null);
 
@@ -47,9 +47,9 @@ function WithholdingEditCell({ params, withholdings, onChange }) {
   );
 }
 
-// **********************************************************
+// ******************************************************************
 // FORM PRINCIPAL
-// **********************************************************
+// ******************************************************************
 function FormWithholdings() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -156,43 +156,45 @@ function FormWithholdings() {
   const handleInvoiceSelect = async (invoice) => {
     if (!invoice?.id) return;
 
-    // Evitar duplicados por número de factura o control
-    const exists = withholding.items.some(
-      (item) =>
-        item.factura_afectada_numero === invoice.numero_factura ||
-        item.factura_afectada_control === invoice.numero_control
-    );
-    if (exists) {
-      toast.warning("La factura ya fue agregada");
-      return;
-    }
-
     try {
       const fullInvoice = await showInvoice(invoice.id);
       const items = Array.isArray(fullInvoice.items) ? fullInvoice.items : [];
-      const baseImponible = items.reduce((acc, item) => {
-        const precio = parseFloat((item.precio_unitario || 0).toString().replace(",", "."));
-        const cantidad = parseFloat((item.cantidad || 0).toString().replace(",", "."));
-        return acc + precio * cantidad;
-      }, 0);
 
-      const newItem = {
-        id: Date.now(),
-        comprobante_id: fullInvoice.id,
-        tipo_documento_afectado: fullInvoice.tipo_documento || "FC",
-        factura_afectada_numero: fullInvoice.numero_factura || "",
-        factura_afectada_control: fullInvoice.numero_control || "",
-        factura_afectada_fecha: fullInvoice.fecha_emision || "",
-        monto_documento: parseFloat((fullInvoice.total_neto || 0).toString().replace(",", ".")) || 0,
-        monto_base_imponible: parseFloat(baseImponible.toFixed(2)) || 0,
-        retencion_id: null,
-        tipo_retencion: null,
-        monto_retenido: 0,
-      };
+      // Agrupar items por categoría de IVA
+      const groupedByIva = items.reduce((acc, item) => {
+        const ivaKey = item.iva_categoria?.tasa_porcentaje || "0";
+        if (!acc[ivaKey]) acc[ivaKey] = [];
+        acc[ivaKey].push(item);
+        return acc;
+      }, {});
+
+      // Crear una línea por cada categoría de IVA
+      const newItems = Object.entries(groupedByIva).map(([iva, itemsGroup]) => {
+        const baseImponible = itemsGroup.reduce((sum, item) => {
+          const precio = parseFloat((item.precio_unitario || 0).toString().replace(",", "."));
+          const cantidad = parseFloat((item.cantidad || 0).toString().replace(",", "."));
+          return sum + precio * cantidad;
+        }, 0);
+
+        return {
+          id: Date.now() + Math.random(), // id único
+          comprobante_id: fullInvoice.id,
+          tipo_documento_afectado: fullInvoice.tipo_documento || "FC",
+          factura_afectada_numero: fullInvoice.numero_factura || "",
+          factura_afectada_control: fullInvoice.numero_control || "",
+          factura_afectada_fecha: fullInvoice.fecha_emision || "",
+          monto_documento: parseFloat((fullInvoice.total_neto || 0).toString().replace(",", ".")) || 0,
+          monto_base_imponible: parseFloat(baseImponible.toFixed(2)) || 0,
+          iva: parseFloat(iva),
+          retencion_id: null,
+          tipo_retencion: null,
+          monto_retenido: 0,
+        };
+      });
 
       setWithholding((prev) => ({
         ...prev,
-        items: [...prev.items, newItem],
+        items: [...prev.items, ...newItems],
       }));
 
       setSearchControl("");
@@ -217,7 +219,7 @@ function FormWithholdings() {
               retencion_id: retencion.id,
               tipo_retencion: retencion,
               monto_retenido: parseFloat(
-                ((item.monto_base_imponible * parseFloat(retencion.porcentaje)) / 100).toFixed(2)
+                (((item.monto_base_imponible * (parseFloat(item.iva) / 100)) * parseFloat(retencion.porcentaje)) / 100).toFixed(2)
               ),
             }
           : item
@@ -271,6 +273,12 @@ function FormWithholdings() {
         }),
     },
     {
+      field: "iva",
+      headerName: "IVA %",
+      flex: 1,
+      renderCell: (params) => `${params.row.iva || 0}`,
+    },
+    {
       field: "retencion_id",
       headerName: "Tipo Retención",
       width: 250,
@@ -314,7 +322,6 @@ function FormWithholdings() {
     e.preventDefault();
     setButtonDisabled(true);
 
-    // Validar campos principales
     if (!withholding.fecha_emision) {
       toast.error("La fecha de emisión es obligatoria");
       setButtonDisabled(false);
@@ -327,7 +334,6 @@ function FormWithholdings() {
       return;
     }
 
-    // Validar filas
     for (let item of withholding.items) {
       if (!item.retencion_id) {
         toast.error(`Debe seleccionar el tipo de retención para la factura ${item.factura_afectada_numero}`);
@@ -375,7 +381,6 @@ function FormWithholdings() {
             <h4 className="font-bold mb-2">Datos del Sujeto Retenido</h4>
             <hr className="my-6 border-b-1 border-blueGray-300" />
 
-            {/* Datos Cliente */}
             <div className="flex flex-wrap">
               <div className="w-full lg:w-3/12 px-4">
                 <label className="block text-blueGray-600 text-xs font-bold mb-2">RIF</label>
@@ -394,9 +399,10 @@ function FormWithholdings() {
                 <input disabled className="border-0 px-3 py-3 bg-gray-200 rounded w-full" value={withholding.periodo_fiscal || ""} />
               </div>
             </div>
+
             <hr className="my-6 border-b-1 border-blueGray-300" />
             <h4 className="font-bold mb-2">Documentos Afectados</h4>
-            {/* Buscador Facturas */}
+
             <div className="flex flex-wrap mt-6">
               <div className="w-full lg:w-6/12 px-4">
                 <Autocomplete
@@ -420,7 +426,6 @@ function FormWithholdings() {
               </div>
             </div>
 
-            {/* DataGrid */}
             <div className="flex flex-wrap mt-6">
               <DataGrid
                 apiRef={apiRef}
@@ -436,17 +441,21 @@ function FormWithholdings() {
             <hr className="my-6 border-b-1 border-blueGray-300" />
 
             <div className="text-right">
-              <button className="bg-slate-800 text-white px-4 py-2 rounded me-3"
-                disabled={buttonDisabled} // Deshabilita el botón si `buttonDisabled` es `true`
-                style={{ opacity: buttonDisabled ? 0.5 : 1 }} // Cambiar la opacidad cuando está deshabilitado
-                onClick={() => redirectToList()}>Cancelar</button>
+              <button
+                className="bg-slate-800 text-white px-4 py-2 rounded me-3"
+                disabled={buttonDisabled}
+                style={{ opacity: buttonDisabled ? 0.5 : 1 }}
+                onClick={() => navigate("/withholdings")}
+              >
+                Cancelar
+              </button>
               <button
                 type="submit"
                 className="bg-blue-500 text-white px-4 py-2 rounded"
-                disabled={buttonDisabled} // Deshabilita el botón si `buttonDisabled` es `true`
-                style={{ opacity: buttonDisabled ? 0.5 : 1 }} // Cambiar la opacidad cuando está deshabilitado
+                disabled={buttonDisabled}
+                style={{ opacity: buttonDisabled ? 0.5 : 1 }}
               >
-                {buttonDisabled ? "Guardando..." :  "Guardar" } {/* Cambia el texto mientras está cargando */}
+                {buttonDisabled ? "Guardando..." : "Guardar"}
               </button>
             </div>
           </form>
