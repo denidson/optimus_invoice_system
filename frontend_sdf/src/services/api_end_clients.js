@@ -10,7 +10,7 @@ export const getEndClients = async ({ page = 1, per_page = 20, request_type=fals
       //if (rol == 'admin'){
         //response = await api.get('/admin/clients');
       //}else{
-      response = await api.get(`/api/final-clients/?page=${page}&per_page=${per_page}` + (request_type != false ? `?request_type=${request_type}` : ``));
+      response = await api.get(`/api/final-clients?page=${page}&per_page=${per_page}` + (request_type != false ? `?request_type=${request_type}` : ``));
       //}
       return response.data;
     }
@@ -73,7 +73,7 @@ export const editEndClient = async (id, body) => {
 // Crear un cliente
 export const createEndClient = async (body) => {
   try {
-    const response = await api.post(`/api/final-clients/`, body);
+    const response = await api.post(`/api/final-clients`, body);
     console.log('createEndClient-response: ', response);
     return response.data;
   } catch (error) {

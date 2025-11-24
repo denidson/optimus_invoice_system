@@ -16,7 +16,7 @@ export const getAllWithholdings = async (params = {}) => {
 
     const { rol } = JSON.parse(authData);
 
-    const endpoint = '/api/retenciones/';
+    const endpoint = '/api/retenciones';
 
     const query = new URLSearchParams({
       page,
@@ -53,7 +53,7 @@ export const showWithholding = async (id) => {
 // Crear una retencion
 export const createWithholding = async (body) => {
   try {
-    const response = await api.post(`/api/retenciones/`, body);
+    const response = await api.post(`/api/retenciones`, body);
     console.log('createWithholding-response: ', response);
     return response.data;
   } catch (error) {

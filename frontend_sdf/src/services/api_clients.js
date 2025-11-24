@@ -10,7 +10,7 @@ export const getClients = async () => {
       if (rol == 'admin'){
         response = await api.get('/admin/clients');
       }else{
-        response = await api.get('/api/clients/');
+        response = await api.get('/api/clients');
       }
       return response.data.data;
     }
