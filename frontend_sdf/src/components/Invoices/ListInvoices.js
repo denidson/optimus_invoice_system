@@ -47,11 +47,30 @@ function ListInvoices() {
       handleOpenModalInvoices(id, nombre);
     });
 
+    $("#ListInvoicesDt tbody").on("click", "button.btn-credit-note", function () {
+      const id = $(this).data("id");
+      redirectToCreateNote(id, 'NC');
+    });
+
+    $("#ListInvoicesDt tbody").on("click", "button.btn-debit-note", function () {
+      const id = $(this).data("id");
+      redirectToCreateNote(id, 'ND');
+    });
+
     return () => {
       // limpiar eventos para evitar duplicados
       $("#ListInvoicesDt tbody").off("click", "button.btn-view");
+      $("#ListInvoicesDt tbody").off("click", "button.credit-note");
+      $("#ListInvoicesDt tbody").off("click", "button.debit-note");
     };
   }, []); // Se ejecuta solo una vez al montar el componente
+
+
+  const redirectToCreateNote = (id, tipo_documento) => {
+    const hash = encryptText(id.toString());
+    const hashType = encryptText(tipo_documento.toString());
+    navigate(`/preinvoices/create?id=${encodeURIComponent(hash)}&type=${encodeURIComponent(hashType)}`);
+  };
 
   const handleOpenModalInvoices = async (id) => {
     try{
@@ -230,9 +249,17 @@ function ListInvoices() {
                     orderable: false,
                     searchable: false,
                     render: (data, type, row) => {
-                      return `
-                        <button class="btn-view px-1 py-1 mx-0" data-id="${row.id}"><i class="fa-solid fa-lg fa-expand"></i></button>
-                      `;
+                      if (rol === "admin" || row.estatus.toUpperCase() == 'ANULADA') {
+                        return `
+                          <button class="btn-view px-1 py-1 mx-0" data-id="${row.id}"><i class="fa-solid fa-lg fa-expand"></i></button>
+                        `;
+                      }else{
+                        return `
+                          <button class="btn-view px-1 py-1 mx-0" data-id="${row.id}"><i class="fa-solid fa-lg fa-expand"></i></button>
+                          <button class="btn-credit-note px-1 py-1 mx-0 text-red-600" data-id="${row.id}"><i class="fa-solid fa-lg fa-file-invoice"></i></button>
+                          <button class="btn-debit-note px-1 py-1 mx-0 text-green-600" data-id="${row.id}"><i class="fa-solid fa-lg fa-file-invoice"></i></button>
+                        `;
+                      }
                     }
                   },
                 ]}
