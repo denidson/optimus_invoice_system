@@ -16,6 +16,7 @@ export const AuthProvider = ({ children }) => {
 
   const login = (data) => {
     setUser(data);
+    console.log('AuthContext-login-data: ', data);
     localStorage.setItem("authData", JSON.stringify(data));
   };
 

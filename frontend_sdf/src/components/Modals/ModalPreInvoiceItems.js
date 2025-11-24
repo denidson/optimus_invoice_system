@@ -57,25 +57,34 @@ export default function ModalPreInvoiceItems({
   }, []);
 
   // ----------------------------
-  // 🔹 Inicializar items al abrir preInvoice
+  // 🔹 1) Cargar items del Excel apenas abra la modal
   // ----------------------------
   useEffect(() => {
-    if (preInvoice?.items && products.length && taxCategories.length) {
-      const mappedItems = preInvoice.items.map((item) => {
-        const productMatch = products.find((p) => p.sku === item.producto_sku);
-
-        return {
-          ...item,
-          producto_id: productMatch?.value || null, // <-- ID real
-          productOption: productMatch || null,      // <-- Para mostrar en Select
-          iva_categoria_id: productMatch?.iva_categoria_id || null,
-          precio_unitario: parseFloat(item.precio_unitario) || productMatch?.precio_base || 0,
-        };
-      });
-
-      setItems(mappedItems);
+    if (preInvoice?.items) {
+      setItems(preInvoice.items);
     }
-  }, [preInvoice, products, taxCategories]);
+  }, [preInvoice]);
+
+  // ----------------------------
+  // 🔹 2) Completar info cuando products & IVA estén listas
+  // ----------------------------
+  useEffect(() => {
+    if (!items.length || !products.length || !taxCategories.length) return;
+
+    const mapped = items.map((item) => {
+      const productMatch = products.find((p) => p.sku === item.producto_sku);
+
+      return {
+        ...item,
+        producto_id: productMatch?.value || item.producto_id || null,
+        productOption: productMatch || item.productOption || null,
+        iva_categoria_id: productMatch?.iva_categoria_id || item.iva_categoria_id || null,
+        precio_unitario: item.precio_unitario || productMatch?.precio_base || 0,
+      };
+    });
+
+    setItems(mapped);
+  }, [products, taxCategories]);
 
   // ----------------------------
   // 🔹 Cambios en los items
@@ -140,14 +149,13 @@ export default function ModalPreInvoiceItems({
   const handleSave = () => {
     if (!validateItems()) return;
 
-    // Asegurarse de enviar solo los campos necesarios al backend
     const cleanedItems = items.map((item) => ({
       id: item.id || null,
       producto_id: item.producto_id,
       nombre: item.productOption?.label || item.nombre || "",
       cantidad: item.cantidad,
       precio_unitario: item.precio_unitario,
-      aplica_iva: true, // o según tu lógica
+      aplica_iva: true,
       iva_categoria_id: item.iva_categoria_id,
       activo: true,
       descuento_porcentaje: item.descuento_porcentaje || 0,
@@ -231,7 +239,11 @@ export default function ModalPreInvoiceItems({
                       className="w-full border rounded px-2 py-1 text-center"
                       value={item.descuento_porcentaje || 0}
                       onChange={(e) =>
-                        handleChange(idx, "descuento_porcentaje", Number(e.target.value))
+                        handleChange(
+                          idx,
+                          "descuento_porcentaje",
+                          Number(e.target.value)
+                        )
                       }
                     />
                   </td>

@@ -1,50 +1,57 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from "react-router-dom"; // Para la redirección
-import { getInvoices, showInvoice } from '../../services/api_invoices'; // Importa el servicio
-import { encryptText } from '../../services/api'; // Importa el servicio para encriptar/desencriptar parametros
+import { useNavigate } from "react-router-dom"; 
+import { getInvoices, showInvoice } from '../../services/api_invoices';
+import { createPreInvoice } from "../../services/api_pre_invoices";
+import { encryptText } from '../../services/api';
 import ModalInvoices from "./ModalInvoices";
-import { toast, ToastContainer } from "react-toastify"; // Importamos las funciones necesarias
-import "react-toastify/dist/ReactToastify.css"; // Importar el CSS de las notificaciones
+import ModalImportPreviewPreInvoices from "../Modals/ModalImportPreviewPreInvoice";
+import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 import $ from "jquery";
 import DataTable from "datatables.net-react";
 import DT from "datatables.net-dt";
-// Importa estilos de DataTables
 import "datatables.net-dt/css/dataTables.dataTables.css";
-// extensiones de exportación
+
 import "datatables.net-buttons/js/dataTables.buttons";
 import "datatables.net-buttons-dt/css/buttons.dataTables.css";
 import "datatables.net-buttons/js/buttons.html5";
 import "datatables.net-buttons/js/buttons.print";
+
 import JSZip from "jszip";
 import pdfMake from "pdfmake/build/pdfmake";
 import pdfFonts from "pdfmake/build/vfs_fonts";
-import { read, utils } from 'xlsx'; // ✅ Import correcto para XLSX
+
+import { read, utils } from 'xlsx';
 import Papa from 'papaparse';
+
 window.JSZip = JSZip;
-//pdfMake.vfs = pdfFonts.pdfMake.vfs;
-// Activar el "plugin" base de DataTables
 DataTable.use(DT);
 
 function ListInvoices() {
-  const navigate = useNavigate(); // Hook para redirección
-  const [modalOpen, setModalOpen] = useState(false); // Estado para manejar la visibilidad de la modal
-  const [modalOpenInvoices, setModalOpenInvoices] = useState(false); // Estado para manejar la visibilidad de la modal
+  const navigate = useNavigate();
+  const [modalOpenInvoices, setModalOpenInvoices] = useState(false);
   const [Invoices, setInvoices] = useState(false);
+
+  // 🔥 Estados faltantes que daban error
+  const [modalImportOpen, setModalImportOpen] = useState(false);
+  const [preInvoicesToImport, setPreInvoicesToImport] = useState([]);
+
+  // 🔥 Variables faltantes que daban error
   const authData = localStorage.getItem("authData");
+  const authclientId = authData ? JSON.parse(authData).cliente_id : null;
+  const formattedDate = new Date().toISOString().split("T")[0];
+
   var rol;
   if (authData) {
     rol = JSON.parse(authData)['rol'];
   }
 
-  // Cargar las pre-facturas al inicio
   useEffect(() => {
     const table = $("#ListInvoicesDt").DataTable();
 
-    // Click visualizar
     $("#ListInvoicesDt tbody").on("click", "button.btn-view", function () {
       const id = $(this).data("id");
-      const nombre = $(this).data("nombre");
-      handleOpenModalInvoices(id, nombre);
+      handleOpenModalInvoices(id);
     });
 
     $("#ListInvoicesDt tbody").on("click", "button.btn-credit-note", function () {
@@ -58,13 +65,11 @@ function ListInvoices() {
     });
 
     return () => {
-      // limpiar eventos para evitar duplicados
       $("#ListInvoicesDt tbody").off("click", "button.btn-view");
       $("#ListInvoicesDt tbody").off("click", "button.credit-note");
       $("#ListInvoicesDt tbody").off("click", "button.debit-note");
     };
-  }, []); // Se ejecuta solo una vez al montar el componente
-
+  }, []);
 
   const redirectToCreateNote = (id, tipo_documento) => {
     const hash = encryptText(id.toString());
@@ -73,319 +78,249 @@ function ListInvoices() {
   };
 
   const handleOpenModalInvoices = async (id) => {
-    try{
-        const data = await showInvoice(id);
-        setInvoices(data);
-        setModalOpenInvoices(true); // Abre la modal de confirmación
+    try {
+      const data = await showInvoice(id);
+      setInvoices(data);
+      setModalOpenInvoices(true);
     } catch (err) {
-      // Mostrar una notificación de error
       toast.error("Error al consultar los datos del cliente.");
-    } finally {
-      // Indicamos que la carga ha finalizado
     }
   };
 
   const handleCloseModalInvoices = () => {
-    setModalOpenInvoices(false); // Cierra la modal
+    setModalOpenInvoices(false);
+  };
+
+  // ----------------------
+  // CARGA DE ARCHIVO
+  // ----------------------
+  const handleFileUpload = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const ext = file.name.split(".").pop().toLowerCase();
+    const reader = new FileReader();
+
+    const processData = (data) => {
+      const grouped = Object.values(
+        data.reduce((acc, row) => {
+          const key = row.correlativo_interno;
+          if (!acc[key]) {
+            acc[key] = {
+              prefactura: {
+                id: "#",
+                cliente_final_id: row.cliente_final_id || "",
+                cliente_final_nombre: row.cliente_final_nombre || "",
+                cliente_final_rif: row.cliente_final_rif || "",
+                cliente_final_telefono: row.cliente_final_telefono || "",
+                cliente_final_email: row.cliente_final_email || "",
+                cliente_final_direccion: row.cliente_final_direccion || "",
+                cliente_id: authclientId,
+                correlativo_interno: row.correlativo_interno || "",
+                zona: row.direccion || row.zona || "",
+                aplica_igtf: row.aplica_igtf || false,
+                monto_pagado_divisas: Number(row.monto_pagado_divisas) || 0,
+                igtf_porcentaje: Number(row.igtf_porcentaje) || 3.0,
+                igtf_monto: Number(row.igtf_monto) || 0,
+                tipo_documento: row.tipo_documento || "FC",
+                fecha_factura: row.fecha_factura || formattedDate,
+                serial: row.serial || "",
+              },
+              items: [],
+            };
+          }
+          acc[key].items.push({
+            producto_sku: row.producto_sku || "",
+            cantidad: Number(row.cantidad) || 0,
+            precio_unitario: Number(row.precio_unitario) || 0,
+            descuento_porcentaje: Number(row.descuento_porcentaje) || 0,
+            iva_categoria_id: row.iva_categoria_id || "",
+            descripcion: row.descripcion || "",
+          });
+          return acc;
+        }, {})
+      );
+
+      setPreInvoicesToImport(grouped);
+      setModalImportOpen(true);
+    };
+
+    if (ext === "csv") {
+      Papa.parse(file, {
+        header: true,
+        skipEmptyLines: true,
+        complete: (res) => processData(res.data),
+      });
+    } else if (ext === "xlsx" || ext === "xls") {
+      reader.onload = (evt) => {
+        const workbook = read(evt.target.result, { type: "binary" });
+        const sheet = workbook.Sheets[workbook.SheetNames[0]];
+        processData(utils.sheet_to_json(sheet));
+      };
+      reader.readAsBinaryString(file);
+    } else {
+      toast.error("Archivo no soportado. Solo CSV o Excel.");
+    }
+
+    e.target.value = "";
+  };
+
+  // ----------------------
+  // ENVÍO A API
+  // ----------------------
+  const handleConfirmImport = async (prefacturasEditadas) => {
+    try {
+      const authData = localStorage.getItem("authData");
+      const cliente_id = authData ? JSON.parse(authData).cliente_id : null;
+
+      let errores = [];
+
+      for (let i = 0; i < prefacturasEditadas.length; i++) {
+        const pre = prefacturasEditadas[i];
+        const payload = { ...pre, cliente_id, force_final: true };
+
+        try {
+          const response = await createPreInvoice(payload);
+
+          // ✅ Revisar si el response trae resultados con error
+          if (response?.resultados?.length) {
+            response.resultados.forEach((r) => {
+              if (r.status && r.status.toLowerCase() === "error") {
+                errores.push(`Fila ${r.index + 1}: ${r.error}`);
+              }
+            });
+          }
+        } catch (error) {
+          errores.push(`Factura ${pre.prefactura?.correlativo_interno || "#"}: ${error.message}`);
+        }
+      }
+
+      if (errores.length === 0) {
+        toast.success("Facturas importadas correctamente");
+      } else {
+        errores.forEach((msg) => toast.error(`❌ ${msg}`));
+        toast.warn(`${errores.length} factura(s) fallaron.`);
+      }
+    } catch (err) {
+      toast.error("Error inesperado al importar");
+    }
   };
 
   return (
     <div className="md:px-10 mx-auto w-full -m-24">
       <ToastContainer />
+
       <div className="flex flex-wrap">
         <div className="w-full lg:w-12/12">
           <div className="relative flex flex-col min-w-0 break-words w-full mb-6 shadow-lg rounded-lg bg-blueGray-100 border-0">
-            {/* Header Card */}
+
             <div className="rounded-t bg-white mb-0 px-6 py-6 flex justify-between items-center border-b">
-              <h6 className="text-blueGray-700 text-xl font-bold">Lista de Facturas</h6>
-              {/* Grupo de botones alineado a la derecha */}
-              <div className="flex items-center space-x-3"></div>
+              <h6 className="text-blueGray-700 text-xl font-bold">
+                Lista de Facturas
+              </h6>
+
+              <label className="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded cursor-pointer">
+                Importar Excel/CSV
+                <input
+                  type="file"
+                  accept=".csv,.xlsx,.xls"
+                  className="hidden"
+                  onChange={handleFileUpload}
+                />
+              </label>
             </div>
 
-            {/* DataTable */}
+            {/* Tabla */}
             <div className="block w-full overflow-x-auto px-4 py-4">
               <DataTable
                 id="ListInvoicesDt"
                 className="table-auto w-full text-left"
                 columns={[
-                  {
-                    title: "Fecha",
-                    data: "fecha_factura",
-                    orderable: true,
-                    searchable: false,
-                    render: (data, type, row) => {
-                      return data ? data.toString().replace('T', ' ').substr(0,19) : '';
-                    }
-                  },
+                  { title: "Fecha", data: "fecha_factura" },
                   { title: "RIF", data: "cliente_final_rif" },
                   { title: "Razón Social", data: "cliente_final_nombre" },
-                  {
-                    title: "Tipo de documento", data: "tipo_documento",
-                    orderable: true,
-                    searchable: false,
-                    render: (data, type, row) => {
-                      if (data == 'FC'){
-                        return 'FACTURA';
-                      }else if(data == 'NC'){
-                        return 'NOTA DE CREDITO';
-                      }else{
-                        return 'NOTA DE DEBITO';
-                      }
-                    }
-                  },
+                  { title: "Tipo de documento", data: "tipo_documento" },
                   { title: "Número de control", data: "numero_control" },
                   { title: "Correlativo", data: "correlativo_interno" },
-                  {
-                    title: "Base imponible",
-                    data: "total_base",
-                    render: (data, type, row) => {
-                      if (type === "display" || type === "filter") {
-                        // Formato de número con separadores para Venezuela
-                        const formatted = new Intl.NumberFormat("es-VE", {
-                          style: "decimal",
-                          minimumFractionDigits: 2,
-                          maximumFractionDigits: 2
-                        }).format(data);
-
-                        return `Bs. ${formatted}`;
-                      }
-                      // Para ordenamiento y cálculos → devolver el valor numérico real
-                      return data;
-                    }
-                  },
-                  {
-                    title: "I.V.A.",
-                    data: "total_impuestos",
-                    render: (data, type, row) => {
-                      if (type === "display" || type === "filter") {
-                        // Formato de número con separadores para Venezuela
-                        const formatted = new Intl.NumberFormat("es-VE", {
-                          style: "decimal",
-                          minimumFractionDigits: 2,
-                          maximumFractionDigits: 2
-                        }).format(data);
-
-                        return `Bs. ${formatted}`;
-                      }
-                      // Para ordenamiento y cálculos → devolver el valor numérico real
-                      return data;
-                    }
-                  },
-                  {
-                    title: "Total",
-                    data: "total_neto",
-                    render: (data, type, row) => {
-                      if (type === "display" || type === "filter") {
-                        // Formato de número con separadores para Venezuela
-                        const formatted = new Intl.NumberFormat("es-VE", {
-                          style: "decimal",
-                          minimumFractionDigits: 2,
-                          maximumFractionDigits: 2
-                        }).format(data);
-
-                        return `Bs. ${formatted}`;
-                      }
-                      // Para ordenamiento y cálculos → devolver el valor numérico real
-                      return data;
-                    }
-                  },
-                  {
-                    title: "Pagado en divisas",
-                    data: "monto_pagado_divisas",
-                    render: (data, type, row) => {
-                      if (type === "display" || type === "filter") {
-                        // Formato de número con separadores para Venezuela
-                        const formatted = new Intl.NumberFormat("es-VE", {
-                          style: "decimal",
-                          minimumFractionDigits: 2,
-                          maximumFractionDigits: 2
-                        }).format(data);
-
-                        return `Bs. ${formatted}`;
-                      }
-                      // Para ordenamiento y cálculos → devolver el valor numérico real
-                      return data;
-                    }
-                  },
-                  {
-                    title: "IGTF",
-                    data: "igtf_monto",
-                    render: (data, type, row) => {
-                      if (type === "display" || type === "filter") {
-                        // Formato de número con separadores para Venezuela
-                        const formatted = new Intl.NumberFormat("es-VE", {
-                          style: "decimal",
-                          minimumFractionDigits: 2,
-                          maximumFractionDigits: 2
-                        }).format(data);
-
-                        return `Bs. ${formatted}`;
-                      }
-                      // Para ordenamiento y cálculos → devolver el valor numérico real
-                      return data;
-                    }
-                  },
-                  {
-                    title: "Zona",
-                    data: "zona",
-                    orderable: true,
-                    searchable: false,
-                    render: (data, type, row) => {
-                      return data ? data.toUpperCase():'';
-                    }
-                  },
-                  {
-                    title: "Estado",
-                    data: "estatus",
-                    orderable: true,
-                    searchable: false,
-                    render: (data, type, row) => {
-                      return data ? data.toUpperCase():'';
-                    }
-                  },
+                  { title: "Base imponible", data: "total_base" },
+                  { title: "I.V.A.", data: "total_impuestos" },
+                  { title: "Total", data: "total_neto" },
+                  { title: "Pagado en divisas", data: "monto_pagado_divisas" },
+                  { title: "IGTF", data: "igtf_monto" },
+                  { title: "Zona", data: "zona" },
+                  { title: "Estado", data: "estatus" },
                   {
                     title: "Acciones",
                     data: null,
                     orderable: false,
-                    searchable: false,
                     render: (data, type, row) => {
-                      if (rol === "admin" || row.estatus.toUpperCase() == 'ANULADA') {
+                      if (rol === "admin" || row.estatus.toUpperCase() === "ANULADA") {
                         return `
-                          <button class="btn-view px-1 py-1 mx-0" data-id="${row.id}"><i class="fa-solid fa-lg fa-expand"></i></button>
+                          <button class="btn-view px-1 py-1 mx-0" data-id="${row.id}">
+                            <i class="fa-solid fa-lg fa-expand"></i>
+                          </button>
                         `;
-                      }else{
+                      } else {
                         return `
-                          <button class="btn-view px-1 py-1 mx-0" data-id="${row.id}"><i class="fa-solid fa-lg fa-expand"></i></button>
-                          <button class="btn-credit-note px-1 py-1 mx-0 text-red-600" data-id="${row.id}"><i class="fa-solid fa-lg fa-file-invoice"></i></button>
-                          <button class="btn-debit-note px-1 py-1 mx-0 text-green-600" data-id="${row.id}"><i class="fa-solid fa-lg fa-file-invoice"></i></button>
+                          <button class="btn-view px-1 py-1 mx-0" data-id="${row.id}">
+                            <i class="fa-solid fa-lg fa-expand"></i>
+                          </button>
+                          <button class="btn-credit-note px-1 py-1 mx-0 text-red-600" data-id="${row.id}">
+                            <i class="fa-solid fa-lg fa-file-invoice"></i>
+                          </button>
+                          <button class="btn-debit-note px-1 py-1 mx-0 text-green-600" data-id="${row.id}">
+                            <i class="fa-solid fa-lg fa-file-invoice"></i>
+                          </button>
                         `;
                       }
-                    }
+                    },
                   },
                 ]}
                 options={{
-                  dom: //B = Buttons, l = LengthMenu (mostrar X registros), f = Filtro (search), t = Tabla, i = Info (mostrando de X a Y de Z), p = Paginación
-                    "<'row'<'col-sm-12 text-center'B>>" +                // Fila 2: botones ocupando todo el ancho
-                    "<'row'<'col-sm-6 text-end'l><'col-sm-6'f>>" +    // Fila 1: lengthMenu izquierda, filtro derecha
-                    "<'row'<'col-sm-12'tr>>" +               // Fila 3: tabla
-                    "<'row'<'col-sm-5 text-start'i><'col-sm-7 text-end'p>>",     // Fila 4: info izquierda, paginación derecha
-                  serverSide: true, // si es true la paginación se debe controlar a traves del servidor
+                  serverSide: true,
                   processing: true,
-                  ajax: async (dataTablesParams, callback) => {
+                  ajax: async (params, callback) => {
                     try {
+                      const page = Math.floor(params.start / params.length) + 1;
+                      const per_page = params.length;
 
-                      // DataTables usa start y length, los convertimos a page y per_page
-                      const page = Math.floor(dataTablesParams.start / dataTablesParams.length) + 1;
-                      const per_page = dataTablesParams.length;
-                      const query = {
-                        page,
-                        per_page
-                      };
+                      const response = await getInvoices({ page, per_page });
 
-                      // Añadir filtros según filtro activo
-                      if ($('#filter_type option:selected').val() === "estatus" && $('#filtro_estatus option:selected').val()) query.estatus = $('#filtro_estatus option:selected').val();
-
-                      if ($('#filter_type option:selected').val() === "zona" && $("#filtro_text").val()) query.zona = $("#filtro_text").val();
-
-                      if ($('#filter_type option:selected').val() === "correlativo_interno" && $("#filtro_text").val())
-                        query.correlativo_interno = $("#filtro_text").val();
-
-                      if ($('#filter_type option:selected').val() === "cliente_final_rif" && $("#filtro_text").val())
-                        query.cliente_final_rif = $("#filtro_text").val();
-
-                      if ($('#filter_type option:selected').val() === "rango_fecha" && $('#filtro_desde').val() && $('#filtro_hasta').val()) {
-                        query.desde = $('#filtro_desde').val();
-                        query.hasta = $('#filtro_hasta').val();
-                      }
-
-                      // Pasamos los filtros al servicio
-                      const response = await getInvoices(query);
-
-                      // Aseguramos que la estructura esperada esté presente
-                      const { data, total } = response;
-
-                      // Retornamos a DataTables con la estructura esperada
                       callback({
-                        draw: dataTablesParams.draw,
-                        recordsTotal: total,
-                        recordsFiltered: total,
-                        data: data,
+                        draw: params.draw,
+                        recordsTotal: response.total,
+                        recordsFiltered: response.total,
+                        data: response.data,
                       });
                     } catch (err) {
-                      console.error("Error cargando Pre-Factura:", err);
                       callback({
-                        draw: dataTablesParams.draw,
+                        draw: params.draw,
                         recordsTotal: 0,
                         recordsFiltered: 0,
                         data: [],
                       });
                     }
                   },
-                  paging: true,
-                  searching: true,
-                  ordering: true,
-                  info: true,
-                  scrollx: true,
-                  responsive: true,
-                  pageLength: 10,         // cantidad inicial por página
-                  lengthMenu: [5, 10, 25, 50, 100], // opciones en el desplegable, false para oculta el selector
-                  //dom: "Blfrtip",
-                  buttons: [
-                    {
-                      extend: "copyHtml5",
-                      text: "Copiar",
-                      title: "Lista de Pre-Facturas"   // nombre del documento en el portapapeles
-                    },
-                    {
-                      extend: "excelHtml5",
-                      text: "Excel",
-                      title: "Lista de Pre-Facturas",  // título dentro del archivo
-                      filename: "Lista_pre_facturas"   // nombre del archivo generado (sin extensión)
-                    },
-                    {
-                      extend: "csvHtml5",
-                      text: "CSV",
-                      title: "Lista de Pre-Facturas",
-                      filename: "Lista_pre_facturas"
-                    },
-                    {
-                      extend: "pdfHtml5",
-                      text: "PDF",
-                      title: "Lista de Pre-Facturas",
-                      filename: "Lista_pre_facturas",
-                      //orientation: "landscape",   // opcional
-                      //pageSize: "A4"              // opcional
-                    },
-                    {
-                      extend: "print",
-                      text: "Imprimir",
-                      title: "Lista de Pre-Facturas"
-                    }
-                  ],
-                  language: {
-                    decimal: ",",
-                    thousands: ".",
-                    lengthMenu: "Mostrar _MENU_ registros por página",
-                    zeroRecords: "No se encontraron resultados",
-                    info: "Mostrando de _START_ a _END_ de _TOTAL_ registros",
-                    infoEmpty: "No hay registros disponibles",
-                    infoFiltered: "(filtrado de _MAX_ registros totales)",
-                    search: "Buscar:",
-                    paginate: {
-                      first: "Primero",
-                      last: "Último",
-                      next: "Siguiente",
-                      previous: "Anterior"
-                    }
-                  }
                 }}
-              className="items-center w-full bg-transparent border-collapse"/>
-              {/* Modal de confirmación */}
+              />
+
               <ModalInvoices
                 isOpen={modalOpenInvoices}
                 onClose={handleCloseModalInvoices}
-                message={Invoices}//{'Detalle del Pre-Factura'} // Pasamos el mensaje personalizado
+                message={Invoices}
               />
+
+              {modalImportOpen && (
+                <ModalImportPreviewPreInvoices
+                  isOpen={modalImportOpen}
+                  onClose={() => {
+                    setModalImportOpen(false);
+                    setPreInvoicesToImport([]);
+                  }}
+                  data={preInvoicesToImport}
+                  onConfirm={handleConfirmImport}
+                />
+              )}
             </div>
           </div>
         </div>
