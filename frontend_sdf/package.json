@@ -26,6 +26,7 @@
     "js-sha256": "^0.11.1",
     "jszip": "^3.10.1",
     "lucide-react": "^0.544.0",
+    "notus-react": "^1.1.0",
     "papaparse": "^5.5.3",
     "pdfmake": "^0.2.20",
     "react": "^18.2.0",

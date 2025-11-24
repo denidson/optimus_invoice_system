@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo, useRef } from "react";
 import { useParams } from "react-router-dom";
 import { getPreInvoices, showPreInvoice, createPreInvoice, editPreInvoice } from '../../services/api_pre_invoices'; // Importa el servicio
+import { showInvoice } from '../../services/api_invoices'; // Importa el servicio
 import { getProducts, showProduct, createProduct } from '../../services/apiProducts'; // Importa el servicio
 import { getEndClients, showEndClient, createEndClient } from '../../services/api_end_clients'; // Importa el servicio
 import { useNavigate } from "react-router-dom"; // Para la redirección
@@ -11,6 +12,7 @@ import "react-toastify/dist/ReactToastify.css"; // Importar el CSS de las notifi
 import { DataGrid, useGridApiRef } from '@mui/x-data-grid';
 import { Button } from "@mui/material";
 import { Autocomplete, TextField } from "@mui/material";
+import { Tabs, Tab, Box } from "@mui/material";
 import { esES } from '@mui/x-data-grid/locales';
 import $ from "jquery";
 
@@ -76,18 +78,21 @@ function FormPreInvoices() {
   const location = useLocation();
   const queryParams = new URLSearchParams(location.search);
   const preInvoiceId = queryParams.get("id"); // Obtener el ID de la URL
+  const preInvoiceType = queryParams.get("type");
   const [preInvoice, setPreInvoice] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [buttonDisabled, setButtonDisabled] = useState(false);
+  const [tab, setTab] = useState("productos"); // Estado para controlar qué DataGrids mostrar
   const authData = localStorage.getItem("authData");
   var authclientId;
   if (authData) {
     authclientId = JSON.parse(authData)['cliente_id'];
   }
-
+  const type = preInvoiceType != undefined ? decryptText(preInvoiceType) : '';
   //Autofocus
   const apiRef = useGridApiRef();
+  const apiRefNd = useGridApiRef();
   //Campos del DataGrid
   const columns = [
     { field: "id", headerName: "ID", editable: false },
@@ -211,6 +216,42 @@ function FormPreInvoices() {
       ),
     },
   ];
+
+  const columnsNd = [
+    { field: "id", headerName: "ID", editable: false },
+    { field: "nueva_linea", headerName: "Nueva Linea", editable: false },
+    { field: "concepto", headerName: "Concepto", editable: true, flex: 4 },
+    {
+      field: "monto",
+      headerName: "Monto",
+      flex: 1,
+      type: "number",
+      editable: true,
+      headerAlign: "center",
+      renderCell: (params) => {
+        // safe check: params puede ser undefined muy tempranamente, evitamos crash
+        const raw = params?.value ?? 0;
+        return new Intl.NumberFormat("es-VE", {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2,
+        }).format(Number(raw));
+      },
+    },
+    {
+      field: "acciones",
+      headerName: "",
+      flex: 0.4,
+      sortable: false,
+      renderCell: (params) => (
+        <Button
+          color="bg-slate-800"
+          size="small"
+          onClick={() => handleDeleteRowNd(params.row.id)}>
+          <i class="fa-solid fa-lg fa-trash"></i>
+        </Button>
+      ),
+    },
+  ];
   //Botones para agregar lineas
   const [rows, setRows] = useState([
     //{ id: 1, producto_id: "P001", cantidad: 2, precio_unitario: 1500.0 },
@@ -227,12 +268,29 @@ function FormPreInvoices() {
         setProducts(datapts);
         const datacls = await getEndClients({ page: 1, per_page: 20, request_type: 'export' });
         setEndClients(datacls.data);
+        var data;
         if (preInvoiceId != null){
-          const data = await showPreInvoice(decryptText(preInvoiceId)); // Llamamos a showPreInvoice con el ID
-          if (data.igtf_monto > 0){
-            data['aplica_igtf'] = true;
-            $('#aplica_igtf').prop('checked', true);
-            $('.apply_igtf').removeClass('hidden');
+          console.log('type: ', type);
+          if (type == 'FC'){
+            data = await showPreInvoice(decryptText(preInvoiceId)); // Llamamos a showPreInvoice con el ID
+            if (data.igtf_monto > 0){
+              data['aplica_igtf'] = true;
+              $('#aplica_igtf').prop('checked', true);
+              $('.apply_igtf').removeClass('hidden');
+            }
+          }else{
+            data = await showInvoice(decryptText(preInvoiceId)); // Llamamos a showPreInvoice con el ID
+            data['tipo_documento'] = type;
+            data['factura_afectada_id'] = data['id'];
+            data['id'] = '#';
+            data['fecha_factura'] = formattedDate;
+            data['aplica_igtf'] = false;
+            data['monto_pagado_divisas'] = 0.0;
+            data['igtf_monto'] = 0.0;
+            if (type == 'ND'){
+              data['items'] = [];
+              data['conceptos_nd'] = [];
+            }
           }
           setPreInvoice(data); // Guardamos los datos del Pre-Factura en el estado
         }else{
@@ -254,7 +312,8 @@ function FormPreInvoices() {
             igtf_monto: 0,
             tipo_documento: 'FC',
             fecha_factura: formattedDate,
-            serial: ''
+            serial: '',
+            conceptos_nd: [],
           })
         }
       } catch (err) {
@@ -275,7 +334,7 @@ function FormPreInvoices() {
 
   //Calcular base imponible de la Pre-Factura
   const taxBase = useMemo(() => {
-    if (!preInvoice?.items) return 0;
+    if (!preInvoice?.items && !preInvoice?.conceptos_nd) return 0;
 
     const baseTotal = preInvoice.items.reduce((acc, item) => {
       const cantidad = Number(item.cantidad) || 0;
@@ -289,9 +348,16 @@ function FormPreInvoices() {
       return acc + roundTo(baseLine, 2);
     }, 0);
 
+    const baseTotalNd = preInvoice.conceptos_nd.reduce((acc, item) => {
+      const monto = Number(item.monto) || 0;
+
+      // redondear a 4 decimales por línea
+      return acc + roundTo(monto, 2);
+    }, 0);
+
     // resultado final redondeado a 2 decimales
-    return roundTo(baseTotal, 2);
-  }, [preInvoice?.items]);
+    return roundTo(baseTotal + baseTotalNd, 2);
+  }, [preInvoice?.items, preInvoice?.conceptos_nd]);
 
   //Calcular iva de la Pre-Factura
   const taxApplied = useMemo(() => {
@@ -316,7 +382,7 @@ function FormPreInvoices() {
 
   //Calcular total de la Pre-Factura
   const totalAmount = useMemo(() => {
-    if (!preInvoice?.items) return 0;
+    if (!preInvoice?.items && !preInvoice?.conceptos_nd) return 0;
 
     const total = preInvoice.items.reduce((acc, item) => {
       const cantidad = Number(item.cantidad) || 0;
@@ -331,9 +397,16 @@ function FormPreInvoices() {
       return acc + roundTo(totalLine, 2);
     }, 0);
 
+    const totalNd = preInvoice.conceptos_nd.reduce((acc, item) => {
+      const monto = Number(item.monto) || 0;
+
+      // redondear a 4 decimales por línea
+      return acc + roundTo(monto, 2);
+    }, 0);
+
     // resultado final redondeado a 2 decimales
-    return roundTo(total, 2);
-  }, [preInvoice?.items]);
+    return roundTo(total + totalNd, 2);
+  }, [preInvoice?.items, preInvoice?.conceptos_nd]);
 
   //Calcular monto del igtf en la Pre-Factura
   const igtfAmount = useMemo(() => {
@@ -360,6 +433,9 @@ function FormPreInvoices() {
         delete preInvoice.id;
         if (preInvoice.cliente_final_id == '#'){
           delete preInvoice.cliente_final_id;
+          if (preInvoice.tipo_documento != 'ND'){
+            delete preInvoice.conceptos_nd;
+          }
         }
         action = 'create';
         //preInvoice.total = totalAmount;
@@ -420,7 +496,7 @@ function FormPreInvoices() {
       preInvoice.items.length > 0
         ? Math.max(...preInvoice.items.map((r) => r.id)) + 1
         : 1;
-    console.log('newId: ', newId);
+    //console.log('newId: ', newId);
     const newRow = { id: newId, nueva_linea: true, producto_id: "", cantidad: 1, precio_unitario: 0, iva_categoria_id: "", tasa_porcentaje: "", descuento_porcentaje: 0 };
 
     setPreInvoice((prev) => {
@@ -438,11 +514,43 @@ function FormPreInvoices() {
     });
   };
 
+  // Agregar nueva línea con foco Nota de Debito
+  const handleAddRowNd = () => {
+    const newId =
+      preInvoice.conceptos_nd.length > 0
+        ? Math.max(...preInvoice.conceptos_nd.map((r) => r.id)) + 1
+        : 1;
+    //console.log('newId: ', newId);
+    const newRow = { id: newId, nueva_linea: true, concepto: "", monto: 0.0 };
+
+    setPreInvoice((prev) => {
+      const updated = {
+        ...prev,
+        conceptos_nd: [...prev.conceptos_nd, newRow],
+      };
+
+      setTimeout(() => {
+        apiRefNd.current.setCellFocus(newId, "concepto");
+        apiRefNd.current.startCellEditMode({ id: newId, field: "concepto" });
+      });
+
+      return updated;
+    });
+  };
+
   // Función para eliminar fila
   const handleDeleteRow = (id) => {
     setPreInvoice((prev) => ({
       ...prev,
       items: prev.items.filter((row) => row.id !== id),
+    }));
+  };
+
+  // Función para eliminar fila
+  const handleDeleteRowNd = (id) => {
+    setPreInvoice((prev) => ({
+      ...prev,
+      conceptos_nd: prev.conceptos_nd.filter((row) => row.id !== id),
     }));
   };
 
@@ -473,6 +581,32 @@ const processRowUpdate = (newRow, oldRow) => {
   setPreInvoice((prev) => ({
     ...prev,
     items: prev.items.map((row) =>
+      row.id === updatedRow.id ? updatedRow : row
+    ),
+  }));
+
+  return updatedRow; // obligatorio retornar la fila actualizada
+};
+
+  // Función para actualizar fila Nota Debito
+const processRowUpdateNd = (newRow, oldRow) => {
+  // Buscar producto seleccionado
+
+  // Normalizar precio_base: convertir "31,00" -> 31.00 (float)
+  let monto = parseFloat(
+    newRow.monto.toString().replace(",", ".")
+  );
+
+  // Crear la fila actualizada
+  const updatedRow = {
+    ...newRow,
+    monto: monto,
+  };
+
+  // Actualizar estado global preInvoice
+  setPreInvoice((prev) => ({
+    ...prev,
+    conceptos_nd: prev.conceptos_nd.map((row) =>
       row.id === updatedRow.id ? updatedRow : row
     ),
   }));
@@ -569,6 +703,10 @@ const reduceRif = (rif) => {
     ...prev,
     cliente_final_rif: rif || '',
   }));
+};
+
+const handleRadioChange = (event) => {
+  setSelectedView(event.target.value); // Actualiza el estado con el valor del radio button seleccionado
 };
 
   return (
@@ -819,37 +957,84 @@ const reduceRif = (rif) => {
                   </div>
                 </div>
                 <div className="flex flex-wrap">
-                  <div className="w-full lg:w-12/12 px-4 mt-1 text-right">
-                    <Button
-                      variant="contained"
-                      color="primary"
-                      onClick={handleAddRow}
-                      style={{ marginBottom: 10 }}>
-                      Agregar línea
-                    </Button>
-                    <DataGrid
-                      apiRef={apiRef}
-                      rows={preInvoice.items}
-                      columns={columns}
-                      getRowId={(row) => row.id}
-                      pageSize={5}
-                      autoHeight
-                      processRowUpdate={processRowUpdate}
-                      columnVisibilityModel={{
-                        id: false, // oculta la columna "id"
-                        nueva_linea: false, // oculta la columna "nueva_linea"
-                        iva_categoria_id: false, // oculta la columna "iva_categoria_id"
-                      }}
-                      rowHeight={30}
-                      localeText={esES.components.MuiDataGrid.defaultProps.localeText} // Traducción al español
-                      sx={{
-                        '& .MuiDataGrid-columnHeaderTitle': {
-                          fontWeight: 'bold',   // ahora sí en negrita
-                          fontSize: '0.80rem',
-                        },
-                      }}
-                    />
-                  </div>
+                  {/* Aquí el grupo de radio buttons */}
+
+                    {type == 'ND' && (
+                      <div className="w-full lg:w-12/12 px-4 mt-1 text-center">
+                        <hr class="my-6 border-b-1 border-blueGray-300"/>
+                        <Tabs value={tab} onChange={(e, v) => setTab(v)} textColor="primary" indicatorColor="primary" centered>
+                          <Tab value="productos" label="Productos" />
+                          <Tab value="conceptos" label="Conceptos" />
+                        </Tabs>
+                      </div>
+                    )}
+                    {/* Condicionalmente renderizamos los DataGrids basados en el estado selectedView */}
+                    {tab === "productos" && (
+                      <div className="w-full lg:w-12/12 px-4 mt-1 text-right">
+                        <Button
+                          variant="contained"
+                          color="primary"
+                          onClick={handleAddRow}
+                          style={{ marginBottom: 10 }}>
+                          Agregar línea
+                        </Button>
+                        <DataGrid
+                          apiRef={apiRef}
+                          rows={preInvoice.items}
+                          columns={columns}
+                          getRowId={(row) => row.id}
+                          pageSize={5}
+                          autoHeight
+                          processRowUpdate={processRowUpdate}
+                          columnVisibilityModel={{
+                            id: false, // oculta la columna "id"
+                            nueva_linea: false, // oculta la columna "nueva_linea"
+                            iva_categoria_id: false, // oculta la columna "iva_categoria_id"
+                          }}
+                          rowHeight={30}
+                          localeText={esES.components.MuiDataGrid.defaultProps.localeText} // Traducción al español
+                          sx={{
+                            '& .MuiDataGrid-columnHeaderTitle': {
+                              fontWeight: 'bold',   // ahora sí en negrita
+                              fontSize: '0.80rem',
+                            },
+                          }}
+                        />
+                      </div>
+                    )}
+                    {tab === "conceptos" && (
+                      <div className="w-full lg:w-12/12 px-4 mt-5 text-right">
+                        <Button
+                          variant="contained"
+                          color="primary"
+                          onClick={handleAddRowNd}
+                          style={{ marginBottom: 10 }}>
+                          Agregar concepto
+                        </Button>
+                        <DataGrid
+                          apiRef={apiRefNd}
+                          rows={preInvoice.conceptos_nd}
+                          columns={columnsNd}
+                          getRowId={(row) => row.id}
+                          pageSize={5}
+                          autoHeight
+                          processRowUpdate={processRowUpdateNd}
+                          columnVisibilityModel={{
+                            id: false, // oculta la columna "id"
+                            nueva_linea: false, // oculta la columna "nueva_linea"
+                          }}
+                          rowHeight={30}
+                          localeText={esES.components.MuiDataGrid.defaultProps.localeText} // Traducción al español
+                          sx={{
+                            '& .MuiDataGrid-columnHeaderTitle': {
+                              fontWeight: 'bold',   // ahora sí en negrita
+                              fontSize: '0.80rem',
+                            },
+                          }}
+                        />
+                      </div>
+                    )}
+
                   <div className="w-full lg:w-4/12 px-4 mt-3">
                     <div className="relative w-full mb-3">
                       <label class="inline-flex items-center cursor-pointer">
