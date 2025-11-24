@@ -269,19 +269,56 @@ function ListInvoices() {
                     "<'row'<'col-sm-6 text-end'l><'col-sm-6'f>>" +    // Fila 1: lengthMenu izquierda, filtro derecha
                     "<'row'<'col-sm-12'tr>>" +               // Fila 3: tabla
                     "<'row'<'col-sm-5 text-start'i><'col-sm-7 text-end'p>>",     // Fila 4: info izquierda, paginación derecha
-                  serverSide: false, // si es true la paginación se debe controlar a traves del servidor
+                  serverSide: true, // si es true la paginación se debe controlar a traves del servidor
                   processing: true,
                   ajax: async (dataTablesParams, callback) => {
                     try {
-                      const response = await getInvoices();
+
+                      // DataTables usa start y length, los convertimos a page y per_page
+                      const page = Math.floor(dataTablesParams.start / dataTablesParams.length) + 1;
+                      const per_page = dataTablesParams.length;
+                      const query = {
+                        page,
+                        per_page
+                      };
+
+                      // Añadir filtros según filtro activo
+                      if ($('#filter_type option:selected').val() === "estatus" && $('#filtro_estatus option:selected').val()) query.estatus = $('#filtro_estatus option:selected').val();
+
+                      if ($('#filter_type option:selected').val() === "zona" && $("#filtro_text").val()) query.zona = $("#filtro_text").val();
+
+                      if ($('#filter_type option:selected').val() === "correlativo_interno" && $("#filtro_text").val())
+                        query.correlativo_interno = $("#filtro_text").val();
+
+                      if ($('#filter_type option:selected').val() === "cliente_final_rif" && $("#filtro_text").val())
+                        query.cliente_final_rif = $("#filtro_text").val();
+
+                      if ($('#filter_type option:selected').val() === "rango_fecha" && $('#filtro_desde').val() && $('#filtro_hasta').val()) {
+                        query.desde = $('#filtro_desde').val();
+                        query.hasta = $('#filtro_hasta').val();
+                      }
+
+                      // Pasamos los filtros al servicio
+                      const response = await getInvoices(query);
+
+                      // Aseguramos que la estructura esperada esté presente
+                      const { data, total } = response;
+
+                      // Retornamos a DataTables con la estructura esperada
                       callback({
                         draw: dataTablesParams.draw,
-                        recordsTotal: response.length,
-                        recordsFiltered: response.length,
-                        data: response
+                        recordsTotal: total,
+                        recordsFiltered: total,
+                        data: data,
                       });
                     } catch (err) {
-                      console.error(err);
+                      console.error("Error cargando Pre-Factura:", err);
+                      callback({
+                        draw: dataTablesParams.draw,
+                        recordsTotal: 0,
+                        recordsFiltered: 0,
+                        data: [],
+                      });
                     }
                   },
                   paging: true,
