@@ -207,25 +207,52 @@ function FormWithholdings() {
   // **********************************************************
   // CAMBIO DE RETENCIÓN
   // **********************************************************
+  let monto_retenido = 0;
+
   const handleRetencionChange = (itemId, retencion) => {
     if (!retencion) return;
 
+    // Buscar el item correspondiente
+    const item = withholding.items.find((i) => i.id === itemId);
+    if (!item) return;
+
+    let monto_retenido = 0;
+
+    const isIvaRetention =
+      retencion.codigo_seniat === "IVA_100" ||
+      retencion.codigo_seniat === "IVA_75";
+
+    if (isIvaRetention) {
+      // calcular el IVA real del item
+      const ivaCalculado =
+        item.monto_base_imponible * (parseFloat(item.iva) / 100);
+
+      monto_retenido = parseFloat(
+        ((ivaCalculado * parseFloat(retencion.porcentaje)) / 100).toFixed(2)
+      );
+    } else {
+      // retención sobre base imponible
+      monto_retenido = parseFloat(
+        ((item.monto_base_imponible * parseFloat(retencion.porcentaje)) / 100).toFixed(2)
+      );
+    }
+
+    // actualizar el item
     setWithholding((prev) => ({
       ...prev,
-      items: prev.items.map((item) =>
-        item.id === itemId
+      items: prev.items.map((i) =>
+        i.id === itemId
           ? {
-              ...item,
+              ...i,
               retencion_id: retencion.id,
               tipo_retencion: retencion,
-              monto_retenido: parseFloat(
-                (((item.monto_base_imponible * (parseFloat(item.iva) / 100)) * parseFloat(retencion.porcentaje)) / 100).toFixed(2)
-              ),
+              monto_retenido: monto_retenido,
             }
-          : item
+          : i
       ),
     }));
   };
+
 
   // **********************************************************
   // ELIMINAR FILA
@@ -322,8 +349,15 @@ function FormWithholdings() {
     e.preventDefault();
     setButtonDisabled(true);
 
+    // Validaciones mínimas antes de enviar
     if (!withholding.fecha_emision) {
       toast.error("La fecha de emisión es obligatoria");
+      setButtonDisabled(false);
+      return;
+    }
+
+    if (!withholding.numero_comprobante) {
+      toast.error("El número de comprobante es obligatorio");
       setButtonDisabled(false);
       return;
     }
@@ -340,22 +374,49 @@ function FormWithholdings() {
         setButtonDisabled(false);
         return;
       }
-      if (item.monto_documento <= 0 || item.monto_base_imponible <= 0) {
-        toast.error(`La factura ${item.factura_afectada_numero} tiene valores inválidos`);
-        setButtonDisabled(false);
-        return;
-      }
     }
+
+    // ---------------------------------------------------------
+    // Construir JSON final a enviar (payload)
+    // ---------------------------------------------------------
+    const payload = {
+      sujeto_retenido_rif: withholding.sujeto_retenido_rif,
+      sujeto_retenido_nombre: withholding.sujeto_retenido_nombre,
+      numero_comprobante: withholding.numero_comprobante,
+      periodo_fiscal: withholding.periodo_fiscal,
+      fecha_emision: withholding.fecha_emision,
+      items: withholding.items.map((item) => ({
+        factura_afectada_numero: item.factura_afectada_numero,
+        factura_afectada_control: item.factura_afectada_control,
+        factura_afectada_fecha: item.factura_afectada_fecha?.split("T")[0] || "",
+        tipo_documento_afectado: item.tipo_documento_afectado,
+        monto_documento: item.monto_documento.toFixed(2),
+        monto_base_imponible: item.monto_base_imponible.toFixed(2),
+        retencion_id: item.retencion_id,
+        monto_retenido: item.monto_retenido.toFixed(2),
+      })),
+    };
+
+    console.log("Payload enviado al backend:");
+    console.log(JSON.stringify(payload, null, 2));
 
     try {
       if (!withholding.id) {
-        await createWithholding(withholding);
+        await createWithholding(payload);
         toast.success("Retención creada correctamente", {
           onClose: () => navigate("/withholdings"),
         });
       }
-    } catch {
-      toast.error("Error al guardar");
+    } catch (err) {
+      console.error("Error del servidor:", err);
+
+      const backendMessage =
+        err.response?.data?.message ||
+        err.response?.data?.error ||
+        err.response?.data?.detail ||
+        "Error al guardar";
+
+      toast.error(backendMessage);
     } finally {
       setButtonDisabled(false);
     }
@@ -384,19 +445,50 @@ function FormWithholdings() {
             <div className="flex flex-wrap">
               <div className="w-full lg:w-3/12 px-4">
                 <label className="block text-blueGray-600 text-xs font-bold mb-2">RIF</label>
-                <input disabled className="border-0 px-3 py-3 bg-gray-200 rounded w-full" value={withholding.sujeto_retenido_rif || ""} />
+                <input 
+                  disabled
+                  className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-gray-200 rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
+                  value={withholding.sujeto_retenido_rif || ""} />
               </div>
               <div className="w-full lg:w-5/12 px-4">
                 <label className="block text-blueGray-600 text-xs font-bold mb-2">Razón Social</label>
-                <input disabled className="border-0 px-3 py-3 bg-gray-200 rounded w-full" value={withholding.sujeto_retenido_nombre || ""} />
+                <input 
+                  disabled 
+                  className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-gray-200 rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
+                  value={withholding.sujeto_retenido_nombre || ""} />
               </div>
-              <div className="w-full lg:w-2/12 px-4">
+              <div className="w-full lg:w-3/12 px-4">
+                <label className="block text-blueGray-600 text-xs font-bold mb-2">Nro. Comprobante</label>
+                <input
+                  type="text"
+                  className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
+                  value={withholding.numero_comprobante || ""}
+                  onChange={(e) =>
+                    setWithholding((prev) => ({ ...prev, numero_comprobante: e.target.value }))
+                  }
+                />
+              </div>
+            </div>
+
+            <div className="flex flex-wrap mt-4">
+              <div className="w-full lg:w-3/12 px-4">
                 <label className="block text-blueGray-600 text-xs font-bold mb-2">Fecha Emisión</label>
-                <input type="date" className="border-0 px-3 py-3 rounded w-full" value={withholding.fecha_emision || ""} max={today} onChange={(e) => handleFechaEmisionChange(e.target.value)} />
+                <input
+                  type="date"
+                  className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
+                  value={withholding.fecha_emision || ""}
+                  max={today}
+                  onChange={(e) => handleFechaEmisionChange(e.target.value)}
+                />
               </div>
-              <div className="w-full lg:w-2/12 px-4">
+
+              <div className="w-full lg:w-3/12 px-4">
                 <label className="block text-blueGray-600 text-xs font-bold mb-2">Periodo Fiscal</label>
-                <input disabled className="border-0 px-3 py-3 bg-gray-200 rounded w-full" value={withholding.periodo_fiscal || ""} />
+                <input
+                  disabled
+                  className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-gray-200 rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
+                  value={withholding.periodo_fiscal || ""}
+                />
               </div>
             </div>
 
