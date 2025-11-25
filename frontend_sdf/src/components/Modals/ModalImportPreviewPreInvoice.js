@@ -95,7 +95,7 @@ const ModalImportPreviewPreInvoice = ({
     const updated = [...tableData];
     updated.splice(index, 1);
     setTableData(updated);
-    toast.info("Prefactura eliminada");
+    toast.info("Prefactura/factura eliminada");
   };
 
   const handlePrefacturaChange = (index, field, value) => {
@@ -206,7 +206,7 @@ const ModalImportPreviewPreInvoice = ({
     console.log("Final pre-invoices to import:", updated);
 
     onConfirm(updated);
-    toast.success("Prefacturas listas para importar");
+    toast.success("Prefacturas/Facturas listas para importar");
     onClose();
   };
 
