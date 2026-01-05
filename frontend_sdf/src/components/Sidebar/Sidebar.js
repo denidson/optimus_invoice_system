@@ -22,7 +22,7 @@ export default function Sidebar() {
     {
       heading: "Inicio",
       links: [
-        { to: "/dashboard", icon: "fas fa-tv", label: "Dashboard" },
+        { to: "/dashboard", icon: "fas fa-tv", label: "Panel de Control" },
       ],
     },
     {
@@ -31,12 +31,6 @@ export default function Sidebar() {
         { to: "/preinvoices", icon: "fas fa-file-import", label: "Pre-Facturación" },
         { to: "/invoices", icon: "fas fa-file-invoice", label: "Facturación" },
         { to: "/withholdings", icon: "fas fa-file-invoice", label: "Retenciones" },
-      ],
-    },
-    {
-      heading: "Configuración Usuarios",
-      links: [
-        { to: "/company-users", icon: "fas fa-users", label: "Usuarios", roles: ["operador_admin"] },
       ],
     },
     {
@@ -49,6 +43,7 @@ export default function Sidebar() {
         { to: "/taxes", icon: "fas fa-percent", label: "Impuestos", roles: ["admin", "operador_admin"] },
         { to: "/config-withholdings", icon: "fas fa-percent", label: "Retenciones", roles: ["admin", "operador_admin"] },
         { to: "/auditlogs", icon: "fa-solid fa-list-ul", label: "Registro de auditoria", roles: ["admin"] },
+        { to: "/company-users", icon: "fas fa-users", label: "Configuración Usuarios", roles: ["operador_admin"] },
       ],
     },
   ];
