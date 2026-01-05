@@ -89,7 +89,7 @@ function FormPreInvoices() {
   if (authData) {
     authclientId = JSON.parse(authData)['cliente_id'];
   }
-  const type = preInvoiceType != undefined ? decryptText(preInvoiceType) : '';
+  const type = preInvoiceType != undefined ? decryptText(preInvoiceType) : 'FC';
   //Autofocus
   const apiRef = useGridApiRef();
   const apiRefNd = useGridApiRef();
@@ -971,6 +971,7 @@ const handleRadioChange = (event) => {
                     {/* Condicionalmente renderizamos los DataGrids basados en el estado selectedView */}
                     {tab === "productos" && (
                       <div className="w-full lg:w-12/12 px-4 mt-1 text-right">
+                        {type != 'NC' && (
                         <Button
                           variant="contained"
                           color="primary"
@@ -978,6 +979,7 @@ const handleRadioChange = (event) => {
                           style={{ marginBottom: 10 }}>
                           Agregar línea
                         </Button>
+                        )}
                         <DataGrid
                           apiRef={apiRef}
                           rows={preInvoice.items}
