@@ -1,6 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
-import { Link } from "react-router-dom"; // 👈 Importa Link
-import ReactImg from "../../assets/img/react.jpg";
+import { Link } from "react-router-dom";
 
 export default function UserDropdown({ nombreUsuario, onLogout }) {
   const [open, setOpen] = useState(false);
@@ -24,12 +23,8 @@ export default function UserDropdown({ nombreUsuario, onLogout }) {
         onClick={toggleDropdown}
         className="flex items-center space-x-2 focus:outline-none"
       >
-        <span className="w-10 h-10 rounded-full overflow-hidden border-2 border-white">
-          <img
-            src={ReactImg}
-            alt="Profile"
-            className="w-full h-full object-cover"
-          />
+        <span className="w-10 h-10 rounded-full overflow-hidden border-2 border-white flex items-center justify-center bg-slate-400 text-white">
+          <i className="fas fa-user-circle text-2xl"></i>
         </span>
         <span className="text-white font-medium hidden md:inline">
           {nombreUsuario || "Usuario"}

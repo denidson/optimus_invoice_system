@@ -211,11 +211,11 @@ function ListProducts() {
   const handleCloseModalProducts = () => setModalOpenProducts(false);
 
   return (
-    <div className="md:px-10 mx-auto w-full -m-24">
+    <div className="mx-auto w-full">
       <ToastContainer />
       <div className="flex flex-wrap">
         <div className="w-full lg:w-12/12">
-          <div className="relative flex flex-col min-w-0 break-words w-full mb-6 shadow-lg rounded-lg bg-blueGray-100 border-0">
+          <div className="relative bg-white flex flex-col min-w-0 break-words w-full mb-6 shadow-lg rounded-lg bg-blueGray-100 border-0">
 
             {/* Header Card */}
             <div className="rounded-t bg-white mb-0 px-6 py-6 flex justify-between items-center border-b">

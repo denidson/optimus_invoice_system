@@ -105,9 +105,8 @@ export default function HeaderStats() {
 
   return (
     <>
-      <div className="relative bg-[#4551f7] md:pt-32 pb-32 pt-12">
+      <div className="relative bg-[#4551f7] md:pt-8 pt-4 pb-4">
         <div className="px-4 md:px-10 mx-auto w-full">
-
           <div className="flex flex-wrap">
 
             {/* Total Facturado */}
@@ -133,7 +132,7 @@ export default function HeaderStats() {
             {/* Notas de Crédito */}
             <div className="w-full lg:w-6/12 xl:w-3/12 px-4">
               <CardStats
-                statSubtitle="NOTAS DE CRÉDITO (NC)"
+                statSubtitle="TOTAL NOTAS DE CRÉDITO"
                 statTitle={`$${summary.total_notas_credito_nc}`}
                 statIconName="fas fa-arrow-down"
                 statIconColor="bg-red-500"
@@ -143,7 +142,7 @@ export default function HeaderStats() {
             {/* Notas de Débito */}
             <div className="w-full lg:w-6/12 xl:w-3/12 px-4">
               <CardStats
-                statSubtitle="NOTAS DE DÉBITO (ND)"
+                statSubtitle="TOTAL NOTAS DE DÉBITO"
                 statTitle={`$${summary.total_notas_debito_nd}`}
                 statIconName="fas fa-arrow-up"
                 statIconColor="bg-orange-500"

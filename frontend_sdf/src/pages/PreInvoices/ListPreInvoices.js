@@ -1,39 +1,18 @@
 import React, { useContext } from "react";
 import { AuthContext } from "../../context/AuthContext";
-import Sidebar from '../../components/Sidebar/Sidebar';
-import Navbar from '../../components/Navbars/IndexNavbar';
-import HeaderStats from '../../components/Headers/HeaderStats';
-import ListPreInvoices from '../../components/PreInvoices/ListPreInvoices';
+import AdminLayout from "../../layouts/AdminLayout";
+import ListPreInvoices from "../../components/PreInvoices/ListPreInvoices";
 
-function ListPreInvoicesPage() {
+export default function ListPreInvoicesPage() {
   const { user } = useContext(AuthContext);
   const nombreUsuario = user?.nombre || "Usuario";
 
   return (
-    <>
-      <Sidebar />
-      <div className="relative md:ml-64 bg-blueGray-100 min-h-screen">
-        <Navbar nombreUsuario={nombreUsuario} />
-
-        {/* Header con estadísticas */}
-        <HeaderStats
-          statSubtitle="Pre-Facturas"
-          statTitle="1,200"
-          statArrow="up"
-          statPercent="3.48"
-          statPercentColor="text-emerald-500"
-          statDescription="Desde el mes pasado"
-          statIconName="fas fa-chart-line"
-          statIconColor="bg-blue-500"
-        />
-
-        {/* Contenido principal */}
-        <div className="mt-6 px-4 md:px-8">
-          <ListPreInvoices />
-        </div>
+    <AdminLayout nombreUsuario={nombreUsuario}>
+      {/* Contenedor principal con separación y fondo blanco */}
+      <div className="mt-8 px-4 md:px-8">
+        <ListPreInvoices />
       </div>
-    </>
+    </AdminLayout>
   );
 }
-
-export default ListPreInvoicesPage;

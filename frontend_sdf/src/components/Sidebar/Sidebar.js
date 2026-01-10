@@ -1,29 +1,58 @@
-/* eslint-disable */
-import React, { useContext } from "react";
+import React, { useContext, useState, useRef, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
+import ReactDOM from "react-dom";
 
-import NotificationDropdown from "../Dropdowns/NotificationDropdown.js";
-import UserDropdown from "../Dropdowns/UserDropdown.js";
-import Logo1 from "../../assets/img/logo1.png";
+import Logo1 from "../../assets/img/Quantus-Invoice.png";
 import { AuthContext } from "../../context/AuthContext";
 
-export default function Sidebar() {
-  const [collapseShow, setCollapseShow] = React.useState("hidden");
+function Tooltip({ targetRef, text, visible }) {
+  const [coords, setCoords] = useState({ top: 0, left: 0 });
+
+  useEffect(() => {
+    if (targetRef.current && visible) {
+      const rect = targetRef.current.getBoundingClientRect();
+      setCoords({ top: rect.top + rect.height / 2, left: rect.right + 8 });
+    }
+  }, [targetRef, visible]);
+
+  if (!visible) return null;
+
+  return ReactDOM.createPortal(
+    <div
+      style={{
+        position: "fixed",
+        top: coords.top,
+        left: coords.left,
+        transform: "translateY(-50%)",
+        backgroundColor: "#1e293b", // slate-800
+        color: "#fff",
+        padding: "2px 6px",
+        borderRadius: "4px",
+        fontSize: "0.7rem",
+        zIndex: 9999,
+        whiteSpace: "nowrap",
+      }}
+    >
+      {text}
+    </div>,
+    document.body
+  );
+}
+
+export default function Sidebar({ collapsed, setCollapsed }) {
   const location = useLocation();
   const { user } = useContext(AuthContext);
   const rol = user?.rol || "";
 
   const isActive = (path) =>
     location.pathname.includes(path)
-      ? "text-sky-500 hover:text-sky-600 font-bold"
+      ? "text-sky-500 font-bold"
       : "text-slate-700 hover:text-slate-500";
 
   const menuSections = [
     {
       heading: "Inicio",
-      links: [
-        { to: "/dashboard", icon: "fas fa-tv", label: "Panel de Control" },
-      ],
+      links: [{ to: "/dashboard", icon: "fas fa-tv", label: "Panel de Control" }],
     },
     {
       heading: "Facturación",
@@ -43,108 +72,88 @@ export default function Sidebar() {
         { to: "/taxes", icon: "fas fa-percent", label: "Impuestos", roles: ["admin", "operador_admin"] },
         { to: "/config-withholdings", icon: "fas fa-percent", label: "Retenciones", roles: ["admin", "operador_admin"] },
         { to: "/auditlogs", icon: "fa-solid fa-list-ul", label: "Registro de auditoria", roles: ["admin"] },
-        { to: "/company-users", icon: "fas fa-users", label: "Configuración Usuarios", roles: ["operador_admin"] },
+        { to: "/company-users", icon: "fas fa-users", label: "Usuarios", roles: ["operador_admin"] },
       ],
     },
   ];
 
+  const [tooltip, setTooltip] = useState({ text: "", visible: false, ref: null });
+
   return (
-    <nav className="md:left-0 md:block md:fixed md:top-0 md:bottom-0 md:overflow-y-auto md:flex-row md:flex-nowrap md:overflow-hidden shadow-xl bg-white flex flex-wrap items-center justify-between relative md:w-64 z-10 py-4 px-6">
-      <div className="md:flex-col md:items-stretch md:min-h-full md:flex-nowrap px-0 flex flex-wrap items-center justify-between w-full mx-auto">
-        {/* Toggler */}
-        <button
-          className="cursor-pointer text-black opacity-50 md:hidden px-3 py-1 text-xl leading-none bg-transparent rounded border border-solid border-transparent"
-          type="button"
-          onClick={() => setCollapseShow("bg-white m-2 py-3 px-6")}
-        >
-          <i className="fas fa-bars"></i>
-        </button>
+    <nav
+      className={`
+        fixed top-0 left-0 h-screen
+        bg-white shadow-xl z-30 py-4
+        transition-[width] duration-200 ease-in-out
+        ${collapsed ? "md:w-20" : "md:w-64"}
+        w-64
+      `}
+    >
+      <div className={`${collapsed ? "px-3" : "px-6"} h-screen flex flex-col`}>
+        {/* LOGO + COLLAPSE */}
+        <div className="flex items-center justify-between">
+          <Link to="/" className="block py-4">
+            <img
+              src={Logo1}
+              alt="Logo"
+              className={`transition-all duration-150 ${collapsed ? "w-8 mx-auto" : "w-full"}`}
+            />
+          </Link>
 
-        {/* Brand */}
-        <Link
-          className="md:block text-left md:pb-2 text-slate-600 mr-0 inline-block whitespace-nowrap text-sm uppercase font-bold p-4 px-0"
-          to="/"
-        >
-          <img src={Logo1} alt="Logo1" className="w-full h-full object-cover" />
-        </Link>
+          <button
+            onClick={() => setCollapsed(!collapsed)}
+            className="hidden md:block text-slate-500 hover:text-sky-600"
+          >
+            <i className={`fas ${collapsed ? "fa-chevron-right" : "fa-chevron-left"}`} />
+          </button>
+        </div>
 
-        {/* User */}
-        <ul className="md:hidden items-center flex flex-wrap list-none">
-          <li className="inline-block relative"><NotificationDropdown /></li>
-          <li className="inline-block relative"><UserDropdown /></li>
-        </ul>
-
-        {/* Collapse */}
-        <div
-          className={
-            "md:flex md:flex-col md:items-stretch md:opacity-100 md:relative md:mt-4 md:shadow-none shadow absolute top-0 left-0 right-0 z-40 overflow-y-auto overflow-x-hidden h-auto items-center flex-1 rounded " +
-            collapseShow
-          }
-        >
-          {/* Collapse header */}
-          <div className="md:min-w-full md:hidden block pb-4 mb-4 border-b border-solid border-slate-200">
-            <div className="flex flex-wrap">
-              <div className="w-6/12">
-                <Link
-                  className="md:block text-left md:pb-2 text-slate-600 mr-0 inline-block whitespace-nowrap text-sm uppercase font-bold p-4 px-0"
-                  to="/"
-                >
-                  <img src={Logo1} alt="Logo1" className="w-8 h-8 object-cover" />
-                </Link>
-              </div>
-              <div className="w-6/12 flex justify-end">
-                <button
-                  type="button"
-                  className="cursor-pointer text-black opacity-50 md:hidden px-3 py-1 text-xl leading-none bg-transparent rounded border border-solid border-transparent"
-                  onClick={() => setCollapseShow("hidden")}
-                >
-                  <i className="fas fa-times"></i>
-                </button>
-              </div>
-            </div>
-          </div>
-
-          {/* Search Form */}
-          <form className="mt-6 mb-4 md:hidden">
-            <div className="mb-3 pt-0">
-              <input
-                type="text"
-                placeholder="Search"
-                className="border-0 px-3 py-2 h-12 border border-solid border-slate-500 placeholder-slate-300 text-slate-600 bg-white rounded text-base leading-snug shadow-none outline-none focus:outline-none w-full font-normal"
-              />
-            </div>
-          </form>
-
-          {/* Navigation Sections */}
+        {/* Menu */}
+        <div className="flex-1 mt-4 overflow-y-auto">
           {menuSections.map((section) => {
             const visibleLinks = section.links.filter(
               (link) => !link.roles || link.roles.includes(rol)
             );
-
-            if (visibleLinks.length === 0) return null; // No mostrar sección vacía
+            if (!visibleLinks.length) return null;
 
             return (
               <React.Fragment key={section.heading}>
-                <hr className="my-4 md:min-w-full" />
-                <h6 className="md:min-w-full text-slate-500 text-xs uppercase font-bold block pt-1 pb-4 no-underline">
-                  {section.heading}
-                </h6>
-                <ul className="md:flex-col md:min-w-full flex flex-col list-none">
-                  {visibleLinks.map((link) => (
-                    <li key={link.to} className="items-center">
-                      <Link
-                        className={`text-xs uppercase py-3 font-bold block ${isActive(link.to)}`}
-                        to={link.to}
-                      >
-                        <i
-                          className={`${link.icon} mr-2 text-sm ${
-                            isActive(link.to).includes("text-sky") ? "opacity-75" : "text-slate-300"
-                          }`}
-                        ></i>{" "}
-                        {link.label}
-                      </Link>
-                    </li>
-                  ))}
+                <hr className="my-4" />
+                {!collapsed && (
+                  <h6 className="text-slate-500 text-xs uppercase font-bold pb-4">
+                    {section.heading}
+                  </h6>
+                )}
+
+                <ul className="flex flex-col list-none pb-6">
+                  {visibleLinks.map((link) => {
+                    const iconRef = useRef();
+                    return (
+                      <li key={link.to} className="relative">
+                        <Link
+                          to={link.to}
+                          ref={iconRef}
+                          onMouseEnter={() => collapsed && setTooltip({ text: link.label, visible: true, ref: iconRef })}
+                          onMouseLeave={() => setTooltip({ text: "", visible: false, ref: null })}
+                          className={`
+                            flex items-center
+                            ${collapsed ? "justify-center" : "gap-3"}
+                            py-3 text-xs uppercase font-bold
+                            ${isActive(link.to)}
+                            relative
+                          `}
+                        >
+                          <i className={`${link.icon} text-sm w-5 text-center`} />
+                          {!collapsed && <span>{link.label}</span>}
+                        </Link>
+
+                        {/* Tooltip portal */}
+                        {tooltip.ref === iconRef && (
+                          <Tooltip targetRef={iconRef} text={tooltip.text} visible={tooltip.visible} />
+                        )}
+                      </li>
+                    );
+                  })}
                 </ul>
               </React.Fragment>
             );
