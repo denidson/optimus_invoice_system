@@ -294,7 +294,7 @@ function ListPreInvoices() {
               {rol != "admin" && (
                 <div className="flex items-center space-x-3">
                   <button
-                    className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded"
+                    className="bg-twilight-indigo-600 hover:bg-twilight-indigo-500 text-white font-bold py-2 px-4 rounded"
                     onClick={redirectToCreate}
                   >
                     Crear Pre-Facturas
@@ -342,7 +342,7 @@ function ListPreInvoices() {
                   </>
                 )}
                 <button
-                  className="bg-slate-700 hover:bg-slate-600 text-white font-bold py-2 px-4 rounded"
+                  className="bg-twilight-indigo-600 hover:bg-twilight-indigo-500 text-white font-bold py-2 px-4 rounded"
                   onClick={actionSearch}>
                   Buscar
                 </button>

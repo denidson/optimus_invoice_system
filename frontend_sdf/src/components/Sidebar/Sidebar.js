@@ -55,8 +55,6 @@ export default function Sidebar({ collapsed, setCollapsed }) {
       links: [
         { to: "/preinvoices", icon: "fas fa-file-import", label: "Prefacturas" },
         { to: "/invoices", icon: "fas fa-file-invoice", label: "Facturas" },
-        { to: "/invoices", icon: "fas fa-file-invoice", label: "Notas de Crédito" },
-        { to: "/invoices", icon: "fas fa-file-invoice", label: "Notas de Débito" },
         { to: "/withholdings", icon: "fas fa-file-invoice", label: "Retenciones" },
       ],
     },
