@@ -55,10 +55,12 @@ export default function Sidebar({ collapsed, setCollapsed }) {
       links: [{ to: "/dashboard", icon: "fas fa-tv", label: "Panel de Control" }],
     },
     {
-      heading: "Facturación",
+      heading: "Documentos Legales",
       links: [
-        { to: "/preinvoices", icon: "fas fa-file-import", label: "Pre-Facturación" },
-        { to: "/invoices", icon: "fas fa-file-invoice", label: "Facturación" },
+        { to: "/preinvoices", icon: "fas fa-file-import", label: "Prefacturas" },
+        { to: "/invoices", icon: "fas fa-file-invoice", label: "Facturas" },
+        { to: "/invoices", icon: "fas fa-file-invoice", label: "Notas de Crédito" },
+        { to: "/invoices", icon: "fas fa-file-invoice", label: "Notas de Débito" },
         { to: "/withholdings", icon: "fas fa-file-invoice", label: "Retenciones" },
       ],
     },
@@ -92,7 +94,7 @@ export default function Sidebar({ collapsed, setCollapsed }) {
       <div className={`${collapsed ? "px-3" : "px-6"} h-screen flex flex-col`}>
         {/* LOGO + COLLAPSE */}
         <div className="flex items-center justify-between">
-          <Link to="/" className="block py-4">
+          <Link to="/dashboard" className="block py-4">
             <img
               src={Logo1}
               alt="Logo"

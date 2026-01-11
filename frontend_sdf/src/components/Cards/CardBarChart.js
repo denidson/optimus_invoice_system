@@ -1,51 +1,43 @@
-import React, { useEffect, useState, useContext } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Chart, registerables } from "chart.js";
-import { getSalesOverTime } from "../../services/apiReports";
-import { AuthContext } from "../../context/AuthContext";
 
 Chart.register(...registerables);
 
-export default function CardBarChart() {
-  const { user } = useContext(AuthContext);
-  const cliente_id = user?.cliente_id;
+export default function CardBarChart({ data = [] }) {
+  const canvasRef = useRef(null);
+  const chartRef = useRef(null);
 
-  const [chartData, setChartData] = useState({ labels: [], values: [] });
-  const [filter, setFilter] = useState(""); // filtro de búsqueda
+  const [filter, setFilter] = useState("");
 
-  // Cargar datos
-  useEffect(() => {
-    async function loadData() {
-      try {
-        const response = await getSalesOverTime(cliente_id);
-        const labels = response.data.map((item) => {
-          const date = new Date(item.periodo);
-          return date.toLocaleString("es-ES", { month: "long" });
-        });
-        const values = response.data.map((item) => parseFloat(item.neto_total));
-        setChartData({ labels, values });
-      } catch (error) {
-        console.error("Error cargando gráfico:", error);
-      }
-    }
-    loadData();
-  }, [cliente_id]);
+  // Transformar datos recibidos
+  const labels = data.map((item) => {
+    const date = new Date(item.periodo);
+    return date.toLocaleString("es-ES", { month: "long" });
+  });
 
-  // Filtrar por búsqueda
-  const filteredLabels = chartData.labels.filter((label) =>
+  const values = data.map((item) => Number(item.neto_total));
+
+  // Filtrar por texto
+  const filteredLabels = labels.filter((label) =>
     label.toLowerCase().includes(filter.toLowerCase())
   );
-  const filteredValues = chartData.labels
-    .map((label, idx) => (filteredLabels.includes(label) ? chartData.values[idx] : null))
-    .filter((val) => val !== null);
 
-  // Renderizar gráfico
+  const filteredValues = labels
+    .map((label, idx) =>
+      filteredLabels.includes(label) ? values[idx] : null
+    )
+    .filter((v) => v !== null);
+
+  // Crear / actualizar gráfico
   useEffect(() => {
-    if (!chartData.labels.length) return;
+    if (!canvasRef.current || !filteredLabels.length) return;
 
-    const ctx = document.getElementById("bar-chart").getContext("2d");
-    if (window.salesChart) window.salesChart.destroy();
+    // Destruir gráfico previo
+    if (chartRef.current) {
+      chartRef.current.destroy();
+    }
 
-    window.salesChart = new Chart(ctx, {
+    chartRef.current = new Chart(canvasRef.current, {
       type: "bar",
       data: {
         labels: filteredLabels,
@@ -62,13 +54,18 @@ export default function CardBarChart() {
       options: {
         responsive: true,
         maintainAspectRatio: false,
-        animation: { duration: 1200, easing: "easeOutQuart" },
-
+        animation: {
+          duration: 1200,
+          easing: "easeOutQuart",
+        },
         plugins: {
           legend: {
             display: true,
             position: "top",
-            labels: { color: "#1a202c", font: { size: 12 } },
+            labels: {
+              color: "#1a202c",
+              font: { size: 12 },
+            },
           },
           tooltip: {
             backgroundColor: "#fff",
@@ -80,7 +77,6 @@ export default function CardBarChart() {
             displayColors: false,
           },
         },
-
         scales: {
           x: {
             title: {
@@ -89,7 +85,10 @@ export default function CardBarChart() {
               color: "#4a5568",
               font: { size: 12, weight: "500" },
             },
-            ticks: { color: "#4a5568", font: { size: 12 } },
+            ticks: {
+              color: "#4a5568",
+              font: { size: 12 },
+            },
             grid: { display: false },
           },
           y: {
@@ -99,19 +98,36 @@ export default function CardBarChart() {
               color: "#4a5568",
               font: { size: 12, weight: "500" },
             },
-            ticks: { color: "#4551f7", font: { size: 12 }, beginAtZero: true },
-            grid: { color: "rgba(0,0,0,0.05)", drawBorder: false },
+            ticks: {
+              color: "#4551f7",
+              font: { size: 12 },
+              beginAtZero: true,
+            },
+            grid: {
+              color: "rgba(0,0,0,0.05)",
+              drawBorder: false,
+            },
           },
         },
       },
     });
-  }, [chartData, filter]);
 
-  // Función descarga
+    // Cleanup al desmontar
+    return () => {
+      if (chartRef.current) {
+        chartRef.current.destroy();
+        chartRef.current = null;
+      }
+    };
+  }, [filteredLabels, filteredValues]);
+
+  // Descargar imagen
   const handleDownload = () => {
+    if (!canvasRef.current) return;
+
     const link = document.createElement("a");
     link.download = "ventas_periodo.png";
-    link.href = document.getElementById("bar-chart").toDataURL("image/png", 1.0);
+    link.href = canvasRef.current.toDataURL("image/png", 1.0);
     link.click();
   };
 
@@ -119,11 +135,15 @@ export default function CardBarChart() {
     <div className="relative flex flex-col min-w-0 break-words bg-white w-full mb-6 shadow-lg rounded-lg">
       {/* Header */}
       <div className="rounded-t-lg mb-0 px-4 py-3 border-b border-slate-100">
-        <h6 className="uppercase text-[#4551f7] mb-1 text-xs font-semibold">Análisis</h6>
-        <h2 className="text-slate-700 text-xl font-semibold">Ventas por Periodo</h2>
+        <h6 className="uppercase text-[#4551f7] mb-1 text-xs font-semibold">
+          Análisis
+        </h6>
+        <h2 className="text-slate-700 text-xl font-semibold">
+          Ventas por Periodo
+        </h2>
       </div>
 
-      {/* Filtro + Botón descargar */}
+      {/* Filtro + Descargar */}
       <div className="flex flex-wrap justify-between items-center px-4 py-3 gap-2">
         <input
           type="text"
@@ -142,8 +162,8 @@ export default function CardBarChart() {
 
       {/* Chart */}
       <div className="p-4 flex-auto">
-        <div className="relative h-80 md:h-96">
-          <canvas id="bar-chart"></canvas>
+        <div className="relative h-56 md:h-64">
+          <canvas ref={canvasRef} />
         </div>
       </div>
     </div>

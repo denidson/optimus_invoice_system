@@ -172,7 +172,7 @@ function App() {
             path="/products"
             element={
               <PrivateRoute>
-                <RoleRoute roles={["operador_admin", "operador"]}>
+                <RoleRoute roles={["operador_admin", "operador", "admin"]}>
                   <ListProducts />
                 </RoleRoute>
               </PrivateRoute>
@@ -182,7 +182,7 @@ function App() {
             path="/products/create"
             element={
               <PrivateRoute>
-                <RoleRoute roles={["operador_admin", "operador"]}>
+                <RoleRoute roles={["operador_admin", "operador", "admin"]}>
                   <FormProducts />
                 </RoleRoute>
               </PrivateRoute>
@@ -192,7 +192,7 @@ function App() {
             path="/products/edit"
             element={
               <PrivateRoute>
-                <RoleRoute roles={["operador_admin", "operador"]}>
+                <RoleRoute roles={["operador_admin", "operador", "admin"]}>
                   <FormProducts />
                 </RoleRoute>
               </PrivateRoute>

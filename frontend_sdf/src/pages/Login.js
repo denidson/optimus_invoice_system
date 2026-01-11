@@ -146,7 +146,7 @@ export default function Login() {
                       setForgotEmail(email);
                       setShowForgotModal(true);
                     }}
-                    className="text-slate-200 text-sm underline"
+                    className="text-white text-sm underline"
                   >
                     ¿Olvidaste tu contraseña?
                   </button>
