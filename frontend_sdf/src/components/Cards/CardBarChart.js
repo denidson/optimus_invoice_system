@@ -32,7 +32,6 @@ export default function CardBarChart({ data = [] }) {
   useEffect(() => {
     if (!canvasRef.current || !filteredLabels.length) return;
 
-    // Destruir gráfico previo
     if (chartRef.current) {
       chartRef.current.destroy();
     }
@@ -45,7 +44,7 @@ export default function CardBarChart({ data = [] }) {
           {
             label: "Monto Neto (USD)",
             data: filteredValues,
-            backgroundColor: "rgba(66, 153, 225, 0.7)",
+            backgroundColor: "#2a6ed5", // twilight-indigo-500
             borderRadius: 6,
             maxBarThickness: 18,
           },
@@ -99,7 +98,7 @@ export default function CardBarChart({ data = [] }) {
               font: { size: 12, weight: "500" },
             },
             ticks: {
-              color: "#4551f7",
+              color: "#2a6ed5", // twilight-indigo-500
               font: { size: 12 },
               beginAtZero: true,
             },
@@ -112,7 +111,6 @@ export default function CardBarChart({ data = [] }) {
       },
     });
 
-    // Cleanup al desmontar
     return () => {
       if (chartRef.current) {
         chartRef.current.destroy();
@@ -135,7 +133,7 @@ export default function CardBarChart({ data = [] }) {
     <div className="relative flex flex-col min-w-0 break-words bg-white w-full mb-6 shadow-lg rounded-lg">
       {/* Header */}
       <div className="rounded-t-lg mb-0 px-4 py-3 border-b border-slate-100">
-        <h6 className="uppercase text-[#4551f7] mb-1 text-xs font-semibold">
+        <h6 className="uppercase text-twilight-indigo-500 mb-1 text-xs font-semibold">
           Análisis
         </h6>
         <h2 className="text-slate-700 text-xl font-semibold">
@@ -150,11 +148,11 @@ export default function CardBarChart({ data = [] }) {
           placeholder="Filtrar por mes..."
           value={filter}
           onChange={(e) => setFilter(e.target.value)}
-          className="border border-slate-300 rounded px-3 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-[#4551f7]"
+          className="border border-twilight-indigo-300 rounded px-3 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-twilight-indigo-500"
         />
         <button
           onClick={handleDownload}
-          className="bg-[#4551f7] text-white text-sm px-3 py-1 rounded hover:bg-[#3741b7] transition"
+          className="bg-twilight-indigo-500 text-white text-sm px-3 py-1 rounded hover:bg-twilight-indigo-600 transition"
         >
           Descargar PNG
         </button>

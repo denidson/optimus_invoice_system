@@ -11,7 +11,7 @@ export default function Navbar({ nombreUsuario }) {
   };
 
   return (
-    <nav className="sticky top-0 w-full z-20 bg-[#4551f7] flex items-center p-4">
+    <nav className="sticky top-0 w-full z-20 bg-twilight-indigo-600 flex items-center p-4 shadow-md">
       <div className="w-full mx-auto flex justify-between items-center px-4 md:px-10">
         <a
           className="text-white text-sm uppercase hidden lg:inline-block font-semibold"

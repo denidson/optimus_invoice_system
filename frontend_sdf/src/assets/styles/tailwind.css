@@ -8,3 +8,30 @@
 body {
   font-family: 'Inter', sans-serif;
 }
+
+/* ========================
+   Scroll personalizado
+   ======================== */
+.sidebar-scroll::-webkit-scrollbar {
+  width: 8px; /* ancho del scroll */
+}
+
+.sidebar-scroll::-webkit-scrollbar-track {
+  background: #eaf1fb; /* twilight-indigo-50 */
+  border-radius: 4px;
+}
+
+.sidebar-scroll::-webkit-scrollbar-thumb {
+  background: #112c55; /* twilight-indigo-800 */
+  border-radius: 4px;
+}
+
+.sidebar-scroll::-webkit-scrollbar-thumb:hover {
+  background: #2a6ed5; /* twilight-indigo-500 */
+}
+
+/* Firefox */
+.sidebar-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: #112c55 #eaf1fb; /* thumb track */
+}

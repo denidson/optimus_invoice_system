@@ -5,6 +5,7 @@ import ReactDOM from "react-dom";
 import Logo1 from "../../assets/img/Quantus-Invoice.png";
 import { AuthContext } from "../../context/AuthContext";
 
+// Tooltip para modo colapsado
 function Tooltip({ targetRef, text, visible }) {
   const [coords, setCoords] = useState({ top: 0, left: 0 });
 
@@ -24,11 +25,11 @@ function Tooltip({ targetRef, text, visible }) {
         top: coords.top,
         left: coords.left,
         transform: "translateY(-50%)",
-        backgroundColor: "#1e293b", // slate-800
+        backgroundColor: "#112c55", // twilight-indigo-800
         color: "#fff",
-        padding: "2px 6px",
-        borderRadius: "4px",
-        fontSize: "0.7rem",
+        padding: "4px 8px",         // un poquito más grande
+        borderRadius: "6px",
+        fontSize: "0.85rem",        // un poco más grande que antes
         zIndex: 9999,
         whiteSpace: "nowrap",
       }}
@@ -43,11 +44,6 @@ export default function Sidebar({ collapsed, setCollapsed }) {
   const location = useLocation();
   const { user } = useContext(AuthContext);
   const rol = user?.rol || "";
-
-  const isActive = (path) =>
-    location.pathname.includes(path)
-      ? "text-sky-500 font-bold"
-      : "text-slate-700 hover:text-slate-500";
 
   const menuSections = [
     {
@@ -81,6 +77,8 @@ export default function Sidebar({ collapsed, setCollapsed }) {
 
   const [tooltip, setTooltip] = useState({ text: "", visible: false, ref: null });
 
+  const isActive = (path) => location.pathname.includes(path);
+
   return (
     <nav
       className={`
@@ -104,14 +102,14 @@ export default function Sidebar({ collapsed, setCollapsed }) {
 
           <button
             onClick={() => setCollapsed(!collapsed)}
-            className="hidden md:block text-slate-500 hover:text-sky-600"
+            className="hidden md:block text-slate-500 hover:text-twilight-indigo-500"
           >
             <i className={`fas ${collapsed ? "fa-chevron-right" : "fa-chevron-left"}`} />
           </button>
         </div>
 
-        {/* Menu */}
-        <div className="flex-1 mt-4 overflow-y-auto">
+        {/* MENU */}
+        <div className="flex-1 mt-4 overflow-y-auto sidebar-scroll pr-2">
           {menuSections.map((section) => {
             const visibleLinks = section.links.filter(
               (link) => !link.roles || link.roles.includes(rol)
@@ -120,7 +118,7 @@ export default function Sidebar({ collapsed, setCollapsed }) {
 
             return (
               <React.Fragment key={section.heading}>
-                <hr className="my-4" />
+                <hr className="my-4 border-slate-200" />
                 {!collapsed && (
                   <h6 className="text-slate-500 text-xs uppercase font-bold pb-4">
                     {section.heading}
@@ -130,26 +128,36 @@ export default function Sidebar({ collapsed, setCollapsed }) {
                 <ul className="flex flex-col list-none pb-6">
                   {visibleLinks.map((link) => {
                     const iconRef = useRef();
+                    const active = isActive(link.to);
+
                     return (
                       <li key={link.to} className="relative">
                         <Link
                           to={link.to}
                           ref={iconRef}
-                          onMouseEnter={() => collapsed && setTooltip({ text: link.label, visible: true, ref: iconRef })}
-                          onMouseLeave={() => setTooltip({ text: "", visible: false, ref: null })}
+                          onMouseEnter={() =>
+                            collapsed &&
+                            setTooltip({ text: link.label, visible: true, ref: iconRef })
+                          }
+                          onMouseLeave={() =>
+                            setTooltip({ text: "", visible: false, ref: null })
+                          }
                           className={`
                             flex items-center
-                            ${collapsed ? "justify-center" : "gap-3"}
+                            ${collapsed ? "justify-center px-1" : "gap-3 px-4"} 
                             py-3 text-xs uppercase font-bold
-                            ${isActive(link.to)}
-                            relative
+                            w-full h-12 mb-1 transition-colors duration-150
+                            rounded-lg
+                            ${active
+                              ? "bg-twilight-indigo-100 text-twilight-indigo-700"
+                              : "text-slate-700 hover:bg-twilight-indigo-50 hover:text-twilight-indigo-700"
+                            }
                           `}
                         >
                           <i className={`${link.icon} text-sm w-5 text-center`} />
                           {!collapsed && <span>{link.label}</span>}
                         </Link>
 
-                        {/* Tooltip portal */}
                         {tooltip.ref === iconRef && (
                           <Tooltip targetRef={iconRef} text={tooltip.text} visible={tooltip.visible} />
                         )}
