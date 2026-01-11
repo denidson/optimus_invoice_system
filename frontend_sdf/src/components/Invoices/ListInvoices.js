@@ -201,9 +201,9 @@ function ListInvoices() {
                   { title: "Base imponible", data: "total_base", className: "text-center" },
                   { title: "I.V.A.", data: "total_impuestos", className: "text-center" },
                   { title: "Total", data: "total_neto", className: "text-center" },
-                  // { title: "Pagado en divisas", data: "monto_pagado_divisas", className: "text-center" },
-                  // { title: "IGTF", data: "igtf_monto", className: "text-center" },
-                  // { title: "Zona", data: "zona", className: "text-center" },
+                  { title: "Pagado en divisas", data: "monto_pagado_divisas", className: "text-center" },
+                  { title: "IGTF", data: "igtf_monto", className: "text-center" },
+                  { title: "Zona", data: "zona", className: "text-center" },
                   { title: "Estado", data: "estatus", className: "text-center" },
                   {
                     title: "Acciones",
