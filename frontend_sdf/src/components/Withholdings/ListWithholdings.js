@@ -68,7 +68,7 @@ function ListWithholdings() {
               <h6 className="text-blueGray-700 text-xl font-bold">Lista de Retenciones</h6>
               <div className="flex items-center space-x-3">
                 <button
-                  className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded"
+                  className="bg-twilight-indigo-600 hover:bg-twilight-indigo-500 text-white font-bold py-2 px-4 rounded"
                   onClick={redirectToCreate}
                 >
                   Crear Retención
@@ -117,7 +117,7 @@ function ListWithholdings() {
                 )}
 
                 <button
-                  className="bg-slate-700 hover:bg-slate-600 text-white font-bold py-2 px-4 rounded"
+                  className="bg-twilight-indigo-600 hover:bg-twilight-indigo-500 text-white font-bold py-2 px-4 rounded"
                   onClick={actionSearch}
                 >
                   Buscar
@@ -184,6 +184,7 @@ function ListWithholdings() {
                       callback({ draw: params.draw, recordsTotal: 0, recordsFiltered: 0, data: [] });
                     }
                   },
+                  
                   dom: //B = Buttons, l = LengthMenu (mostrar X registros), f = Filtro (search), t = Tabla, i = Info (mostrando de X a Y de Z), p = Paginación
                       "<'row'<'col-sm-12 text-center'B>>" +                // Fila 2: botones ocupando todo el ancho
                       "<'row'<'col-sm-6 text-end'l><'col-sm-6'f>>" +    // Fila 1: lengthMenu izquierda, filtro derecha

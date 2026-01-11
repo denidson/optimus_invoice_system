@@ -1,311 +1,155 @@
-import React, { useState } from "react";
+import React from "react";
 
 function ModalPreinvoices({ isOpen, onClose, message }) {
-  if (!isOpen) return null; // Si la modal no está abierta, no renderiza nada
+  if (!isOpen) return null;
 
   return (
-    <div style={overlayStyle}>
-      <div style={modalStyle} class="z-50">
-        <div className="flex flex-wrap h-full">
-          <div className="w-full lg:w-12/12 px-4">
-            <div className="relative flex flex-col min-w-0 break-words w-full mb-6 rounded-lg bg-blueGray-100 border-0">
-              <div class="rounded-t bg-white mb-0 px-6 py-6">
-                <div class="text-center flex justify-center pb-4">
-                  <h6 class="text-blueGray-700 text-xl font-bold">Detalles de la Factura</h6>
-                </div>
-                <hr class="my-6 border-b-1 border-blueGray-300"/>
-                <div class="px-5 text-center flex justify-between">
-                  <div className="lg:w-2/12 text-start">
-                    <label class="text-blueGray-700 lg:w-4/12 font-bold me-3">Fecha de Factura:</label><br/>
-                    <label class="text-blueGray-700 lg:w-8/12">{message.fecha_factura ? message.fecha_factura.replace('T',' ').substr(0, 19) : ''}</label>
-                  </div>
-                  <div className="lg:w-3/12 text-start">
-                    <label class="text-blueGray-700 lg:w-6/12 font-bold me-3">Número de control:</label><br/>
-                    <label class="text-blueGray-700 lg:w-8/12">{message.numero_control}</label>
-                  </div>
-                  <div className="lg:w-3/12 text-start">
-                    <label class="text-blueGray-700 lg:w-6/12 font-bold me-3">Número de factura:</label><br/>
-                    <label class="text-blueGray-700 lg:w-8/12">{(message.numero_factura ? message.numero_factura.toUpperCase():'')}</label>
-                  </div>
-                  <div className="lg:w-2/12 text-start">
-                    <label class="text-blueGray-700 lg:w-6/12 font-bold me-3">Correlativo:</label><br/>
-                    <label class="text-blueGray-700 lg:w-8/12">{message.correlativo_interno}</label>
-                  </div>
-                  <div className="lg:w-2/12 text-start">
-                    <label class="text-blueGray-700 lg:w-6/12 font-bold me-3">Serial:</label><br/>
-                    <label class="text-blueGray-700 lg:w-8/12">{(message.serial ? message.serial.toUpperCase():'')}</label>
-                  </div>
-                </div>
-                <hr class="my-6 border-b-1 border-blueGray-300"/>
-                <div class="px-5 text-center flex justify-between">
-                  <div className="lg:w-2/12 text-start">
-                    <label class="text-blueGray-700 lg:w-4/12 font-bold me-3">RIF:</label><br/>
-                    <label class="text-blueGray-700 lg:w-8/12">{message.cliente_final_rif}</label>
-                  </div>
-                  <div className="lg:w-4/12 text-start">
-                    <label class="text-blueGray-700 lg:w-6/12 font-bold me-3">Razón Social:</label><br/>
-                    <label class="text-blueGray-700 lg:w-8/12">{message.cliente_final_nombre}</label>
-                  </div>
-                  <div className="lg:w-4/12 text-start">
-                    <label class="text-blueGray-700 lg:w-6/12 font-bold me-3">Dirección:</label><br/>
-                    <label class="text-blueGray-700 lg:w-8/12">{(message.cliente_final_direccion ? message.cliente_final_direccion.toUpperCase():'')}</label>
-                  </div>
-                  <div className="lg:w-2/12 text-start">
-                    <label class="text-blueGray-700 lg:w-6/12 font-bold me-3">Télefono:</label><br/>
-                    <label class="text-blueGray-700 lg:w-8/12">{message.cliente_final_telefono ? message.cliente_final_telefono : ''}</label>
-                  </div>
-                </div>
-                <hr class="mx-3 my-6 border-b-1 border-blueGray-300"/>
-                <div class="px-5 text-center flex justify-between">
-                  <div className="lg:w-6/12 text-start">
-                    <label class="text-blueGray-700 lg:w-4/12 font-bold me-3">Tipo de documento:</label><br/>
-                    <label class="text-blueGray-700 lg:w-8/12">{message.tipo_documento == 'FC' ?
-                        ('FACTURA')
-                        :
-                        (preInvoice.tipo_documento == 'NC'?
-                          ('NOTA DE CREDITO')
-                          :
-                          ('NOTA DE DEBITO')
-                        )
-                      }</label>
-                  </div>
-                  <div className="lg:w-6/12 text-start">
-                    <label class="text-blueGray-700 lg:w-6/12 font-bold me-3">Estado:</label><br/>
-                    <label class="text-blueGray-700 lg:w-8/12">{message.estatus.toUpperCase()}</label>
-                  </div>
-                </div>
-                <hr class="mx-3 my-6 border-b-1 border-blueGray-300"/>
-                <div class="px-5 text-center flex justify-between border-4 p-2 border-double mb-2"> {/*border-b-4*/}
-                  <div className="lg:w-4/12 text-center">
-                    <label class="text-blueGray-700 lg:w-4/12 font-bold me-3">Producto</label>
-                  </div>
-                  <div className="lg:w-4/12 text-center">
-                    <label class="text-blueGray-700 lg:w-4/12 font-bold me-3">Cantidad</label>
-                  </div>
-                  <div className="lg:w-2/12 text-center">
-                    <label class="text-blueGray-700 lg:w-4/12 font-bold me-3">Impuesto</label>
-                  </div>
-                  <div className="lg:w-4/12 text-center">
-                    <label class="text-blueGray-700 lg:w-4/12 font-bold me-3">Precio Unitario</label>
-                  </div>
-                  <div className="lg:w-2/12 text-center">
-                    <label class="text-blueGray-700 lg:w-4/12 font-bold me-3">Desc %</label>
-                  </div>
-                  <div className="lg:w-4/12 text-center">
-                    <label class="text-blueGray-700 lg:w-4/12 font-bold me-3">Total</label>
-                  </div>
-                </div>
-                  {message.items && message.items.length > 0 ? (
-                    message.items.map((item) => (
-                      <div key={item.id} class="px-5 text-center flex justify-between border-b py-1 border-solid">
-                        <div className="lg:w-4/12 text-start">
-                          <label className="text-blueGray-700">{item.producto ? item.producto.sku + '-' + item.producto.nombre : 'N/A' }</label>
-                        </div>
-                        <div className="lg:w-4/12 text-center">
-                          <label className="text-blueGray-700">
-                          {new Intl.NumberFormat("es-VE", {
-                              minimumFractionDigits: 2,
-                              maximumFractionDigits: 2
-                            }).format(item.cantidad)}
-                          </label>
-                        </div>
-                        <div className="lg:w-2/12 text-center">
-                          <label className="text-blueGray-700">
-                          {new Intl.NumberFormat("es-VE", {
-                              minimumFractionDigits: 2,
-                              maximumFractionDigits: 2
-                            }).format(item.iva_categoria_id ? item.iva_categoria.tasa_porcentaje : 0)}
-                          </label>
-                        </div>
-                        <div className="lg:w-4/12 text-right">
-                          <label className="text-blueGray-700">
-                            {new Intl.NumberFormat("es-VE", {
-                              minimumFractionDigits: 2,
-                              maximumFractionDigits: 2
-                            }).format(item.precio_unitario)}
-                          </label>
-                        </div>
-                        <div className="lg:w-2/12 text-center">
-                          <label className="text-blueGray-700">
-                          {new Intl.NumberFormat("es-VE", {
-                              minimumFractionDigits: 2,
-                              maximumFractionDigits: 2
-                            }).format(item.descuento_porcentaje ? item.descuento_porcentaje : 0)}
-                          </label>
-                        </div>
-                        <div className="lg:w-4/12 text-right">
-                          <label className="text-blueGray-700">
-                            {new Intl.NumberFormat("es-VE", {
-                              minimumFractionDigits: 2,
-                              maximumFractionDigits: 2
-                            }).format(item.cantidad * (item.precio_unitario - (item.precio_unitario * (item.descuento_porcentaje ? item.descuento_porcentaje : 0)/100)))}
-                          </label>
-                        </div>
-                      </div>
-                    ))
-                  ) : (
-                    <div class="px-5 text-center flex justify-between border-b p-2 border-solid">
-                      <div className="lg:w-12/12 text-center">No hay líneas asociadas</div>
-                    </div>
-                  )}
-                  <div class="px-5 text-center flex justify-between mt-4">
-                    {(message.monto_pagado_divisas > 0) ?
-                      (<div className="lg:w-6/12 text-start pr-10">
-                      <div class="px-0 text-center flex justify-between mt-0">
-                        <div className="lg:w-4/12 text-left font-bold me-3">Monto pagado en divisas:</div>
-                        <div className="lg:w-8/12 text-right">
-                          <label className="text-blueGray-700">
-                            {'Bs. ' + new Intl.NumberFormat("es-VE", {
-                              minimumFractionDigits: 2,
-                              maximumFractionDigits: 2
-                            }).format(message.monto_pagado_divisas)}
-                          </label>
-                        </div>
-                      </div>
-                    </div>
-                    ):(<div className="lg:w-6/12 text-start pr-10">
-                      <div class="px-0 text-center flex justify-between mt-0">
-                      </div>
-                    </div>)}
-                    <div className="lg:w-6/12 text-right">
-                      <div class="px-0 text-center flex justify-between mt-0">
-                        <div className="lg:w-4/12 text-left font-bold me-3">Base imponible:</div>
-                        <div className="lg:w-8/12 text-right">
-                          <label className="text-blueGray-700">
-                            {'Bs. ' + new Intl.NumberFormat("es-VE", {
-                              minimumFractionDigits: 2,
-                              maximumFractionDigits: 2
-                            }).format(message.total_base)}
-                          </label>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                  <div class="px-5 text-center flex justify-between mt-0">
-                    {(message.igtf_monto > 0) ?
-                      (<div className="lg:w-6/12 text-start pr-10">
-                      <div class="px-0 text-center flex justify-between mt-0">
-                        <div className="lg:w-4/12 text-left font-bold me-3">{'IGTF (' + new Intl.NumberFormat("es-VE", {
-                              minimumFractionDigits: 2,
-                              maximumFractionDigits: 2
-                            }).format(message.igtf_porcentaje) + '%):'}</div>
-                        <div className="lg:w-8/12 text-right">
-                          <label className="text-blueGray-700">
-                            {'Bs. ' + new Intl.NumberFormat("es-VE", {
-                              minimumFractionDigits: 2,
-                              maximumFractionDigits: 2
-                            }).format(message.igtf_monto)}
-                          </label>
-                        </div>
-                      </div>
-                    </div>
-                    ):(<div className="lg:w-6/12 text-start pr-10">
-                      <div class="px-0 text-center flex justify-between mt-0">
-                      </div>
-                    </div>)}
-                    <div className="lg:w-6/12 text-right">
-                      <div class="px-0 text-center flex justify-between mt-0">
-                        <div className="lg:w-4/12 text-left font-bold me-3">I.V.A:</div>
-                        <div className="lg:w-8/12 text-right">
-                          <label className="text-blueGray-700">
-                            {'Bs. ' + new Intl.NumberFormat("es-VE", {
-                              minimumFractionDigits: 2,
-                              maximumFractionDigits: 2
-                            }).format(message.total_impuestos)}
-                          </label>
-                        </div>
-                      </div>
-                  </div>
-                </div>
-                <div class="px-5 text-center flex justify-between mt-0">
-                  <div className="lg:w-6/12 text-start">
-                    {/*<label class="text-blueGray-700 lg:w-4/12 font-bold me-3">Zona:</label>
-                    <label class="text-blueGray-700 lg:w-8/12">{message.zona}</label>*/}
-                  </div>
-                  <div className="lg:w-6/12 text-right">
-                    <div class="px-0 text-center flex justify-between mt-0">
-                      <div className="lg:w-4/12 text-left font-bold me-3">Total:</div>
-                      <div className="lg:w-8/12 text-right">
-                        <label className="text-blueGray-700">
-                          {'Bs. ' + new Intl.NumberFormat("es-VE", {
-                            minimumFractionDigits: 2,
-                            maximumFractionDigits: 2
-                          }).format(message.total_neto ? (message.total_neto - message.igtf_monto) : (message.total - message.igtf_monto))}
-                        </label>
-                      </div>
-                    </div>
-                </div>
-              </div>
-              {(message.monto_pagado_divisas > 0) ?
-                (<div class="px-5 text-center flex justify-between mt-0">
-                  <div className="lg:w-6/12 text-start">
-                    {/*<label class="text-blueGray-700 lg:w-4/12 font-bold me-3">Zona:</label>
-                    <label class="text-blueGray-700 lg:w-8/12">{message.zona}</label>*/}
-                  </div>
-                  <div className="lg:w-6/12 text-right">
-                    <div class="px-0 text-center flex justify-between mt-0">
-                      <div className="lg:w-4/12 text-left font-bold me-3">Total + IGTF:</div>
-                      <div className="lg:w-8/12 text-right">
-                        <label className="text-blueGray-700">
-                          {'Bs. ' + new Intl.NumberFormat("es-VE", {
-                            minimumFractionDigits: 2,
-                            maximumFractionDigits: 2
-                          }).format(message.total_neto ? message.total_neto : message.total)}
-                        </label>
-                      </div>
-                    </div>
-                </div>
-              </div>
-              ):(
-                <div class="px-5 text-center flex justify-between mt-0">
-                  <div className="lg:w-6/12 text-start">
-                  </div>
-                  <div className="lg:w-6/12 text-right">
-                </div>
-              </div>)}
-              </div>
-            </div>
+    <div className="fixed inset-0 z-50 flex justify-center items-center bg-black/50 p-4 overflow-y-auto">
+      <div className="bg-white rounded-lg shadow-lg w-full max-w-[1200px] max-h-[90vh] overflow-y-auto relative p-6">
+        {/* Header */}
+        <div className="text-center mb-6">
+          <h6 className="text-xl font-bold text-blueGray-700">Detalles de la Factura</h6>
+          <hr className="my-4 border-b border-blueGray-300"/>
+        </div>
+
+        {/* Información general */}
+        <div className="flex flex-wrap justify-between px-2 mb-4">
+          <div className="w-1/5 text-start">
+            <label className="font-bold text-blueGray-700">Fecha de Factura:</label>
+            <div>{message.fecha_factura ? message.fecha_factura.replace('T',' ').substr(0,19) : ''}</div>
           </div>
-          <div style={buttonStyle}>
-            <button className="bg-slate-800 text-white px-4 py-2 rounded " onClick={onClose}>Cancelar</button>
+          <div className="w-1/5 text-start">
+            <label className="font-bold text-blueGray-700">Número de control:</label>
+            <div>{message.numero_control}</div>
+          </div>
+          <div className="w-1/5 text-start">
+            <label className="font-bold text-blueGray-700">Número de factura:</label>
+            <div>{message.numero_factura ? message.numero_factura.toUpperCase() : ''}</div>
+          </div>
+          <div className="w-1/5 text-start">
+            <label className="font-bold text-blueGray-700">Correlativo:</label>
+            <div>{message.correlativo_interno}</div>
+          </div>
+          <div className="w-1/5 text-start">
+            <label className="font-bold text-blueGray-700">Serial:</label>
+            <div>{message.serial ? message.serial.toUpperCase() : ''}</div>
           </div>
         </div>
 
+        <hr className="my-4 border-b border-blueGray-300"/>
+
+        {/* Cliente */}
+        <div className="flex flex-wrap justify-between px-2 mb-4">
+          <div className="w-1/5 text-start">
+            <label className="font-bold text-blueGray-700">RIF:</label>
+            <div>{message.cliente_final_rif}</div>
+          </div>
+          <div className="w-2/5 text-start">
+            <label className="font-bold text-blueGray-700">Razón Social:</label>
+            <div>{message.cliente_final_nombre}</div>
+          </div>
+          <div className="w-2/5 text-start">
+            <label className="font-bold text-blueGray-700">Dirección:</label>
+            <div>{message.cliente_final_direccion ? message.cliente_final_direccion.toUpperCase() : ''}</div>
+          </div>
+          <div className="w-1/5 text-start">
+            <label className="font-bold text-blueGray-700">Teléfono:</label>
+            <div>{message.cliente_final_telefono || ''}</div>
+          </div>
+        </div>
+
+        <hr className="my-4 border-b border-blueGray-300"/>
+
+        {/* Documento y Estado */}
+        <div className="flex flex-wrap justify-between px-2 mb-4">
+          <div className="w-1/2 text-start">
+            <label className="font-bold text-blueGray-700">Tipo de documento:</label>
+            <div>
+              {message.tipo_documento === 'FC'
+                ? 'FACTURA'
+                : message.tipo_documento === 'NC'
+                ? 'NOTA DE CREDITO'
+                : 'NOTA DE DEBITO'}
+            </div>
+          </div>
+          <div className="w-1/2 text-start">
+            <label className="font-bold text-blueGray-700">Estado:</label>
+            <div>{message.estatus.toUpperCase()}</div>
+          </div>
+        </div>
+
+        <hr className="my-4 border-b border-blueGray-300"/>
+
+        {/* Tabla de Items */}
+        <div className="overflow-x-auto mb-4">
+          <div className="flex bg-gray-100 border-b-2 border-gray-300 font-bold text-center">
+            <div className="w-1/4 px-2 py-1">Producto</div>
+            <div className="w-1/6 px-2 py-1">Cantidad</div>
+            <div className="w-1/12 px-2 py-1">Impuesto</div>
+            <div className="w-1/6 px-2 py-1">Precio Unitario</div>
+            <div className="w-1/12 px-2 py-1">Desc %</div>
+            <div className="w-1/4 px-2 py-1">Total</div>
+          </div>
+          {message.items && message.items.length > 0 ? (
+            message.items.map((item) => (
+              <div key={item.id} className="flex border-b border-gray-300 text-center">
+                <div className="w-1/4 px-2 py-1 text-left">{item.producto ? item.producto.sku + '-' + item.producto.nombre : 'N/A'}</div>
+                <div className="w-1/6 px-2 py-1">{item.cantidad.toLocaleString("es-VE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+                <div className="w-1/12 px-2 py-1">{item.iva_categoria_id ? item.iva_categoria.tasa_porcentaje.toLocaleString("es-VE", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : 0}</div>
+                <div className="w-1/6 px-2 py-1 text-right">{item.precio_unitario.toLocaleString("es-VE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+                <div className="w-1/12 px-2 py-1">{item.descuento_porcentaje ? item.descuento_porcentaje.toLocaleString("es-VE", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : 0}</div>
+                <div className="w-1/4 px-2 py-1 text-right">
+                  {(item.cantidad * (item.precio_unitario - (item.precio_unitario * (item.descuento_porcentaje || 0)/100))).toLocaleString("es-VE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                </div>
+              </div>
+            ))
+          ) : (
+            <div className="flex text-center border-b border-gray-300">
+              <div className="w-full px-2 py-2">No hay líneas asociadas</div>
+            </div>
+          )}
+        </div>
+
+        {/* Totales */}
+        <div className="flex flex-wrap justify-between px-2 text-right font-bold mb-4">
+          {message.monto_pagado_divisas > 0 && (
+            <div className="w-1/2 text-left">
+              Monto pagado en divisas: Bs. {message.monto_pagado_divisas.toLocaleString("es-VE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            </div>
+          )}
+          <div className="w-1/2">
+            Base imponible: Bs. {message.total_base.toLocaleString("es-VE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+          </div>
+        </div>
+        <div className="flex flex-wrap justify-between px-2 text-right font-bold mb-4">
+          {message.igtf_monto > 0 && (
+            <div className="w-1/2 text-left">
+              IGTF ({message.igtf_porcentaje.toLocaleString("es-VE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}%): Bs. {message.igtf_monto.toLocaleString("es-VE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            </div>
+          )}
+          <div className="w-1/2">
+            I.V.A: Bs. {message.total_impuestos.toLocaleString("es-VE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+          </div>
+        </div>
+        <div className="flex flex-wrap justify-between px-2 text-right font-bold mb-4">
+          <div className="w-1/2"></div>
+          <div className="w-1/2">
+            Total: Bs. {(message.total_neto ? message.total_neto - message.igtf_monto : message.total - message.igtf_monto).toLocaleString("es-VE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+          </div>
+        </div>
+
+        {/* Botón Cancelar */}
+        <div className="flex justify-center mt-6">
+          <button
+            className="bg-slate-800 text-white px-6 py-2 rounded hover:bg-slate-700 transition"
+            onClick={onClose}
+          >
+            Cancelar
+          </button>
+        </div>
       </div>
     </div>
   );
 }
-
-// Estilos para la modal
-const overlayStyle = {
-  position: "fixed",
-  top: 0,
-  left: 0,
-  right: 0,
-  bottom: 0,
-  backgroundColor: "rgba(0, 0, 0, 0.5)", // Fondo oscuro
-  display: "flex",
-  justifyContent: "center",
-  alignItems: "center",
-};
-
-const modalStyle = {
-  backgroundColor: "white",
-  padding: "20px",
-  borderRadius: "8px",
-  boxShadow: "0 4px 8px rgba(0, 0, 0, 0.2)",
-  textAlign: "center",
-  width: "70%",
-  height: "90%",
-};
-
-const buttonStyle = {
-  position: "fixed",
-  justifyContent: "center",
-  alignItems: "center",
-  bottom: "9%",
-  left: "47%",
-  textAlign: "center",
-};
 
 export default ModalPreinvoices;

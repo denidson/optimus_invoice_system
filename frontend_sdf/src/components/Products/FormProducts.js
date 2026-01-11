@@ -248,7 +248,7 @@ function FormProducts({ cliente_id: clienteProp, rol }) {
                   </button>
                   <button
                     type="submit"
-                    className="bg-blue-500 text-white px-4 py-2 rounded"
+                    className="bg-twilight-indigo-600 text-white px-4 py-2 rounded"
                     disabled={buttonDisabled}
                   >
                     {buttonDisabled ? "Guardando..." : productId ? "Actualizar" : "Guardar"}
