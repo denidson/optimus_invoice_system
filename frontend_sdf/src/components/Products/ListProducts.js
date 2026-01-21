@@ -211,17 +211,17 @@ function ListProducts() {
   const handleCloseModalProducts = () => setModalOpenProducts(false);
 
   return (
-    <div className="md:px-10 mx-auto w-full -m-24">
+    <div className="mx-auto w-full">
       <ToastContainer />
       <div className="flex flex-wrap">
         <div className="w-full lg:w-12/12">
-          <div className="relative flex flex-col min-w-0 break-words w-full mb-6 shadow-lg rounded-lg bg-blueGray-100 border-0">
+          <div className="relative bg-white flex flex-col min-w-0 break-words w-full mb-6 shadow-lg rounded-lg bg-blueGray-100 border-0">
 
             {/* Header Card */}
             <div className="rounded-t bg-white mb-0 px-6 py-6 flex justify-between items-center border-b">
               <h6 className="text-blueGray-700 text-xl font-bold">Lista de Productos</h6>
               <div className="flex items-center space-x-3">
-                <button className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded" onClick={redirectToCreate}>
+                <button className="bg-twilight-indigo-600 hover:bg-twilight-indigo-500 text-white font-bold py-2 px-4 rounded" onClick={redirectToCreate}>
                   Crear Producto
                 </button>
                 <label className="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded cursor-pointer">
@@ -275,6 +275,22 @@ function ListProducts() {
                         data: response
                       });
                     } catch (err) { console.error(err); }
+                  },
+                  createdRow: function (row) {
+                    // Reducir tamaño de fuente y forzar nowrap en todas las celdas
+                    $(row).find("td").css({
+                      "font-size": "0.85rem",
+                      "white-space": "nowrap",
+                      "overflow": "hidden",
+                      "text-overflow": "ellipsis"
+                    });
+                  },
+                  headerCallback: function(thead) {
+                    $(thead).find("th").css({
+                      "font-size": "0.85rem", 
+                      "text-align": "center",
+                      "font-weight": "bold"
+                    });
                   },
                   paging: true,
                   searching: true,

@@ -710,7 +710,7 @@ const handleRadioChange = (event) => {
 };
 
   return (
-    <div className="px-4 md:px-10 mx-auto w-full -m-24">
+    <div className="mx-auto w-full">
       <div className="flex flex-wrap">
         <div className="w-full lg:w-12/12 px-4">
           <div className="relative flex flex-col min-w-0 break-words w-full mb-6 shadow-lg rounded-lg bg-blueGray-100 border-0">
@@ -1160,7 +1160,7 @@ const handleRadioChange = (event) => {
                 </div>
 
                 <hr class="my-6 border-b-1 border-blueGray-300"/>
-                <button className="bg-slate-800 text-white px-4 py-2 rounded me-3"
+                <button className="bg-twilight-indigo-600 text-white px-4 py-2 rounded me-3"
                   disabled={buttonDisabled} // Deshabilita el botón si `buttonDisabled` es `true`
                   style={{ opacity: buttonDisabled ? 0.5 : 1 }} // Cambiar la opacidad cuando está deshabilitado
                   onClick={() => redirectToList()}>Cancelar</button>

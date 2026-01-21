@@ -194,19 +194,18 @@ function ListClients() {
   };
 
   return (
-    <div className="md:px-10 mx-auto w-full -m-24">
+    <div className="mx-auto w-full">
       <ToastContainer />
       <div className="flex flex-wrap">
         <div className="w-full lg:w-12/12">
-          <div className="relative flex flex-col min-w-0 break-words w-full mb-6 shadow-lg rounded-lg bg-blueGray-100 border-0">
-            
-            {/* Header Card */}
+          <div className="relative bg-white flex flex-col min-w-0 break-words w-full mb-6 shadow-lg rounded-lg bg-blueGray-100 border-0">
+            {/* Header */}
             <div className="rounded-t bg-white mb-0 px-6 py-6 flex justify-between items-center border-b">
               <h6 className="text-blueGray-700 text-xl font-bold">Lista de Clientes</h6>
 
               <div className="flex items-center space-x-3">
                 <button
-                  className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded"
+                  className="bg-twilight-indigo-600 hover:bg-twilight-indigo-500 text-white font-bold py-2 px-4 rounded"
                   onClick={redirectToCreate}
                 >
                   Crear Cliente

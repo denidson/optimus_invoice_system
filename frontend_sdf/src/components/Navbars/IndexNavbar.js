@@ -1,38 +1,33 @@
-/*eslint-disable*/
 import React from "react";
 import { useNavigate } from "react-router-dom";
-
-// components
-import UserDropdown from "../Dropdowns/UserDropdown.js";
+import UserDropdown from "../Dropdowns/UserDropdown";
 
 export default function Navbar({ nombreUsuario }) {
-  const [navbarOpen, setNavbarOpen] = React.useState(false);
   const navigate = useNavigate();
 
   const handleLogout = () => {
-    // Aquí puedes limpiar tokens o llamar a la API de logout si tienes
+    localStorage.removeItem("token"); // o lo que uses
     navigate("/login");
   };
 
   return (
-    <>
-      <nav className="absolute top-0 left-0 w-full z-10 bg-[#4551f7] md:flex-row md:flex-nowrap md:justify-start flex items-center p-4">
-        <div className="w-full mx-auto items-center flex justify-between md:flex-nowrap flex-wrap md:px-10 px-4">
-          {/* Brand */}
-          <a
-            className="text-white text-sm uppercase hidden lg:inline-block font-semibold"
-            href="#pablo"
-            onClick={(e) => e.preventDefault()}
-          >
-            Sistema de Facturación Digital
-          </a>
-          {/* User */}
-          <ul className="flex-col md:flex-row list-none items-center hidden md:flex">
-            {/* Pasamos el nombre de usuario al dropdown */}
-            <UserDropdown nombreUsuario={nombreUsuario} onLogout={handleLogout} />
-          </ul>
+    <nav className="sticky top-0 w-full z-20 bg-twilight-indigo-600 flex items-center p-4 shadow-md">
+      <div className="w-full mx-auto flex justify-between items-center px-4 md:px-10">
+        <a
+          className="text-white text-sm uppercase hidden lg:inline-block font-semibold"
+          href="#pablo"
+          onClick={(e) => e.preventDefault()}
+        >
+          Quantus Invoice
+        </a>
+
+        <div className="flex items-center gap-4">
+          <UserDropdown
+            nombreUsuario={nombreUsuario}
+            onLogout={handleLogout}
+          />
         </div>
-      </nav>
-    </>
+      </div>
+    </nav>
   );
 }

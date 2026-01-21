@@ -123,11 +123,11 @@ function FormProducts({ cliente_id: clienteProp, rol }) {
     }`;
 
   return (
-    <div className="px-4 md:px-10 mx-auto w-full -m-24">
+    <div className="mx-auto w-full">
       <ToastContainer />
       <div className="flex flex-wrap">
         <div className="w-full lg:w-12/12 px-4">
-          <div className="relative flex flex-col min-w-0 break-words w-full mb-6 shadow-lg rounded-lg bg-blueGray-100 border-0">
+          <div className="relative bg-white flex flex-col min-w-0 break-words w-full mb-6 shadow-lg rounded-lg bg-blueGray-100 border-0">
             <div className="rounded-t bg-white mb-0 px-6 py-6 flex justify-between">
               <h6 className="text-blueGray-700 text-xl font-bold">
                 {productId ? "Actualizar" : "Crear"} Producto
@@ -248,7 +248,7 @@ function FormProducts({ cliente_id: clienteProp, rol }) {
                   </button>
                   <button
                     type="submit"
-                    className="bg-blue-500 text-white px-4 py-2 rounded"
+                    className="bg-twilight-indigo-600 text-white px-4 py-2 rounded"
                     disabled={buttonDisabled}
                   >
                     {buttonDisabled ? "Guardando..." : productId ? "Actualizar" : "Guardar"}

@@ -1,55 +1,50 @@
-import React, { useEffect, useState, useContext } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Chart, registerables } from "chart.js";
-import { getSalesOverTime } from "../../services/apiReports";
-import { AuthContext } from "../../context/AuthContext";
 
 Chart.register(...registerables);
 
-export default function CardBarChart() {
-  const { user } = useContext(AuthContext);
-  const cliente_id = user?.cliente_id;
+export default function CardBarChart({ data = [] }) {
+  const canvasRef = useRef(null);
+  const chartRef = useRef(null);
 
-  const [chartData, setChartData] = useState([]);
+  const [filter, setFilter] = useState("");
 
+  // Transformar datos recibidos
+  const labels = data.map((item) => {
+    const date = new Date(item.periodo);
+    return date.toLocaleString("es-ES", { month: "long" });
+  });
+
+  const values = data.map((item) => Number(item.neto_total));
+
+  // Filtrar por texto
+  const filteredLabels = labels.filter((label) =>
+    label.toLowerCase().includes(filter.toLowerCase())
+  );
+
+  const filteredValues = labels
+    .map((label, idx) =>
+      filteredLabels.includes(label) ? values[idx] : null
+    )
+    .filter((v) => v !== null);
+
+  // Crear / actualizar gráfico
   useEffect(() => {
-    async function loadData() {
-      try {
-        const response = await getSalesOverTime(cliente_id);
+    if (!canvasRef.current || !filteredLabels.length) return;
 
-        const labels = response.data.map((item) => {
-          const date = new Date(item.periodo);
-          return date.toLocaleString("es-ES", { month: "long" });
-        });
-
-        const values = response.data.map((item) => parseFloat(item.neto_total));
-
-        setChartData({ labels, values });
-      } catch (error) {
-        console.error("Error cargando gráfico:", error);
-      }
+    if (chartRef.current) {
+      chartRef.current.destroy();
     }
 
-    loadData();
-  }, [cliente_id]);
-
-  useEffect(() => {
-    if (!chartData.labels) return;
-
-    const ctx = document.getElementById("bar-chart").getContext("2d");
-
-    if (window.salesChart) {
-      window.salesChart.destroy();
-    }
-
-    window.salesChart = new Chart(ctx, {
+    chartRef.current = new Chart(canvasRef.current, {
       type: "bar",
       data: {
-        labels: chartData.labels,
+        labels: filteredLabels,
         datasets: [
           {
-            label: "Monto Neto",
-            data: chartData.values,
-            backgroundColor: "rgba(66, 153, 225, 0.7)", // azul estilo Notus
+            label: "Monto Neto (USD)",
+            data: filteredValues,
+            backgroundColor: "#2a6ed5", // twilight-indigo-500
             borderRadius: 6,
             maxBarThickness: 18,
           },
@@ -58,15 +53,18 @@ export default function CardBarChart() {
       options: {
         responsive: true,
         maintainAspectRatio: false,
-
         animation: {
           duration: 1200,
           easing: "easeOutQuart",
         },
-
         plugins: {
           legend: {
-            display: false,
+            display: true,
+            position: "top",
+            labels: {
+              color: "#1a202c",
+              font: { size: 12 },
+            },
           },
           tooltip: {
             backgroundColor: "#fff",
@@ -78,9 +76,14 @@ export default function CardBarChart() {
             displayColors: false,
           },
         },
-
         scales: {
           x: {
+            title: {
+              display: true,
+              text: "Mes",
+              color: "#4a5568",
+              font: { size: 12, weight: "500" },
+            },
             ticks: {
               color: "#4a5568",
               font: { size: 12 },
@@ -88,8 +91,14 @@ export default function CardBarChart() {
             grid: { display: false },
           },
           y: {
+            title: {
+              display: true,
+              text: "Monto Neto (USD)",
+              color: "#4a5568",
+              font: { size: 12, weight: "500" },
+            },
             ticks: {
-              color: "#4551f7",
+              color: "#2a6ed5", // twilight-indigo-500
               font: { size: 12 },
               beginAtZero: true,
             },
@@ -101,29 +110,60 @@ export default function CardBarChart() {
         },
       },
     });
-  }, [chartData]);
+
+    return () => {
+      if (chartRef.current) {
+        chartRef.current.destroy();
+        chartRef.current = null;
+      }
+    };
+  }, [filteredLabels, filteredValues]);
+
+  // Descargar imagen
+  const handleDownload = () => {
+    if (!canvasRef.current) return;
+
+    const link = document.createElement("a");
+    link.download = "ventas_periodo.png";
+    link.href = canvasRef.current.toDataURL("image/png", 1.0);
+    link.click();
+  };
 
   return (
-    <div className="relative flex flex-col min-w-0 break-words bg-white w-full mb-6 shadow-lg rounded">
-      <div className="rounded-t mb-0 px-4 py-3 bg-transparent">
-        <div className="flex flex-wrap items-center">
-          <div className="w-full">
-            <h6 className="uppercase text-[#4551f7] mb-1 text-xs font-semibold">
-              Análisis
-            </h6>
-            <h2 className="text-slate-700 text-xl font-semibold">
-              Ventas por Periodo
-            </h2>
-          </div>
-        </div>
+    <div className="relative flex flex-col min-w-0 break-words bg-white w-full mb-6 shadow-lg rounded-lg">
+      {/* Header */}
+      <div className="rounded-t-lg mb-0 px-4 py-3 border-b border-slate-100">
+        <h6 className="uppercase text-twilight-indigo-500 mb-1 text-xs font-semibold">
+          Análisis
+        </h6>
+        <h2 className="text-slate-700 text-xl font-semibold">
+          Ventas por Periodo
+        </h2>
       </div>
 
+      {/* Filtro + Descargar */}
+      <div className="flex flex-wrap justify-between items-center px-4 py-3 gap-2">
+        <input
+          type="text"
+          placeholder="Filtrar por mes..."
+          value={filter}
+          onChange={(e) => setFilter(e.target.value)}
+          className="border border-twilight-indigo-300 rounded px-3 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-twilight-indigo-500"
+        />
+        <button
+          onClick={handleDownload}
+          className="bg-twilight-indigo-500 text-white text-sm px-3 py-1 rounded hover:bg-twilight-indigo-600 transition"
+        >
+          Descargar PNG
+        </button>
+      </div>
+
+      {/* Chart */}
       <div className="p-4 flex-auto">
-        <div className="relative h-96">
-          <canvas id="bar-chart"></canvas>
+        <div className="relative h-56 md:h-64">
+          <canvas ref={canvasRef} />
         </div>
       </div>
     </div>
   );
-
 }

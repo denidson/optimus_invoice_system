@@ -428,7 +428,7 @@ function FormWithholdings() {
   // RENDER
   // **********************************************************
   return (
-    <div className="px-4 md:px-10 mx-auto w-full -m-24">
+    <div className="mx-auto w-full">
       <ToastContainer />
       <div className="relative flex flex-col min-w-0 break-words w-full mb-6 shadow-lg rounded-lg bg-blueGray-100 border-0">
         <div className="rounded-t bg-white mb-0 px-6 py-6 flex justify-between">
@@ -437,7 +437,7 @@ function FormWithholdings() {
           </h6>
         </div>
 
-        <div className="flex-auto px-4 lg:px-10 py-10 pt-0">
+        <div className="flex-auto px-4 lg:px-10 py-10 pt-0 bg-white">
           <form onSubmit={handleSubmit}>
             <h4 className="font-bold mb-2">Datos del Sujeto Retenido</h4>
             <hr className="my-6 border-b-1 border-blueGray-300" />

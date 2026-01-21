@@ -11,16 +11,13 @@ import $ from "jquery";
 import DataTable from "datatables.net-react";
 import DT from "datatables.net-dt";
 import "datatables.net-dt/css/dataTables.dataTables.css";
-
 import "datatables.net-buttons/js/dataTables.buttons";
 import "datatables.net-buttons-dt/css/buttons.dataTables.css";
 import "datatables.net-buttons/js/buttons.html5";
 import "datatables.net-buttons/js/buttons.print";
-
 import JSZip from "jszip";
 import pdfMake from "pdfmake/build/pdfmake";
 import pdfFonts from "pdfmake/build/vfs_fonts";
-
 import { read, utils } from 'xlsx';
 import Papa from 'papaparse';
 
@@ -32,42 +29,31 @@ function ListInvoices() {
   const [modalOpenInvoices, setModalOpenInvoices] = useState(false);
   const [Invoices, setInvoices] = useState(false);
 
-  // 🔥 Estados faltantes que daban error
   const [modalImportOpen, setModalImportOpen] = useState(false);
   const [preInvoicesToImport, setPreInvoicesToImport] = useState([]);
 
-  // 🔥 Variables faltantes que daban error
   const authData = localStorage.getItem("authData");
   const authclientId = authData ? JSON.parse(authData).cliente_id : null;
   const formattedDate = new Date().toISOString().split("T")[0];
-
-  var rol;
-  if (authData) {
-    rol = JSON.parse(authData)['rol'];
-  }
+  const rol = authData ? JSON.parse(authData)['rol'] : null;
 
   useEffect(() => {
     const table = $("#ListInvoicesDt").DataTable();
 
     $("#ListInvoicesDt tbody").on("click", "button.btn-view", function () {
-      const id = $(this).data("id");
-      handleOpenModalInvoices(id);
+      handleOpenModalInvoices($(this).data("id"));
     });
-
     $("#ListInvoicesDt tbody").on("click", "button.btn-credit-note", function () {
-      const id = $(this).data("id");
-      redirectToCreateNote(id, 'NC');
+      redirectToCreateNote($(this).data("id"), 'NC');
     });
-
     $("#ListInvoicesDt tbody").on("click", "button.btn-debit-note", function () {
-      const id = $(this).data("id");
-      redirectToCreateNote(id, 'ND');
+      redirectToCreateNote($(this).data("id"), 'ND');
     });
 
     return () => {
       $("#ListInvoicesDt tbody").off("click", "button.btn-view");
-      $("#ListInvoicesDt tbody").off("click", "button.credit-note");
-      $("#ListInvoicesDt tbody").off("click", "button.debit-note");
+      $("#ListInvoicesDt tbody").off("click", "button.btn-credit-note");
+      $("#ListInvoicesDt tbody").off("click", "button.btn-debit-note");
     };
   }, []);
 
@@ -82,18 +68,13 @@ function ListInvoices() {
       const data = await showInvoice(id);
       setInvoices(data);
       setModalOpenInvoices(true);
-    } catch (err) {
+    } catch {
       toast.error("Error al consultar los datos del cliente.");
     }
   };
 
-  const handleCloseModalInvoices = () => {
-    setModalOpenInvoices(false);
-  };
+  const handleCloseModalInvoices = () => setModalOpenInvoices(false);
 
-  // ----------------------
-  // CARGA DE ARCHIVO
-  // ----------------------
   const handleFileUpload = (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -146,11 +127,7 @@ function ListInvoices() {
     };
 
     if (ext === "csv") {
-      Papa.parse(file, {
-        header: true,
-        skipEmptyLines: true,
-        complete: (res) => processData(res.data),
-      });
+      Papa.parse(file, { header: true, skipEmptyLines: true, complete: (res) => processData(res.data) });
     } else if (ext === "xlsx" || ext === "xls") {
       reader.onload = (evt) => {
         const workbook = read(evt.target.result, { type: "binary" });
@@ -165,29 +142,18 @@ function ListInvoices() {
     e.target.value = "";
   };
 
-  // ----------------------
-  // ENVÍO A API
-  // ----------------------
   const handleConfirmImport = async (prefacturasEditadas) => {
     try {
-      const authData = localStorage.getItem("authData");
-      const cliente_id = authData ? JSON.parse(authData).cliente_id : null;
-
+      const cliente_id = authclientId;
       let errores = [];
 
-      for (let i = 0; i < prefacturasEditadas.length; i++) {
-        const pre = prefacturasEditadas[i];
+      for (let pre of prefacturasEditadas) {
         const payload = { ...pre, cliente_id, force_final: true };
-
         try {
           const response = await createPreInvoice(payload);
-
-          // ✅ Revisar si el response trae resultados con error
           if (response?.resultados?.length) {
             response.resultados.forEach((r) => {
-              if (r.status && r.status.toLowerCase() === "error") {
-                errores.push(`Fila ${r.index + 1}: ${r.error}`);
-              }
+              if (r.status?.toLowerCase() === "error") errores.push(`Fila ${r.index + 1}: ${r.error}`);
             });
           }
         } catch (error) {
@@ -195,128 +161,140 @@ function ListInvoices() {
         }
       }
 
-      if (errores.length === 0) {
-        toast.success("Facturas importadas correctamente");
-      } else {
+      if (!errores.length) toast.success("Facturas importadas correctamente");
+      else {
         errores.forEach((msg) => toast.error(`❌ ${msg}`));
         toast.warn(`${errores.length} factura(s) fallaron.`);
       }
-    } catch (err) {
+    } catch {
       toast.error("Error inesperado al importar");
     }
   };
 
   return (
-    <div className="md:px-10 mx-auto w-full -m-24">
+    <div className="mx-auto w-full">
       <ToastContainer />
-
       <div className="flex flex-wrap">
         <div className="w-full lg:w-12/12">
-          <div className="relative flex flex-col min-w-0 break-words w-full mb-6 shadow-lg rounded-lg bg-blueGray-100 border-0">
-
+          <div className="relative bg-white flex flex-col min-w-0 break-words w-full mb-6 shadow-lg rounded-lg bg-blueGray-100 border-0">
+            {/* Header */}
             <div className="rounded-t bg-white mb-0 px-6 py-6 flex justify-between items-center border-b">
-              <h6 className="text-blueGray-700 text-xl font-bold">
-                Lista de Facturas
-              </h6>
-
+              <h6 className="text-blueGray-700 text-xl font-bold">Lista de Facturas</h6>
               <label className="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded cursor-pointer">
                 Importar Excel/CSV
-                <input
-                  type="file"
-                  accept=".csv,.xlsx,.xls"
-                  className="hidden"
-                  onChange={handleFileUpload}
-                />
+                <input type="file" accept=".csv,.xlsx,.xls" className="hidden" onChange={handleFileUpload} />
               </label>
             </div>
 
-            {/* Tabla */}
+            {/* Tabla con scroll horizontal contenido en card */}
             <div className="block w-full overflow-x-auto px-4 py-4">
               <DataTable
                 id="ListInvoicesDt"
                 className="table-auto w-full text-left"
                 columns={[
-                  { title: "Fecha", data: "fecha_factura" },
-                  { title: "RIF", data: "cliente_final_rif" },
-                  { title: "Razón Social", data: "cliente_final_nombre" },
-                  { title: "Tipo de documento", data: "tipo_documento" },
-                  { title: "Número de control", data: "numero_control" },
-                  { title: "Correlativo", data: "correlativo_interno" },
-                  { title: "Base imponible", data: "total_base" },
-                  { title: "I.V.A.", data: "total_impuestos" },
-                  { title: "Total", data: "total_neto" },
-                  { title: "Pagado en divisas", data: "monto_pagado_divisas" },
-                  { title: "IGTF", data: "igtf_monto" },
-                  { title: "Zona", data: "zona" },
-                  { title: "Estado", data: "estatus" },
+                  { title: "Fecha", data: "fecha_factura", className: "text-center" },
+                  { title: "RIF", data: "cliente_final_rif", className: "text-center nowrap" },
+                  { title: "Razón Social", data: "cliente_final_nombre", className: "text-center nowrap" },
+                  { title: "Tipo de documento", data: "tipo_documento", className: "text-center" },
+                  { title: "Número de control", data: "numero_control", className: "text-center nowrap" },
+                  { title: "Correlativo", data: "correlativo_interno", className: "text-center nowrap" },
+                  { title: "Base imponible", data: "total_base", className: "text-center" },
+                  { title: "I.V.A.", data: "total_impuestos", className: "text-center" },
+                  { title: "Total", data: "total_neto", className: "text-center" },
+                  { title: "Pagado en divisas", data: "monto_pagado_divisas", className: "text-center" },
+                  { title: "IGTF", data: "igtf_monto", className: "text-center" },
+                  { title: "Zona", data: "zona", className: "text-center" },
+                  { title: "Estado", data: "estatus", className: "text-center" },
                   {
                     title: "Acciones",
                     data: null,
                     orderable: false,
+                    className: "text-center",
                     render: (data, type, row) => {
-                      if (rol === "admin" || row.estatus.toUpperCase() === "ANULADA") {
-                        return `
-                          <button class="btn-view px-1 py-1 mx-0" data-id="${row.id}">
+                      return `
+                        <div class="flex justify-center space-x-1 whitespace-nowrap">
+                          <button class="btn-view px-1 py-1" data-id="${row.id}">
                             <i class="fa-solid fa-lg fa-expand"></i>
                           </button>
-                        `;
-                      } else {
-                        return `
-                          <button class="btn-view px-1 py-1 mx-0" data-id="${row.id}">
-                            <i class="fa-solid fa-lg fa-expand"></i>
-                          </button>
-                          <button class="btn-credit-note px-1 py-1 mx-0 text-red-600" data-id="${row.id}">
-                            <i class="fa-solid fa-lg fa-file-invoice"></i>
-                          </button>
-                          <button class="btn-debit-note px-1 py-1 mx-0 text-green-600" data-id="${row.id}">
-                            <i class="fa-solid fa-lg fa-file-invoice"></i>
-                          </button>
-                        `;
-                      }
-                    },
-                  },
+                          ${rol !== "admin" && row.estatus.toUpperCase() !== "ANULADA" ? `
+                            <button class="btn-credit-note px-1 py-1 text-red-600" data-id="${row.id}">
+                              <i class="fa-solid fa-lg fa-file-invoice"></i>
+                            </button>
+                            <button class="btn-debit-note px-1 py-1 text-green-600" data-id="${row.id}">
+                              <i class="fa-solid fa-lg fa-file-invoice"></i>
+                            </button>
+                          ` : ""}
+                        </div>
+                      `;
+                    }
+                  }
                 ]}
                 options={{
                   serverSide: true,
                   processing: true,
+                  scrollX: true,
+                  autoWidth: false,
+                  pageLength: 20,
+                  language: {
+                    decimal: ",",
+                    thousands: ".",
+                    lengthMenu: "Mostrar _MENU_ registros por página",
+                    zeroRecords: "No se encontraron resultados",
+                    info: "Mostrando de _START_ a _END_ de _TOTAL_ registros",
+                    infoEmpty: "No hay registros disponibles",
+                    infoFiltered: "(filtrado de _MAX_ registros totales)",
+                    search: "Buscar:",
+                    paginate: {
+                      first: "Primero",
+                      last: "Último",
+                      next: "Siguiente",
+                      previous: "Anterior"
+                    }
+                  },
                   ajax: async (params, callback) => {
                     try {
                       const page = Math.floor(params.start / params.length) + 1;
                       const per_page = params.length;
-
                       const response = await getInvoices({ page, per_page });
-
                       callback({
                         draw: params.draw,
                         recordsTotal: response.total,
                         recordsFiltered: response.total,
-                        data: response.data,
+                        data: response.data
                       });
-                    } catch (err) {
+                    } catch {
                       callback({
                         draw: params.draw,
                         recordsTotal: 0,
                         recordsFiltered: 0,
-                        data: [],
+                        data: []
                       });
                     }
                   },
+                  createdRow: function (row) {
+                    // Reducir tamaño de fuente y forzar nowrap en todas las celdas
+                    $(row).find("td").css({
+                      "font-size": "0.85rem",
+                      "white-space": "nowrap",
+                      "overflow": "hidden",
+                      "text-overflow": "ellipsis"
+                    });
+                  },
+                  headerCallback: function(thead) {
+                    $(thead).find("th").css({
+                      "font-size": "0.85rem", 
+                      "text-align": "center",
+                      "font-weight": "bold"
+                    });
+                  }
                 }}
               />
 
-              <ModalInvoices
-                isOpen={modalOpenInvoices}
-                onClose={handleCloseModalInvoices}
-                message={Invoices}
-              />
-
+              <ModalInvoices isOpen={modalOpenInvoices} onClose={handleCloseModalInvoices} message={Invoices} />
               {modalImportOpen && (
                 <ModalImportPreviewPreInvoices
                   isOpen={modalImportOpen}
-                  onClose={() => {
-                    setModalImportOpen(false);
-                    setPreInvoicesToImport([]);
-                  }}
+                  onClose={() => { setModalImportOpen(false); setPreInvoicesToImport([]); }}
                   data={preInvoicesToImport}
                   onConfirm={handleConfirmImport}
                 />
@@ -326,10 +304,13 @@ function ListInvoices() {
         </div>
       </div>
     </div>
+
   );
 }
 
 export default ListInvoices;
+
+
 
 /* ⚙️ Atributos principales de options
 🔹 Control de datos y renderizado

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react"; 
+import React, { useState, useEffect } from "react";
 import Modal from "react-modal";
 import Select from "react-select";
 import { toast } from "react-toastify";
@@ -18,9 +18,16 @@ export default function ModalPreInvoiceItems({
   const [products, setProducts] = useState([]);
   const [taxCategories, setTaxCategories] = useState([]);
 
-  // ----------------------------
-  // 🔹 Traer productos
-  // ----------------------------
+  // ---------------------------------------
+  // 🔹 Normaliza valores vacíos a null
+  // ---------------------------------------
+  const normalize = (val) => {
+    return val === "" || val === undefined ? null : val;
+  };
+
+  // ---------------------------------------
+  // 🔹 Cargar productos
+  // ---------------------------------------
   useEffect(() => {
     async function fetchProducts() {
       try {
@@ -30,7 +37,7 @@ export default function ModalPreInvoiceItems({
             value: p.id,
             label: `${p.sku} - ${p.nombre}`,
             sku: p.sku,
-            iva_categoria_id: p.iva_categoria_id,
+            iva_categoria_id: normalize(p.iva_categoria_id),
             precio_base: parseFloat(p.precio_base) || 0,
           }))
         );
@@ -41,9 +48,9 @@ export default function ModalPreInvoiceItems({
     fetchProducts();
   }, []);
 
-  // ----------------------------
-  // 🔹 Traer categorías de IVA
-  // ----------------------------
+  // ---------------------------------------
+  // 🔹 Cargar categorías IVA
+  // ---------------------------------------
   useEffect(() => {
     async function fetchTaxCategories() {
       try {
@@ -56,39 +63,50 @@ export default function ModalPreInvoiceItems({
     fetchTaxCategories();
   }, []);
 
-  // ----------------------------
-  // 🔹 1) Cargar items del Excel apenas abra la modal
-  // ----------------------------
+  // ---------------------------------------
+  // 🔹 Cargar items del Excel al abrir modal
+  // ---------------------------------------
   useEffect(() => {
     if (preInvoice?.items) {
-      setItems(preInvoice.items);
+      setItems(
+        preInvoice.items.map((i) => ({
+          ...i,
+          iva_categoria_id: normalize(i.iva_categoria_id),
+        }))
+      );
     }
   }, [preInvoice]);
 
-  // ----------------------------
-  // 🔹 2) Completar info cuando products & IVA estén listas
-  // ----------------------------
+  // ---------------------------------------
+  // 🔹 Mapear items cuando ya tenemos productos & IVA
+  // ---------------------------------------
   useEffect(() => {
-    if (!items.length || !products.length || !taxCategories.length) return;
+    if (!items.length || !products.length) return;
 
     const mapped = items.map((item) => {
-      const productMatch = products.find((p) => p.sku === item.producto_sku);
+      const match = products.find((p) => p.sku === item.producto_sku);
 
       return {
         ...item,
-        producto_id: productMatch?.value || item.producto_id || null,
-        productOption: productMatch || item.productOption || null,
-        iva_categoria_id: productMatch?.iva_categoria_id || item.iva_categoria_id || null,
-        precio_unitario: item.precio_unitario || productMatch?.precio_base || 0,
+        productOption: match || item.productOption || null,
+        producto_id: match?.value || item.producto_id || null,
+
+        // 🔹 Regla importante: el IVA del producto siempre manda
+        iva_categoria_id:
+          match?.iva_categoria_id ??
+          normalize(item.iva_categoria_id) ??
+          null,
+
+        precio_unitario: item.precio_unitario || match?.precio_base || 0,
       };
     });
 
     setItems(mapped);
-  }, [products, taxCategories]);
+  }, [products]);
 
-  // ----------------------------
-  // 🔹 Cambios en los items
-  // ----------------------------
+  // ---------------------------------------
+  // 🔹 Cambios en los campos
+  // ---------------------------------------
   const handleChange = (idx, field, value) => {
     const newItems = [...items];
 
@@ -97,7 +115,9 @@ export default function ModalPreInvoiceItems({
       newItems[idx].producto_sku = value?.sku || "";
       newItems[idx].producto_id = value?.value || null;
       newItems[idx].precio_unitario = value?.precio_base || 0;
-      newItems[idx].iva_categoria_id = value?.iva_categoria_id || null;
+
+      // 🔥 Aquí estaba el problema: ahora garantizado
+      newItems[idx].iva_categoria_id = normalize(value?.iva_categoria_id);
     } else {
       newItems[idx][field] = value;
     }
@@ -105,9 +125,9 @@ export default function ModalPreInvoiceItems({
     setItems(newItems);
   };
 
-  // ----------------------------
+  // ---------------------------------------
   // 🔹 Agregar item
-  // ----------------------------
+  // ---------------------------------------
   const handleAddItem = () => {
     setItems([
       ...items,
@@ -123,9 +143,9 @@ export default function ModalPreInvoiceItems({
     ]);
   };
 
-  // ----------------------------
+  // ---------------------------------------
   // 🔹 Eliminar item
-  // ----------------------------
+  // ---------------------------------------
   const handleDeleteItem = (idx) => {
     const newItems = [...items];
     newItems.splice(idx, 1);
@@ -133,9 +153,9 @@ export default function ModalPreInvoiceItems({
     toast.info("Item eliminado");
   };
 
-  // ----------------------------
-  // 🔹 Validación antes de guardar
-  // ----------------------------
+  // ---------------------------------------
+  // 🔹 Validar antes de guardar
+  // ---------------------------------------
   const validateItems = () => {
     if (!validationRules.items) return true;
     const { valid, message } = validationRules.items(items);
@@ -143,25 +163,25 @@ export default function ModalPreInvoiceItems({
     return valid;
   };
 
-  // ----------------------------
+  // ---------------------------------------
   // 🔹 Guardar
-  // ----------------------------
+  // ---------------------------------------
   const handleSave = () => {
     if (!validateItems()) return;
 
-    const cleanedItems = items.map((item) => ({
+    const cleaned = items.map((item) => ({
       id: item.id || null,
       producto_id: item.producto_id,
       nombre: item.productOption?.label || item.nombre || "",
       cantidad: item.cantidad,
       precio_unitario: item.precio_unitario,
       aplica_iva: true,
-      iva_categoria_id: item.iva_categoria_id,
+      iva_categoria_id: normalize(item.iva_categoria_id),
       activo: true,
       descuento_porcentaje: item.descuento_porcentaje || 0,
     }));
 
-    onSave(cleanedItems);
+    onSave(cleaned);
     onClose();
   };
 
