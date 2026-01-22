@@ -4,6 +4,17 @@
 @tailwind components;
 @tailwind utilities;
 
+table.dataTable thead th {
+  text-align: center !important;
+}
+.dt-button-collection {
+  @apply bg-white border rounded shadow-lg;
+}
+
+.dt-button-collection.dt-button {
+  @apply block w-full text-left px-4 py-2 hover:bg-slate-100;
+}
+
 /* Aplicar la fuente a todo el body */
 body {
   font-family: 'Inter', sans-serif;

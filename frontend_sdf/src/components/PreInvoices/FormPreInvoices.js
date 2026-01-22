@@ -348,12 +348,12 @@ function FormPreInvoices() {
       return acc + roundTo(baseLine, 2);
     }, 0);
 
-    const baseTotalNd = preInvoice.conceptos_nd.reduce((acc, item) => {
+    const baseTotalNd = (preInvoice.conceptos_nd ? (preInvoice.conceptos_nd.reduce((acc, item) => {
       const monto = Number(item.monto) || 0;
 
       // redondear a 4 decimales por línea
       return acc + roundTo(monto, 2);
-    }, 0);
+    }, 0)) : 0.0);
 
     // resultado final redondeado a 2 decimales
     return roundTo(baseTotal + baseTotalNd, 2);
@@ -397,12 +397,12 @@ function FormPreInvoices() {
       return acc + roundTo(totalLine, 2);
     }, 0);
 
-    const totalNd = preInvoice.conceptos_nd.reduce((acc, item) => {
+    const totalNd = (preInvoice.conceptos_nd ? (preInvoice.conceptos_nd.reduce((acc, item) => {
       const monto = Number(item.monto) || 0;
 
       // redondear a 4 decimales por línea
       return acc + roundTo(monto, 2);
-    }, 0);
+    }, 0)) : 0.0);
 
     // resultado final redondeado a 2 decimales
     return roundTo(total + totalNd, 2);

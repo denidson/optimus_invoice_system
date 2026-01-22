@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   getPreInvoices,
@@ -28,6 +28,19 @@ import Papa from "papaparse";
 window.JSZip = JSZip;
 DataTable.use(DT);
 
+function formatDate(valor) {
+  if (!valor) return "";
+
+  const fecha = new Date(valor);
+  if (isNaN(fecha)) return "";
+
+  const dd = String(fecha.getDate()).padStart(2, "0");
+  const mm = String(fecha.getMonth() + 1).padStart(2, "0");
+  const yyyy = fecha.getFullYear();
+
+  return `${dd}/${mm}/${yyyy}`;
+}
+
 function ListPreInvoices() {
   const navigate = useNavigate(); // Hook para redirección
   const [modalOpen, setModalOpen] = useState(false); // Estado para manejar la visibilidad de la modal
@@ -38,6 +51,7 @@ function ListPreInvoices() {
   const [filterType, setFilterType] = useState("");
   const [modalImportOpen, setModalImportOpen] = useState(false);
   const [preInvoicesToImport, setPreInvoicesToImport] = useState([]);
+  var responseCache = useState(false);
 
   const authData = localStorage.getItem("authData");
   const rol = authData ? JSON.parse(authData)["rol"] : "";
@@ -93,8 +107,13 @@ function ListPreInvoices() {
   const redirectToCreate = () => navigate(`/preinvoices/create`);
 
   const actionSearch = () => {
-    $("#ListPreInvoicesDt").DataTable().ajax.reload();
+    const table = $("#ListPreInvoicesDt").DataTable();
+    table.clear();
+    table.search("");
+    table.columns().search("");
+    table.ajax.reload();
   };
+
 
   const refreshPreInvoices = async () => {
     try {
@@ -347,16 +366,30 @@ function ListPreInvoices() {
                   Buscar
                 </button>
               </div>
+              <style>{`
+
+              `}</style>
               <DataTable
                 id="ListPreInvoicesDt"
-                className="table-auto w-full text-left"
+                className="table-auto w-full"
                 columns={[
-                  { title: "Fecha", data: "fecha_factura" },
-                  { title: "RIF", data: "cliente_final_rif" },
-                  { title: "Razón Social", data: "cliente_final_nombre" },
-                  { title: "Correlativo", data: "correlativo_interno" },
                   {
-                    title: "Base imponible",
+                    title: "Fecha",
+                    data: "fecha_factura",
+                    className: "dt-center",
+                    render: (data, type, row) => {
+                      return new Intl.DateTimeFormat("es-VE", {
+                        day: "2-digit",
+                        month: "2-digit",
+                        year: "numeric"
+                      }).format(new Date(data));
+                    }
+                  },
+                  { title: "RIF", data: "cliente_final_rif", className: "dt-center" },
+                  { title: "Razón Social", data: "cliente_final_nombre" },
+                  { title: "Correlativo", data: "correlativo_interno", className: "dt-center" },
+                  {
+                    title: "Base imponible (Bs.)",
                     data: "total_base",
                     render: (data, type, row) => {
                       if (type === "display" || type === "filter") {
@@ -367,14 +400,14 @@ function ListPreInvoices() {
                           maximumFractionDigits: 2
                         }).format(data);
 
-                        return `Bs. ${formatted}`;
+                        return `${formatted}`;
                       }
                       // Para ordenamiento y cálculos → devolver el valor numérico real
                       return data;
                     }
                   },
                   {
-                    title: "I.V.A.",
+                    title: "I.V.A. (Bs.)",
                     data: "total_impuestos",
                     render: (data, type, row) => {
                       if (type === "display" || type === "filter") {
@@ -385,14 +418,14 @@ function ListPreInvoices() {
                           maximumFractionDigits: 2
                         }).format(data);
 
-                        return `Bs. ${formatted}`;
+                        return `${formatted}`;
                       }
                       // Para ordenamiento y cálculos → devolver el valor numérico real
                       return data;
                     }
                   },
                   {
-                    title: "Total",
+                    title: "Total (Bs.)",
                     data: "total_neto",
                     render: (data, type, row) => {
                       if (type === "display" || type === "filter") {
@@ -403,14 +436,14 @@ function ListPreInvoices() {
                           maximumFractionDigits: 2
                         }).format(data);
 
-                        return `Bs. ${formatted}`;
+                        return `${formatted}`;
                       }
                       // Para ordenamiento y cálculos → devolver el valor numérico real
                       return data;
                     }
                   },
                   {
-                    title: "Pagado en divisas",
+                    title: "Pagado en divisas (Bs.)",
                     data: "monto_pagado_divisas",
                     render: (data, type, row) => {
                       if (type === "display" || type === "filter") {
@@ -421,14 +454,14 @@ function ListPreInvoices() {
                           maximumFractionDigits: 2
                         }).format(data);
 
-                        return `Bs. ${formatted}`;
+                        return `${formatted}`;
                       }
                       // Para ordenamiento y cálculos → devolver el valor numérico real
                       return data;
                     }
                   },
                   {
-                    title: "IGTF",
+                    title: "IGTF (Bs.)",
                     data: "igtf_monto",
                     render: (data, type, row) => {
                       if (type === "display" || type === "filter") {
@@ -439,7 +472,7 @@ function ListPreInvoices() {
                           maximumFractionDigits: 2
                         }).format(data);
 
-                        return `Bs. ${formatted}`;
+                        return `${formatted}`;
                       }
                       // Para ordenamiento y cálculos → devolver el valor numérico real
                       return data;
@@ -455,48 +488,62 @@ function ListPreInvoices() {
                     }
                   },
                   {
-                    title: "Estado",
+                    title: "Estatus",
                     data: "estatus",
+                    className: "dt-center",
                     orderable: true,
                     searchable: true,
                     render: (data, type, row) => {
-                      return data ? data.toUpperCase():'';
+                      if (data == 'borrador'){
+                        return '<i class="fas fa-circle text-orange-500 mr-2"></i> ' + data.toUpperCase();
+                      }else if (data == 'facturada'){
+                        return '<i class="fas fa-circle text-emerald-500 mr-2"></i> ' + data.toUpperCase();
+                      } else {
+                        return '<i class="fas fa-circle text-red-500 mr-2"></i> ' + data.toUpperCase();
+                      }
+
                     }
                   },
                   {
                     title: "Acciones",
                     data: null,
+                    orderable: false,
+                    searchable: false,
+                    className: 'no-export',
                     render: (data, type, row) => {
+                      const viewBtn = `<button class="btn-view px-2 py-1 text-gray-700" data-id="${row.id}"><i class="fa-solid fa-lg fa-expand"></i></button>`;
                       if (rol === "admin") {
-                        return `<button class="btn-view px-1 py-1 mx-0" data-id="${row.id}">
-                          <i class="fa-solid fa-lg fa-expand"></i>
-                        </button>`;
+                        return `<div style="display:flex;justify-content:center;align-items:center;gap:0.25rem;white-space:nowrap;">${viewBtn}</div>`;
                       }
                       if (row.estatus.toUpperCase() != 'FACTURADA'){
-                          return `
-                            <button class="btn-view px-1 py-1 mx-0" data-id="${row.id}"><i class="fa-solid fa-lg fa-expand"></i></button>
-                            <button class="btn-invoice px-1 py-1 mx-0 text-green-600" data-id="${row.id}" data-correlativo_interno="${row.correlativo_interno}"><i class="fa-solid fa-file-invoice fa-lg"></i></button>
-                            <button class="btn-edit px-1 py-1 mx-0 text-blue-600" data-id="${row.id}"><i class="fa-solid fa-lg fa-pen-to-square"></i></button>`;
-                            //<button class="btn-delete px-1 py-1 mx-0 text-red-600" data-id="${row.id}" data-nombre="${row.cliente_final_nombre}"><i class="fa-regular fa-rectangle-xmark fa-lg"></i></button>
-                        }else{
-                          return `
-                            <button class="btn-view px-1 py-1 mx-0" data-id="${row.id}"><i class="fa-solid fa-lg fa-expand"></i></button>
-                          `;
-                        }
-                    },
+                        const editBtn = `<button class="btn-edit px-2 py-1 text-blue-600" data-id="${row.id}"><i class="fa-solid fa-lg fa-pen-to-square"></i></button>`;
+                        const invoiceBtn = `<button class="btn-invoice px-1 py-1 mx-0 text-green-600" data-id="${row.id}" data-correlativo_interno="${row.correlativo_interno}"><i class="fa-solid fa-file-invoice fa-lg"></i></button>`;
+                        return `<div style="display:flex;justify-content:center;align-items:center;gap:0.25rem;white-space:nowrap;">${viewBtn}${editBtn}${invoiceBtn}</div>`;
+                      }else{
+                        return `<div style="display:flex;justify-content:center;align-items:center;gap:0.25rem;white-space:nowrap;">${viewBtn}</div>`;
+                      }
+                    }
                   },
                 ]}
                 options={{
+                  columnDefs:[{
+                    targets: [3, 4, 5, 7, 8, 9], // índices de columnas a ocultar (ej: RIF, Zona)
+                    visible: false,
+                    searchable: true // siguen siendo buscables
+                  }],
                   dom: //B = Buttons, l = LengthMenu (mostrar X registros), f = Filtro (search), t = Tabla, i = Info (mostrando de X a Y de Z), p = Paginación
-                    "<'row'<'col-sm-12 text-center'B>>" +                // Fila 2: botones ocupando todo el ancho
+                    "<'row'<'col-sm-12 text-start'B>>" +                // Fila 2: botones ocupando todo el ancho
                     "<'row'<'col-sm-6 text-end'l><'col-sm-6'f>>" +    // Fila 1: lengthMenu izquierda, filtro derecha
                     "<'row'<'col-sm-12'tr>>" +               // Fila 3: tabla
                     "<'row'<'col-sm-5 text-start'i><'col-sm-7 text-end'p>>",     // Fila 4: info izquierda, paginación derecha
                   serverSide: true, // si es true la paginación se debe controlar a traves del servidor
+                  searching: true,
                   processing: true,
                   ajax: async (dataTablesParams, callback) => {
                     try {
 
+                      const searchValue = dataTablesParams.search?.value?.toLowerCase() || '';
+                      //console.log('searchValue: ', searchValue);
                       // DataTables usa start y length, los convertimos a page y per_page
                       const page = Math.floor(dataTablesParams.start / dataTablesParams.length) + 1;
                       const per_page = dataTablesParams.length;
@@ -521,11 +568,46 @@ function ListPreInvoices() {
                         query.hasta = $('#filtro_hasta').val();
                       }
 
-                      // Pasamos los filtros al servicio
-                      const response = await getPreInvoices(query);
+                      if (searchValue == ''){
+                        //console.log('if');
+                        // Pasamos los filtros al servicio
+                        const response = await getPreInvoices(query);
 
-                      // Aseguramos que la estructura esperada esté presente
-                      const { data, total } = response;
+                        // Respaldar response anterior
+                        responseCache = response;
+                        //console.log('responseCache: ', responseCache);
+
+                        // Aseguramos que la estructura esperada esté presente
+                        var { data, total } = response;
+                      }else{
+                        //console.log('else');
+                        const CAMPOS_EXCLUIDOS = [
+                          "created_at",
+                          "updated_at"
+                        ];
+                        var filteredData = responseCache.data.filter(item =>
+                          Object.entries(item).some(([key, value]) => {
+                            // Excluir campos internos
+                            if (CAMPOS_EXCLUIDOS.includes(key)) return false;
+
+                            if (!value) return false;
+
+                            // Si es campo de fecha
+                            if (key.includes("fecha_factura")) {
+                              /*console.log('fecha_factura: ', value);
+                              console.log('searchValue: ', searchValue);
+                              console.log('formatDate: ', formatDate(value));*/
+                              return formatDate(value).includes(searchValue.toUpperCase());
+                            }
+
+                            return String(value).toLowerCase().includes(searchValue.toUpperCase());
+                          })
+                        );
+                        //console.log('filteredData: ', filteredData);
+                        var data = filteredData;
+                        var total = filteredData.length;
+                        //var { data, total } = responseCache;
+                      }
 
                       // Retornamos a DataTables con la estructura esperada
                       callback({
@@ -545,7 +627,7 @@ function ListPreInvoices() {
                     }
                   },
                   paging: true,
-                  searching: false,
+                  searching: true,
                   ordering: true,
                   info: true,
                   scrollx: true,
@@ -555,114 +637,137 @@ function ListPreInvoices() {
                   //dom: "Blfrtip",
                   buttons: [
                     {
-                      extend: "copyHtml5",
-                      text: "Copiar",
-                      title: "Lista de Pre-Facturas"   // nombre del documento en el portapapeles
-                    },
-                    {
-                      extend: "excelHtml5",
-                      text: "Excel",
-                      title: "Lista de Pre-Facturas",  // título dentro del archivo
-                      filename: "Lista_pre_facturas"   // nombre del archivo generado (sin extensión)
-                    },
-                    {
-                      extend: "csvHtml5",
-                      text: "CSV",
-                      title: "Lista de Pre-Facturas",
-                      filename: "Lista_pre_facturas"
-                    },
-                    {
-                      extend: "pdfHtml5",
-                      text: "PDF",
-                      title: "Lista de Pre-Facturas",
-                      filename: "Lista_pre_facturas",
-                      //orientation: "landscape",   // opcional
-                      //pageSize: "A4"              // opcional
-                    },
-                    {
-                      extend: "print",
-                      text: "Imprimir",
-                      title: "Lista de Pre-Facturas"
-                    },
-                    {
-                      text: "Exportar todo (Excel)",
-                      action: async function (e, dt, node, config) {
-                        const exportButton = node;
-                        try {
-                          const allData = [];
-                          let page = 1;
-                          let totalPages = 1;
-
-                          // Mostrar mensaje de progreso
-                          $(exportButton).text("Cargando...").prop("disabled", true).attr("style", "pointer-events: none;");
-                          const query = {
-                            page,
-                            per_page
-                          };
-
-                          // Añadir filtros según filtro activo
-                          if ($('#filter_type option:selected').val() === "estatus" && $('#filtro_estatus option:selected').val()) query.estatus = $('#filtro_estatus option:selected').val();
-
-                          if ($('#filter_type option:selected').val() === "zona" && $("#filtro_text").val()) query.zona = $("#filtro_text").val();
-
-                          if ($('#filter_type option:selected').val() === "correlativo_interno" && $("#filtro_text").val())
-                            query.correlativo_interno = $("#filtro_text").val();
-
-                          if ($('#filter_type option:selected').val() === "cliente_final_rif" && $("#filtro_text").val())
-                            query.cliente_final_rif = $("#filtro_text").val();
-
-                          if ($('#filter_type option:selected').val() === "rango_fecha" && $('#filtro_desde').val() && $('#filtro_hasta').val()) {
-                            query.desde = $('#filtro_desde').val();
-                            query.hasta = $('#filtro_hasta').val();
+                      extend: "collection",
+                      text: "Exportar",
+                      className: "bg-slate-700 hover:bg-slate-600 text-white font-bold py-2 px-4 rounded",
+                      buttons: [
+                        {
+                          extend: "copyHtml5",
+                          text: "Copiar",
+                          title: "Lista de Pre-Facturas"   // nombre del documento en el portapapeles
+                        },
+                        {
+                          extend: "excelHtml5",
+                          text: "Excel",
+                          title: "Lista de Pre-Facturas",  // título dentro del archivo
+                          filename: "Lista_pre_facturas",   // nombre del archivo generado (sin extensión)
+                          exportOptions: {
+                            columns: ':not(.no-export)'
                           }
-                          // Cargar todas las páginas hasta completar total_pages
-                          do {
-                            query.page = page;
-                            query.per_page = 100;
-                            const response = await getPreInvoices(query);
-                            const { data, total_pages } = response;
+                        },
+                        {
+                          extend: "csvHtml5",
+                          text: "CSV",
+                          title: "Lista de Pre-Facturas",
+                          filename: "Lista_pre_facturas",
+                          exportOptions: {
+                            columns: ':not(.no-export)'
+                          }
+                        },
+                        {
+                          extend: "pdfHtml5",
+                          text: "PDF",
+                          title: "Lista de Pre-Facturas",
+                          filename: "Lista_pre_facturas",
+                          exportOptions: {
+                            columns: ':not(.no-export)'
+                          },
+                          orientation: "landscape",
+                          //orientation: "landscape",   // opcional
+                          //pageSize: "A4"              // opcional
+                        },
+                        {
+                          extend: "print",
+                          text: "Imprimir",
+                          title: "Lista de Pre-Facturas",
+                          exportOptions: {
+                            columns: ':not(.no-export)'
+                          }
+                        },
+                        {
+                          text: "Exportar todo (Excel)",
+                          exportOptions: {
+                            columns: ':not(.no-export)'
+                          },
+                          action: async function (e, dt, node, config) {
+                            const exportButton = node;
+                            try {
+                              const allData = [];
+                              let page = 1;
+                              let totalPages = 1;
 
-                            allData.push(...data);
-                            totalPages = total_pages;
-                            page++;
-                          } while (page <= totalPages);
+                              // Mostrar mensaje de progreso
+                              $(exportButton).text("Cargando...").prop("disabled", true).attr("style", "pointer-events: none;");
+                              const query = {
+                                page,
+                                per_page
+                              };
 
-                          // Convertimos a Excel con xlsx
-                          const wb = utils.book_new();
-                          const ws = utils.json_to_sheet(allData.map(item => ({
-                            Fecha: item.timestamp.replace("T", " ").slice(0, 19),
-                            Servicio: item.endpoint,
-                            Acción:
-                              item.method === "GET"
-                                ? "CONSULTA"
-                                : item.method === "POST"
-                                ? (item.endpoint === "/api/login" ? "INICIO DE SESIÓN" : "CREACIÓN")
-                                : item.method === "PUT"
-                                ? "ACTUALIZACIÓN"
-                                : "DESACTIVACIÓN/ACTIVACIÓN",
-                            Origen: item.request_ip,
-                            Respuesta: item.response_status_code,
-                            "Duración (ms)": item.duration_ms,
-                            Usuario: item.usuario?.email || "",
-                          })));
+                              // Añadir filtros según filtro activo
+                              if ($('#filter_type option:selected').val() === "estatus" && $('#filtro_estatus option:selected').val()) query.estatus = $('#filtro_estatus option:selected').val();
 
-                          utils.book_append_sheet(wb, ws, "Auditoría");
+                              if ($('#filter_type option:selected').val() === "zona" && $("#filtro_text").val()) query.zona = $("#filtro_text").val();
 
-                          const wbout = XLSX.write(wb, { bookType: "xlsx", type: "array" });
-                          const blob = new Blob([wbout], { type: "application/octet-stream" });
-                          const link = document.createElement("a");
-                          link.href = URL.createObjectURL(blob);
-                          link.download = "Pre-Facturas.xlsx";
-                          link.click();
+                              if ($('#filter_type option:selected').val() === "correlativo_interno" && $("#filtro_text").val())
+                                query.correlativo_interno = $("#filtro_text").val();
 
-                          $(exportButton).text("Exportar todo (Excel)").prop("disabled", false).attr("style", "pointer-events: auto;");;
-                          toast.success("Archivo exportado correctamente.");
-                        } catch (error) {
-                          $(exportButton).text("Exportar todo (Excel)").prop("disabled", false).attr("style", "pointer-events: auto;");;
-                          console.error("Error al exportar:", error);
-                          toast.error("Error al exportar los datos.");
+                              if ($('#filter_type option:selected').val() === "cliente_final_rif" && $("#filtro_text").val())
+                                query.cliente_final_rif = $("#filtro_text").val();
+
+                              if ($('#filter_type option:selected').val() === "rango_fecha" && $('#filtro_desde').val() && $('#filtro_hasta').val()) {
+                                query.desde = $('#filtro_desde').val();
+                                query.hasta = $('#filtro_hasta').val();
+                              }
+                              // Cargar todas las páginas hasta completar total_pages
+                              do {
+                                query.page = page;
+                                query.per_page = 100;
+                                const response = await getPreInvoices(query);
+                                const { data, total_pages } = response;
+
+                                allData.push(...data);
+                                totalPages = total_pages;
+                                page++;
+                              } while (page <= totalPages);
+
+                              // Convertimos a Excel con xlsx
+                              const wb = utils.book_new();
+                              const ws = utils.json_to_sheet(allData.map(item => ({
+                                Fecha: item.timestamp.replace("T", " ").slice(0, 19),
+                                Servicio: item.endpoint,
+                                Acción:
+                                  item.method === "GET"
+                                    ? "CONSULTA"
+                                    : item.method === "POST"
+                                    ? (item.endpoint === "/api/login" ? "INICIO DE SESIÓN" : "CREACIÓN")
+                                    : item.method === "PUT"
+                                    ? "ACTUALIZACIÓN"
+                                    : "DESACTIVACIÓN/ACTIVACIÓN",
+                                Origen: item.request_ip,
+                                Respuesta: item.response_status_code,
+                                "Duración (ms)": item.duration_ms,
+                                Usuario: item.usuario?.email || "",
+                              })));
+
+                              utils.book_append_sheet(wb, ws, "Auditoría");
+
+                              const wbout = XLSX.write(wb, { bookType: "xlsx", type: "array" });
+                              const blob = new Blob([wbout], { type: "application/octet-stream" });
+                              const link = document.createElement("a");
+                              link.href = URL.createObjectURL(blob);
+                              link.download = "Pre-Facturas.xlsx";
+                              link.click();
+
+                              $(exportButton).text("Exportar todo (Excel)").prop("disabled", false).attr("style", "pointer-events: auto;");;
+                              toast.success("Archivo exportado correctamente.");
+                            } catch (error) {
+                              $(exportButton).text("Exportar todo (Excel)").prop("disabled", false).attr("style", "pointer-events: auto;");;
+                              console.error("Error al exportar:", error);
+                              toast.error("Error al exportar los datos.");
+                            }
+                          }
                         }
-                      }
+                      ]
                     }
                   ],
                   language: {
