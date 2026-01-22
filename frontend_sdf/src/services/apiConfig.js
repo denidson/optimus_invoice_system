@@ -25,7 +25,16 @@ export const getTaxCategories = async () => {
 // Get registros de auditoria
   export const getAuditLogs = async ({ page = 1, per_page = 20, request_type=false } = {}) => {
     try {
-      const response = await api.get(`/admin/logs?request_type=export`);// + (request_type != false ? `?request_type=${request_type}` : ``));
+      const endpoint = '/admin/logs?';
+
+      const query = new URLSearchParams({
+        page,
+        per_page,
+        ...(request_type && { request_type }),
+      });
+
+      const response = await api.get(`${endpoint}?${query.toString()}`);
+      //const response = await api.get(`/admin/logs?request_type=export`);// + (request_type != false ? `?request_type=${request_type}` : ``));
       return response.data; // Retorna los datos directamente
     } catch (error) {
       console.error("Error fetching audit logs:", error);
