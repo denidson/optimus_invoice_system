@@ -2,7 +2,8 @@ import React, { useContext, useState, useRef, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import ReactDOM from "react-dom";
 
-import Logo1 from "../../assets/img/Quantus-Invoice.png";
+import Logo from "../../assets/img/Quantus-Invoice.png";
+import LogoCollapse from "../../assets/img/Quantus-Invoice3.png";
 import { AuthContext } from "../../context/AuthContext";
 
 // Tooltip para modo colapsado
@@ -92,11 +93,15 @@ export default function Sidebar({ collapsed, setCollapsed }) {
         <div className="flex items-center justify-between">
           <Link to="/dashboard" className="block py-4">
             <img
-              src={Logo1}
+              src={collapsed ? LogoCollapse : Logo}
               alt="Logo"
-              className={`transition-all duration-150 ${collapsed ? "w-8 mx-auto" : "w-full"}`}
+              className={`
+                transition-all duration-200 ease-in-out
+                ${collapsed ? "w-10 mx-auto" : "w-full"}
+              `}
             />
           </Link>
+
 
           <button
             onClick={() => setCollapsed(!collapsed)}

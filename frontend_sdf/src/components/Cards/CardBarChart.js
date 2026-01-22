@@ -1,139 +1,95 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useRef, useEffect, useMemo, useState } from "react";
 import { Chart, registerables } from "chart.js";
 
 Chart.register(...registerables);
 
-export default function CardBarChart({ data = [] }) {
+export default function CardBarChart({ data = [], currency = "USD", isLoading }) {
   const canvasRef = useRef(null);
   const chartRef = useRef(null);
-
   const [filter, setFilter] = useState("");
 
-  // Transformar datos recibidos
-  const labels = data.map((item) => {
-    const date = new Date(item.periodo);
-    return date.toLocaleString("es-ES", { month: "long" });
-  });
-
-  const values = data.map((item) => Number(item.neto_total));
-
-  // Filtrar por texto
-  const filteredLabels = labels.filter((label) =>
-    label.toLowerCase().includes(filter.toLowerCase())
+  const labels = useMemo(
+    () =>
+      data.map((item) => {
+        const [year, month] = item.periodo.split("-");
+        return new Date(year, month - 1).toLocaleDateString("es-ES", {
+          month: "long",
+          year: "numeric",
+        });
+      }),
+    [data]
   );
 
-  const filteredValues = labels
-    .map((label, idx) =>
-      filteredLabels.includes(label) ? values[idx] : null
-    )
-    .filter((v) => v !== null);
+  const values = useMemo(
+    () => data.map((item) => Number(item.neto_total)),
+    [data]
+  );
 
-  // Crear / actualizar gráfico
+  const { filteredLabels, filteredValues } = useMemo(() => {
+    if (!filter) return { filteredLabels: labels, filteredValues: values };
+
+    const fL = [];
+    const fV = [];
+    labels.forEach((l, i) => {
+      if (l.toLowerCase().includes(filter.toLowerCase())) {
+        fL.push(l);
+        fV.push(values[i]);
+      }
+    });
+    return { filteredLabels: fL, filteredValues: fV };
+  }, [labels, values, filter]);
+
   useEffect(() => {
-    if (!canvasRef.current || !filteredLabels.length) return;
-
-    if (chartRef.current) {
-      chartRef.current.destroy();
-    }
+    if (!canvasRef.current || chartRef.current) return;
 
     chartRef.current = new Chart(canvasRef.current, {
       type: "bar",
       data: {
-        labels: filteredLabels,
+        labels: [],
         datasets: [
           {
-            label: "Monto Neto (USD)",
-            data: filteredValues,
-            backgroundColor: "#2a6ed5", // twilight-indigo-500
+            label: `Monto Neto (${currency})`,
+            data: [],
+            backgroundColor: "#2a6ed5",
             borderRadius: 6,
-            maxBarThickness: 18,
+            maxBarThickness: 20,
           },
         ],
       },
       options: {
         responsive: true,
         maintainAspectRatio: false,
-        animation: {
-          duration: 1200,
-          easing: "easeOutQuart",
-        },
         plugins: {
-          legend: {
-            display: true,
-            position: "top",
-            labels: {
-              color: "#1a202c",
-              font: { size: 12 },
-            },
-          },
+          legend: { display: true, position: "top" },
           tooltip: {
-            backgroundColor: "#fff",
-            titleColor: "#1a202c",
-            bodyColor: "#2d3748",
-            borderColor: "rgba(0,0,0,0.1)",
-            borderWidth: 1,
-            padding: 12,
-            displayColors: false,
+            callbacks: {
+              label: (ctx) =>
+                `${currency} ${ctx.parsed.y.toLocaleString("es-ES", {
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2,
+                })}`,
+            },
           },
         },
         scales: {
-          x: {
-            title: {
-              display: true,
-              text: "Mes",
-              color: "#4a5568",
-              font: { size: 12, weight: "500" },
-            },
-            ticks: {
-              color: "#4a5568",
-              font: { size: 12 },
-            },
-            grid: { display: false },
-          },
-          y: {
-            title: {
-              display: true,
-              text: "Monto Neto (USD)",
-              color: "#4a5568",
-              font: { size: 12, weight: "500" },
-            },
-            ticks: {
-              color: "#2a6ed5", // twilight-indigo-500
-              font: { size: 12 },
-              beginAtZero: true,
-            },
-            grid: {
-              color: "rgba(0,0,0,0.05)",
-              drawBorder: false,
-            },
-          },
+          x: { grid: { display: false } },
+          y: { beginAtZero: true },
         },
       },
     });
+  }, [currency]);
 
-    return () => {
-      if (chartRef.current) {
-        chartRef.current.destroy();
-        chartRef.current = null;
-      }
-    };
+  useEffect(() => {
+    if (!chartRef.current) return;
+    chartRef.current.data.labels = filteredLabels;
+    chartRef.current.data.datasets[0].data = filteredValues;
+    chartRef.current.update();
   }, [filteredLabels, filteredValues]);
 
-  // Descargar imagen
-  const handleDownload = () => {
-    if (!canvasRef.current) return;
-
-    const link = document.createElement("a");
-    link.download = "ventas_periodo.png";
-    link.href = canvasRef.current.toDataURL("image/png", 1.0);
-    link.click();
-  };
-
   return (
-    <div className="relative flex flex-col min-w-0 break-words bg-white w-full mb-6 shadow-lg rounded-lg">
-      {/* Header */}
-      <div className="rounded-t-lg mb-0 px-4 py-3 border-b border-slate-100">
-        <h6 className="uppercase text-twilight-indigo-500 mb-1 text-xs font-semibold">
+    <div className="relative flex flex-col bg-white w-full mb-6 shadow-lg rounded-lg">
+      <div className="rounded-t-lg px-4 py-3 border-b">
+        <h6 className="uppercase text-twilight-indigo-500 text-xs font-semibold">
           Análisis
         </h6>
         <h2 className="text-slate-700 text-xl font-semibold">
@@ -141,28 +97,23 @@ export default function CardBarChart({ data = [] }) {
         </h2>
       </div>
 
-      {/* Filtro + Descargar */}
-      <div className="flex flex-wrap justify-between items-center px-4 py-3 gap-2">
+      <div className="flex justify-between items-center px-4 py-3 gap-2">
         <input
           type="text"
           placeholder="Filtrar por mes..."
           value={filter}
           onChange={(e) => setFilter(e.target.value)}
-          className="border border-twilight-indigo-300 rounded px-3 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-twilight-indigo-500"
+          className="border rounded px-3 py-1 text-sm focus:ring-1 focus:ring-twilight-indigo-500"
         />
-        <button
-          onClick={handleDownload}
-          className="bg-twilight-indigo-500 text-white text-sm px-3 py-1 rounded hover:bg-twilight-indigo-600 transition"
-        >
-          Descargar PNG
-        </button>
       </div>
 
-      {/* Chart */}
-      <div className="p-4 flex-auto">
-        <div className="relative h-56 md:h-64">
-          <canvas ref={canvasRef} />
-        </div>
+      <div className="p-4 relative h-56 md:h-64">
+        {isLoading && (
+          <div className="absolute inset-0 flex items-center justify-center bg-white/60 z-10">
+            <i className="fas fa-spinner fa-spin text-twilight-indigo-600 text-3xl"></i>
+          </div>
+        )}
+        <canvas ref={canvasRef} />
       </div>
     </div>
   );
