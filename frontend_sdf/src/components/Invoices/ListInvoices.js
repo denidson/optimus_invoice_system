@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import { useNavigate } from "react-router-dom"; 
 import { getInvoices, showInvoice } from '../../services/api_invoices';
 import { createPreInvoice } from "../../services/api_pre_invoices";
@@ -24,6 +24,19 @@ import Papa from 'papaparse';
 window.JSZip = JSZip;
 DataTable.use(DT);
 
+function formatDate(valor) {
+  if (!valor) return "";
+
+  const fecha = new Date(valor);
+  if (isNaN(fecha)) return "";
+
+  const dd = String(fecha.getDate()).padStart(2, "0");
+  const mm = String(fecha.getMonth() + 1).padStart(2, "0");
+  const yyyy = fecha.getFullYear();
+
+  return `${dd}/${mm}/${yyyy}`;
+}
+
 function ListInvoices() {
   const navigate = useNavigate();
   const [modalOpenInvoices, setModalOpenInvoices] = useState(false);
@@ -31,6 +44,7 @@ function ListInvoices() {
 
   const [modalImportOpen, setModalImportOpen] = useState(false);
   const [preInvoicesToImport, setPreInvoicesToImport] = useState([]);
+  var responseCache = useState(false);
 
   const authData = localStorage.getItem("authData");
   const authclientId = authData ? JSON.parse(authData).cliente_id : null;
@@ -192,44 +206,182 @@ function ListInvoices() {
                 id="ListInvoicesDt"
                 className="table-auto w-full text-left"
                 columns={[
-                  { title: "Fecha", data: "fecha_factura", className: "text-center" },
-                  { title: "RIF", data: "cliente_final_rif", className: "text-center nowrap" },
-                  { title: "Razón Social", data: "cliente_final_nombre", className: "text-center nowrap" },
-                  { title: "Tipo de documento", data: "tipo_documento", className: "text-center" },
-                  { title: "Número de control", data: "numero_control", className: "text-center nowrap" },
-                  { title: "Correlativo", data: "correlativo_interno", className: "text-center nowrap" },
-                  { title: "Base imponible", data: "total_base", className: "text-center" },
-                  { title: "I.V.A.", data: "total_impuestos", className: "text-center" },
-                  { title: "Total", data: "total_neto", className: "text-center" },
-                  { title: "Pagado en divisas", data: "monto_pagado_divisas", className: "text-center" },
-                  { title: "IGTF", data: "igtf_monto", className: "text-center" },
-                  { title: "Zona", data: "zona", className: "text-center" },
-                  { title: "Estado", data: "estatus", className: "text-center" },
+                  {
+                    title: "Fecha",
+                    data: "fecha_factura",
+                    className: "dt-center",
+                    render: (data, type, row) => {
+                      return new Intl.DateTimeFormat("es-VE", {
+                        day: "2-digit",
+                        month: "2-digit",
+                        year: "numeric"
+                      }).format(new Date(data));
+                    }
+                  },
+                  { title: "RIF", data: "cliente_final_rif", className: "dt-center", },
+                  { title: "Razón Social", data: "cliente_final_nombre", },
+                  {
+                    title: "Tipo de documento",
+                    data: "tipo_documento",
+                    className: "text-center",
+                    orderable: true,
+                    searchable: true,
+                    render: (data, type, row) => {
+                      if (data == 'FC'){
+                        return 'FACTURA';
+                      }else if (data == 'NC'){
+                        return 'NOTA DE CRÉDITO';
+                      } else {
+                        return 'NOTA DE DÉBITO';
+                      }
+
+                    }
+                  },
+                  { title: "Número de control", data: "numero_control", className: "dt-center", },
+                  { title: "Correlativo", data: "correlativo_interno", className: "dt-center", },
+                  {
+                    title: "Base imponible (Bs.)",
+                    data: "total_base",
+                    render: (data, type, row) => {
+                      if (type === "display" || type === "filter") {
+                        // Formato de número con separadores para Venezuela
+                        const formatted = new Intl.NumberFormat("es-VE", {
+                          style: "decimal",
+                          minimumFractionDigits: 2,
+                          maximumFractionDigits: 2
+                        }).format(data);
+
+                        return `${formatted}`;
+                      }
+                      // Para ordenamiento y cálculos → devolver el valor numérico real
+                      return data;
+                    }
+                  },
+                  {
+                    title: "I.V.A. (Bs.)",
+                    data: "total_impuestos",
+                    render: (data, type, row) => {
+                      if (type === "display" || type === "filter") {
+                        // Formato de número con separadores para Venezuela
+                        const formatted = new Intl.NumberFormat("es-VE", {
+                          style: "decimal",
+                          minimumFractionDigits: 2,
+                          maximumFractionDigits: 2
+                        }).format(data);
+
+                        return `${formatted}`;
+                      }
+                      // Para ordenamiento y cálculos → devolver el valor numérico real
+                      return data;
+                    }
+                  },
+                  {
+                    title: "Total (Bs.)",
+                    data: "total_neto",
+                    render: (data, type, row) => {
+                      if (type === "display" || type === "filter") {
+                        // Formato de número con separadores para Venezuela
+                        const formatted = new Intl.NumberFormat("es-VE", {
+                          style: "decimal",
+                          minimumFractionDigits: 2,
+                          maximumFractionDigits: 2
+                        }).format(data);
+
+                        return `${formatted}`;
+                      }
+                      // Para ordenamiento y cálculos → devolver el valor numérico real
+                      return data;
+                    }
+                  },
+                  {
+                    title: "Pagado en divisas (Bs.)",
+                    data: "monto_pagado_divisas",
+                    render: (data, type, row) => {
+                      if (type === "display" || type === "filter") {
+                        // Formato de número con separadores para Venezuela
+                        const formatted = new Intl.NumberFormat("es-VE", {
+                          style: "decimal",
+                          minimumFractionDigits: 2,
+                          maximumFractionDigits: 2
+                        }).format(data);
+
+                        return `${formatted}`;
+                      }
+                      // Para ordenamiento y cálculos → devolver el valor numérico real
+                      return data;
+                    }
+                  },
+                  {
+                    title: "IGTF (Bs.)",
+                    data: "igtf_monto",
+                    render: (data, type, row) => {
+                      if (type === "display" || type === "filter") {
+                        // Formato de número con separadores para Venezuela
+                        const formatted = new Intl.NumberFormat("es-VE", {
+                          style: "decimal",
+                          minimumFractionDigits: 2,
+                          maximumFractionDigits: 2
+                        }).format(data);
+
+                        return `${formatted}`;
+                      }
+                      // Para ordenamiento y cálculos → devolver el valor numérico real
+                      return data;
+                    }
+                  },
+                  {
+                    title: "Zona",
+                    data: "zona",
+                    orderable: true,
+                    searchable: false,
+                    render: (data, type, row) => {
+                      return data ? data.toUpperCase():'';
+                    }
+                  },
+                  {
+                    title: "Estatus",
+                    data: "estatus",
+                    className: "dt-center",
+                    orderable: true,
+                    searchable: true,
+                    render: (data, type, row) => {
+                      if (data == 'anulada'){
+                        return '<i class="fas fa-circle text-red-500 mr-2"></i> ' + data.toUpperCase();
+                      }else if (data == 'normal'){
+                        return '<i class="fas fa-circle text-emerald-500 mr-2"></i> ' + data.toUpperCase();
+                      } else {
+                        return '<i class="fas fa-circle text-orange-500 mr-2"></i> ' + data.toUpperCase();
+                      }
+
+                    }
+                  },
                   {
                     title: "Acciones",
                     data: null,
                     orderable: false,
-                    className: "text-center",
+                    searchable: false,
+                    className: 'no-export',
                     render: (data, type, row) => {
-                      return `
-                        <div class="flex justify-center space-x-1 whitespace-nowrap">
-                          <button class="btn-view px-1 py-1" data-id="${row.id}">
-                            <i class="fa-solid fa-lg fa-expand"></i>
-                          </button>
-                          ${rol !== "admin" && row.estatus.toUpperCase() !== "ANULADA" ? `
-                            <button class="btn-credit-note px-1 py-1 text-red-600" data-id="${row.id}">
-                              <i class="fa-solid fa-lg fa-file-invoice"></i>
-                            </button>
-                            <button class="btn-debit-note px-1 py-1 text-green-600" data-id="${row.id}">
-                              <i class="fa-solid fa-lg fa-file-invoice"></i>
-                            </button>
-                          ` : ""}
-                        </div>
-                      `;
+                      const viewBtn = `<button class="btn-view px-2 py-1 text-gray-700" data-id="${row.id}"><i class="fa-solid fa-lg fa-expand"></i></button>`;
+                      if (rol === "admin") {
+                        return `<div style="display:flex;justify-content:center;align-items:center;gap:0.25rem;white-space:nowrap;">${viewBtn}</div>`;
+                      }
+                      if (rol !== "admin" && row.estatus.toUpperCase() != 'ANULADA'){
+                        const creditNoteBtn = `<button class="btn-credit-note px-2 py-1 text-red-600" data-id="${row.id}"><i class="fa-solid fa-lg fa-file-invoice"></i></button>`;
+                        const debitNoteBtn = `<button class="btn-debit-note px-1 py-1 mx-0 text-green-600" data-id="${row.id}" data-correlativo_interno="${row.correlativo_interno}"><i class="fa-solid fa-file-invoice fa-lg"></i></button>`;
+                        return `<div style="display:flex;justify-content:center;align-items:center;gap:0.25rem;white-space:nowrap;">${viewBtn}${creditNoteBtn}${debitNoteBtn}</div>`;
+                      }else{
+                        return `<div style="display:flex;justify-content:center;align-items:center;gap:0.25rem;white-space:nowrap;">${viewBtn}</div>`;
+                      }
                     }
                   }
                 ]}
                 options={{
+                  columnDefs:[{
+                    targets: [4, 5, 6, 7, 9, 10, 11], // índices de columnas a ocultar (ej: RIF, Zona)
+                    visible: false,
+                    searchable: true // siguen siendo buscables
+                  }],
                   serverSide: true,
                   processing: true,
                   scrollX: true,

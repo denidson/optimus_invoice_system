@@ -366,9 +366,7 @@ function ListPreInvoices() {
                   Buscar
                 </button>
               </div>
-              <style>{`
 
-              `}</style>
               <DataTable
                 id="ListPreInvoicesDt"
                 className="table-auto w-full"
@@ -387,6 +385,23 @@ function ListPreInvoices() {
                   },
                   { title: "RIF", data: "cliente_final_rif", className: "dt-center" },
                   { title: "Razón Social", data: "cliente_final_nombre" },
+                  {
+                    title: "Tipo de documento",
+                    data: "tipo_documento",
+                    className: "text-center",
+                    orderable: true,
+                    searchable: true,
+                    render: (data, type, row) => {
+                      if (data == 'FC'){
+                        return 'FACTURA';
+                      }else if (data == 'NC'){
+                        return 'NOTA DE CRÉDITO';
+                      } else {
+                        return 'NOTA DE DÉBITO';
+                      }
+
+                    }
+                  },
                   { title: "Correlativo", data: "correlativo_interno", className: "dt-center" },
                   {
                     title: "Base imponible (Bs.)",
@@ -527,7 +542,7 @@ function ListPreInvoices() {
                 ]}
                 options={{
                   columnDefs:[{
-                    targets: [3, 4, 5, 7, 8, 9], // índices de columnas a ocultar (ej: RIF, Zona)
+                    targets: [4, 5, 6, 8, 9, 10], // índices de columnas a ocultar (ej: RIF, Zona)
                     visible: false,
                     searchable: true // siguen siendo buscables
                   }],

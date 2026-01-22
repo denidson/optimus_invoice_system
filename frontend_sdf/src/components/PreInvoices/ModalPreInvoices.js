@@ -50,7 +50,7 @@ function ModalPreinvoices({ isOpen, onClose, message }) {
                     <label class="text-blueGray-700 lg:w-8/12">{message.tipo_documento == 'FC' ?
                         ('FACTURA')
                         :
-                        (preInvoice.tipo_documento == 'NC'?
+                        (message.tipo_documento == 'NC'?
                           ('NOTA DE CREDITO')
                           :
                           ('NOTA DE DEBITO')
