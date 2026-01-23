@@ -4,6 +4,10 @@
 @tailwind components;
 @tailwind utilities;
 
+.dt-container{
+    font-size: 80%!important;
+}
+
 table.dataTable thead th {
   text-align: center !important;
 }

@@ -24,22 +24,10 @@ import "datatables.net-buttons/js/buttons.print";
 import JSZip from "jszip";
 import { read, utils } from "xlsx";
 import Papa from "papaparse";
+import { formatMoney, formatDate, formatDateTime, formatText } from "../../utils/formatters";
 
 window.JSZip = JSZip;
 DataTable.use(DT);
-
-function formatDate(valor) {
-  if (!valor) return "";
-
-  const fecha = new Date(valor);
-  if (isNaN(fecha)) return "";
-
-  const dd = String(fecha.getDate()).padStart(2, "0");
-  const mm = String(fecha.getMonth() + 1).padStart(2, "0");
-  const yyyy = fecha.getFullYear();
-
-  return `${dd}/${mm}/${yyyy}`;
-}
 
 function ListPreInvoices() {
   const navigate = useNavigate(); // Hook para redirección
@@ -310,31 +298,8 @@ function ListPreInvoices() {
               <h6 className="text-blueGray-700 text-xl font-bold">
                 Lista de Pre-Facturas
               </h6>
-              {rol != "admin" && (
-                <div className="flex items-center space-x-3">
-                  <button
-                    className="bg-twilight-indigo-600 hover:bg-twilight-indigo-500 text-white font-bold py-2 px-4 rounded"
-                    onClick={redirectToCreate}
-                  >
-                    Crear Pre-Facturas
-                  </button>
-                  <label className="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded cursor-pointer">
-                    Importar Excel/CSV
-                    <input
-                      type="file"
-                      accept=".csv,.xlsx,.xls"
-                      className="hidden"
-                      onChange={handleFileUpload}
-                    />
-                  </label>
-                </div>
-              )}
-            </div>
-
-            {/* DataTable */}
-            <div className="block w-full overflow-x-auto px-4 py-4">
-              <div className="flex space-x-2 mb-3">
-                <h3 class="text-blueGray-700 font-bold me-3">Buscar por:</h3><br/>
+              <div className="flex space-x-3">
+                <h3 class="text-blueGray-700 font-bold me-3 my-3">Buscar por:</h3><br/>
                 {/* SELECT PRINCIPAL */}
                 <select id="filter_type" className="border p-2 rounded" value={filterType} onChange={(e) => setFilterType(e.target.value)}>
                   <option value=""> - </option>
@@ -366,7 +331,29 @@ function ListPreInvoices() {
                   Buscar
                 </button>
               </div>
+              {rol != "admin" && (
+                <div className="flex items-center space-x-3">
+                  <button
+                    className="bg-twilight-indigo-600 hover:bg-twilight-indigo-500 text-white font-bold py-2 px-4 rounded"
+                    onClick={redirectToCreate}
+                  >
+                    Crear Pre-Facturas
+                  </button>
+                  <label className="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded cursor-pointer">
+                    Importar Excel/CSV
+                    <input
+                      type="file"
+                      accept=".csv,.xlsx,.xls"
+                      className="hidden"
+                      onChange={handleFileUpload}
+                    />
+                  </label>
+                </div>
+              )}
+            </div>
 
+            {/* DataTable */}
+            <div className="block w-full overflow-x-auto px-4 py-4">
               <DataTable
                 id="ListPreInvoicesDt"
                 className="table-auto w-full"
@@ -376,15 +363,17 @@ function ListPreInvoices() {
                     data: "fecha_factura",
                     className: "dt-center",
                     render: (data, type, row) => {
-                      return new Intl.DateTimeFormat("es-VE", {
-                        day: "2-digit",
-                        month: "2-digit",
-                        year: "numeric"
-                      }).format(new Date(data));
+                      return formatDate(data);
                     }
                   },
-                  { title: "RIF", data: "cliente_final_rif", className: "dt-center" },
-                  { title: "Razón Social", data: "cliente_final_nombre" },
+                  { title: "RIF", data: "cliente_final_rif", className: "dt-center", render: (data, type, row) => {
+                      return formatText(data);
+                    }
+                  },
+                  { title: "Razón Social", data: "cliente_final_nombre", render: (data, type, row) => {
+                      return formatText(data);
+                    }
+                  },
                   {
                     title: "Tipo de documento",
                     data: "tipo_documento",
@@ -402,95 +391,43 @@ function ListPreInvoices() {
 
                     }
                   },
-                  { title: "Correlativo", data: "correlativo_interno", className: "dt-center" },
+                  { title: "Correlativo", data: "correlativo_interno", className: "dt-center", render: (data, type, row) => {
+                      return formatText(data);
+                    }
+                  },
                   {
                     title: "Base imponible (Bs.)",
                     data: "total_base",
                     render: (data, type, row) => {
-                      if (type === "display" || type === "filter") {
-                        // Formato de número con separadores para Venezuela
-                        const formatted = new Intl.NumberFormat("es-VE", {
-                          style: "decimal",
-                          minimumFractionDigits: 2,
-                          maximumFractionDigits: 2
-                        }).format(data);
-
-                        return `${formatted}`;
-                      }
-                      // Para ordenamiento y cálculos → devolver el valor numérico real
-                      return data;
+                      return formatMoney(data);
                     }
                   },
                   {
                     title: "I.V.A. (Bs.)",
                     data: "total_impuestos",
                     render: (data, type, row) => {
-                      if (type === "display" || type === "filter") {
-                        // Formato de número con separadores para Venezuela
-                        const formatted = new Intl.NumberFormat("es-VE", {
-                          style: "decimal",
-                          minimumFractionDigits: 2,
-                          maximumFractionDigits: 2
-                        }).format(data);
-
-                        return `${formatted}`;
-                      }
-                      // Para ordenamiento y cálculos → devolver el valor numérico real
-                      return data;
+                      return formatMoney(data);
                     }
                   },
                   {
                     title: "Total (Bs.)",
                     data: "total_neto",
                     render: (data, type, row) => {
-                      if (type === "display" || type === "filter") {
-                        // Formato de número con separadores para Venezuela
-                        const formatted = new Intl.NumberFormat("es-VE", {
-                          style: "decimal",
-                          minimumFractionDigits: 2,
-                          maximumFractionDigits: 2
-                        }).format(data);
-
-                        return `${formatted}`;
-                      }
-                      // Para ordenamiento y cálculos → devolver el valor numérico real
-                      return data;
+                      return formatMoney(data);
                     }
                   },
                   {
                     title: "Pagado en divisas (Bs.)",
                     data: "monto_pagado_divisas",
                     render: (data, type, row) => {
-                      if (type === "display" || type === "filter") {
-                        // Formato de número con separadores para Venezuela
-                        const formatted = new Intl.NumberFormat("es-VE", {
-                          style: "decimal",
-                          minimumFractionDigits: 2,
-                          maximumFractionDigits: 2
-                        }).format(data);
-
-                        return `${formatted}`;
-                      }
-                      // Para ordenamiento y cálculos → devolver el valor numérico real
-                      return data;
+                      return formatMoney(data);
                     }
                   },
                   {
                     title: "IGTF (Bs.)",
                     data: "igtf_monto",
                     render: (data, type, row) => {
-                      if (type === "display" || type === "filter") {
-                        // Formato de número con separadores para Venezuela
-                        const formatted = new Intl.NumberFormat("es-VE", {
-                          style: "decimal",
-                          minimumFractionDigits: 2,
-                          maximumFractionDigits: 2
-                        }).format(data);
-
-                        return `${formatted}`;
-                      }
-                      // Para ordenamiento y cálculos → devolver el valor numérico real
-                      return data;
+                      return formatMoney(data);
                     }
                   },
                   {
@@ -499,7 +436,7 @@ function ListPreInvoices() {
                     orderable: true,
                     searchable: false,
                     render: (data, type, row) => {
-                      return data ? data.toUpperCase():'';
+                      return formatText(data);
                     }
                   },
                   {
@@ -510,11 +447,11 @@ function ListPreInvoices() {
                     searchable: true,
                     render: (data, type, row) => {
                       if (data == 'borrador'){
-                        return '<i class="fas fa-circle text-orange-500 mr-2"></i> ' + data.toUpperCase();
+                        return '<i class="fas fa-circle text-orange-500 mr-2"></i> ' + formatText(data);
                       }else if (data == 'facturada'){
-                        return '<i class="fas fa-circle text-emerald-500 mr-2"></i> ' + data.toUpperCase();
+                        return '<i class="fas fa-circle text-emerald-500 mr-2"></i> ' + formatText(data);
                       } else {
-                        return '<i class="fas fa-circle text-red-500 mr-2"></i> ' + data.toUpperCase();
+                        return '<i class="fas fa-circle text-red-500 mr-2"></i> ' + formatText(data);
                       }
 
                     }
@@ -600,6 +537,7 @@ function ListPreInvoices() {
                           "created_at",
                           "updated_at"
                         ];
+                        //console.log('responseCache: ', responseCache);
                         var filteredData = responseCache.data.filter(item =>
                           Object.entries(item).some(([key, value]) => {
                             // Excluir campos internos
@@ -615,7 +553,7 @@ function ListPreInvoices() {
                               return formatDate(value).includes(searchValue.toUpperCase());
                             }
 
-                            return String(value).toLowerCase().includes(searchValue.toUpperCase());
+                            return String(value).toUpperCase().includes(searchValue.toUpperCase());
                           })
                         );
                         //console.log('filteredData: ', filteredData);
@@ -642,7 +580,6 @@ function ListPreInvoices() {
                     }
                   },
                   paging: true,
-                  searching: true,
                   ordering: true,
                   info: true,
                   scrollx: true,

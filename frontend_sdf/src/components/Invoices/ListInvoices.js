@@ -19,23 +19,11 @@ import JSZip from "jszip";
 import pdfMake from "pdfmake/build/pdfmake";
 import pdfFonts from "pdfmake/build/vfs_fonts";
 import { read, utils } from 'xlsx';
+import { formatMoney, formatDate, formatDateTime, formatText } from "../../utils/formatters";
 import Papa from 'papaparse';
 
 window.JSZip = JSZip;
 DataTable.use(DT);
-
-function formatDate(valor) {
-  if (!valor) return "";
-
-  const fecha = new Date(valor);
-  if (isNaN(fecha)) return "";
-
-  const dd = String(fecha.getDate()).padStart(2, "0");
-  const mm = String(fecha.getMonth() + 1).padStart(2, "0");
-  const yyyy = fecha.getFullYear();
-
-  return `${dd}/${mm}/${yyyy}`;
-}
 
 function ListInvoices() {
   const navigate = useNavigate();
@@ -44,6 +32,7 @@ function ListInvoices() {
 
   const [modalImportOpen, setModalImportOpen] = useState(false);
   const [preInvoicesToImport, setPreInvoicesToImport] = useState([]);
+  const [filterType, setFilterType] = useState("");
   var responseCache = useState(false);
 
   const authData = localStorage.getItem("authData");
@@ -185,6 +174,14 @@ function ListInvoices() {
     }
   };
 
+  const actionSearch = () => {
+    const table = $("#ListInvoicesDt").DataTable();
+    table.clear();
+    table.search("");
+    table.columns().search("");
+    table.ajax.reload();
+  };
+
   return (
     <div className="mx-auto w-full">
       <ToastContainer />
@@ -194,6 +191,39 @@ function ListInvoices() {
             {/* Header */}
             <div className="rounded-t bg-white mb-0 px-6 py-6 flex justify-between items-center border-b">
               <h6 className="text-blueGray-700 text-xl font-bold">Lista de Facturas</h6>
+              <div className="flex space-x-3">
+                <h3 class="text-blueGray-700 font-bold me-3 my-3">Buscar por:</h3><br/>
+                {/* SELECT PRINCIPAL */}
+                <select id="filter_type" className="border p-2 rounded" value={filterType} onChange={(e) => setFilterType(e.target.value)}>
+                  <option value=""> - </option>
+                  <option value="estatus">Estado</option>
+                  <option value="zona">Zona</option>
+                  <option value="correlativo_interno">Correlativo Interno</option>
+                  <option value="cliente_final_rif">RIF del cliente</option>
+                  <option value="rango_fecha">Rango de fecha</option>
+                </select>
+                {filterType === "estatus" && (
+                  <select id="filtro_estatus" className="border p-2 rounded">
+                    <option value="">Todos</option>
+                    <option value="normal">Normal</option>
+                    <option value="anulada">Anulada</option>
+                  </select>
+                )}
+                {(filterType === "zona" || filterType === "correlativo_interno" || filterType === "cliente_final_rif") && (
+                  <input id="filtro_text" className="border p-2 rounded" placeholder="Buscar..."/>
+                )}
+                {filterType === "rango_fecha" && (
+                  <>
+                    <input id="filtro_desde" type="date" className="border p-2 rounded" />
+                    <input id="filtro_hasta" type="date" className="border p-2 rounded" />
+                  </>
+                )}
+                <button
+                  className="bg-twilight-indigo-600 hover:bg-twilight-indigo-500 text-white font-bold py-2 px-4 rounded"
+                  onClick={actionSearch}>
+                  Buscar
+                </button>
+              </div>
               <label className="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded cursor-pointer">
                 Importar Excel/CSV
                 <input type="file" accept=".csv,.xlsx,.xls" className="hidden" onChange={handleFileUpload} />
@@ -211,15 +241,17 @@ function ListInvoices() {
                     data: "fecha_factura",
                     className: "dt-center",
                     render: (data, type, row) => {
-                      return new Intl.DateTimeFormat("es-VE", {
-                        day: "2-digit",
-                        month: "2-digit",
-                        year: "numeric"
-                      }).format(new Date(data));
+                      return formatDate(data);
                     }
                   },
-                  { title: "RIF", data: "cliente_final_rif", className: "dt-center", },
-                  { title: "Razón Social", data: "cliente_final_nombre", },
+                  { title: "RIF", data: "cliente_final_rif", className: "dt-center", render: (data, type, row) => {
+                      return formatText(data);
+                    }
+                  },
+                  { title: "Razón Social", data: "cliente_final_nombre", render: (data, type, row) => {
+                      return formatText(data);
+                    }
+                  },
                   {
                     title: "Tipo de documento",
                     data: "tipo_documento",
@@ -237,8 +269,14 @@ function ListInvoices() {
 
                     }
                   },
-                  { title: "Número de control", data: "numero_control", className: "dt-center", },
-                  { title: "Correlativo", data: "correlativo_interno", className: "dt-center", },
+                  { title: "Número de control", data: "numero_control", className: "dt-center", render: (data, type, row) => {
+                      return formatText(data);
+                    }
+                  },
+                  { title: "Correlativo", data: "correlativo_interno", className: "dt-center", render: (data, type, row) => {
+                      return formatText(data);
+                    }
+                  },
                   {
                     title: "Base imponible (Bs.)",
                     data: "total_base",
@@ -261,72 +299,28 @@ function ListInvoices() {
                     title: "I.V.A. (Bs.)",
                     data: "total_impuestos",
                     render: (data, type, row) => {
-                      if (type === "display" || type === "filter") {
-                        // Formato de número con separadores para Venezuela
-                        const formatted = new Intl.NumberFormat("es-VE", {
-                          style: "decimal",
-                          minimumFractionDigits: 2,
-                          maximumFractionDigits: 2
-                        }).format(data);
-
-                        return `${formatted}`;
-                      }
-                      // Para ordenamiento y cálculos → devolver el valor numérico real
-                      return data;
+                      return formatMoney(data);
                     }
                   },
                   {
                     title: "Total (Bs.)",
                     data: "total_neto",
                     render: (data, type, row) => {
-                      if (type === "display" || type === "filter") {
-                        // Formato de número con separadores para Venezuela
-                        const formatted = new Intl.NumberFormat("es-VE", {
-                          style: "decimal",
-                          minimumFractionDigits: 2,
-                          maximumFractionDigits: 2
-                        }).format(data);
-
-                        return `${formatted}`;
-                      }
-                      // Para ordenamiento y cálculos → devolver el valor numérico real
-                      return data;
+                      return formatMoney(data);
                     }
                   },
                   {
                     title: "Pagado en divisas (Bs.)",
                     data: "monto_pagado_divisas",
                     render: (data, type, row) => {
-                      if (type === "display" || type === "filter") {
-                        // Formato de número con separadores para Venezuela
-                        const formatted = new Intl.NumberFormat("es-VE", {
-                          style: "decimal",
-                          minimumFractionDigits: 2,
-                          maximumFractionDigits: 2
-                        }).format(data);
-
-                        return `${formatted}`;
-                      }
-                      // Para ordenamiento y cálculos → devolver el valor numérico real
-                      return data;
+                      return formatMoney(data);
                     }
                   },
                   {
                     title: "IGTF (Bs.)",
                     data: "igtf_monto",
                     render: (data, type, row) => {
-                      if (type === "display" || type === "filter") {
-                        // Formato de número con separadores para Venezuela
-                        const formatted = new Intl.NumberFormat("es-VE", {
-                          style: "decimal",
-                          minimumFractionDigits: 2,
-                          maximumFractionDigits: 2
-                        }).format(data);
-
-                        return `${formatted}`;
-                      }
-                      // Para ordenamiento y cálculos → devolver el valor numérico real
-                      return data;
+                      return formatMoney(data);
                     }
                   },
                   {
@@ -335,7 +329,7 @@ function ListInvoices() {
                     orderable: true,
                     searchable: false,
                     render: (data, type, row) => {
-                      return data ? data.toUpperCase():'';
+                      return formatText(data);
                     }
                   },
                   {
@@ -346,11 +340,11 @@ function ListInvoices() {
                     searchable: true,
                     render: (data, type, row) => {
                       if (data == 'anulada'){
-                        return '<i class="fas fa-circle text-red-500 mr-2"></i> ' + data.toUpperCase();
+                        return '<i class="fas fa-circle text-red-500 mr-2"></i> ' + formatText(data);
                       }else if (data == 'normal'){
-                        return '<i class="fas fa-circle text-emerald-500 mr-2"></i> ' + data.toUpperCase();
+                        return '<i class="fas fa-circle text-emerald-500 mr-2"></i> ' + formatText(data);
                       } else {
-                        return '<i class="fas fa-circle text-orange-500 mr-2"></i> ' + data.toUpperCase();
+                        return '<i class="fas fa-circle text-orange-500 mr-2"></i> ' + formatText(data);
                       }
 
                     }
@@ -382,11 +376,153 @@ function ListInvoices() {
                     visible: false,
                     searchable: true // siguen siendo buscables
                   }],
-                  serverSide: true,
+                  dom: //B = Buttons, l = LengthMenu (mostrar X registros), f = Filtro (search), t = Tabla, i = Info (mostrando de X a Y de Z), p = Paginación
+                    "<'row'<'col-sm-12 text-start'B>>" +                // Fila 2: botones ocupando todo el ancho
+                    "<'row'<'col-sm-6 text-end'l><'col-sm-6'f>>" +    // Fila 1: lengthMenu izquierda, filtro derecha
+                    "<'row'<'col-sm-12'tr>>" +               // Fila 3: tabla
+                    "<'row'<'col-sm-5 text-start'i><'col-sm-7 text-end'p>>",     // Fila 4: info izquierda, paginación derecha
+                  serverSide: true, // si es true la paginación se debe controlar a traves del servidor
+                  searching: true,
                   processing: true,
                   scrollX: true,
                   autoWidth: false,
-                  pageLength: 20,
+                  pageLength: 20,         // cantidad inicial por página
+                  lengthMenu: [20, 50, 100], // opciones en el desplegable, false para oculta el selector
+                  buttons: [
+                    {
+                      extend: "collection",
+                      text: "Exportar",
+                      className: "bg-slate-700 hover:bg-slate-600 text-white font-bold py-2 px-4 rounded",
+                      buttons: [
+                        {
+                          extend: "copyHtml5",
+                          text: "Copiar",
+                          title: "Lista de Facturas"   // nombre del documento en el portapapeles
+                        },
+                        {
+                          extend: "excelHtml5",
+                          text: "Excel",
+                          title: "Lista de Facturas",  // título dentro del archivo
+                          filename: "Lista_facturas",   // nombre del archivo generado (sin extensión)
+                          exportOptions: {
+                            columns: ':not(.no-export)'
+                          }
+                        },
+                        {
+                          extend: "csvHtml5",
+                          text: "CSV",
+                          title: "Lista de Facturas",
+                          filename: "Lista_facturas",
+                          exportOptions: {
+                            columns: ':not(.no-export)'
+                          }
+                        },
+                        {
+                          extend: "pdfHtml5",
+                          text: "PDF",
+                          title: "Lista de Facturas",
+                          filename: "Lista_facturas",
+                          exportOptions: {
+                            columns: ':not(.no-export)'
+                          },
+                          orientation: "landscape",
+                          //orientation: "landscape",   // opcional
+                          //pageSize: "A4"              // opcional
+                        },
+                        {
+                          extend: "print",
+                          text: "Imprimir",
+                          title: "Lista de Facturas",
+                          exportOptions: {
+                            columns: ':not(.no-export)'
+                          }
+                        },
+                        {
+                          text: "Exportar todo (Excel)",
+                          exportOptions: {
+                            columns: ':not(.no-export)'
+                          },
+                          action: async function (e, dt, node, config) {
+                            const exportButton = node;
+                            try {
+                              const allData = [];
+                              let page = 1;
+                              let totalPages = 1;
+
+                              // Mostrar mensaje de progreso
+                              $(exportButton).text("Cargando...").prop("disabled", true).attr("style", "pointer-events: none;");
+                              const query = {
+                                page,
+                                per_page
+                              };
+
+                              // Añadir filtros según filtro activo
+                              if ($('#filter_type option:selected').val() === "estatus" && $('#filtro_estatus option:selected').val()) query.estatus = $('#filtro_estatus option:selected').val();
+
+                              if ($('#filter_type option:selected').val() === "zona" && $("#filtro_text").val()) query.zona = $("#filtro_text").val();
+
+                              if ($('#filter_type option:selected').val() === "correlativo_interno" && $("#filtro_text").val())
+                                query.correlativo_interno = $("#filtro_text").val();
+
+                              if ($('#filter_type option:selected').val() === "cliente_final_rif" && $("#filtro_text").val())
+                                query.cliente_final_rif = $("#filtro_text").val();
+
+                              if ($('#filter_type option:selected').val() === "rango_fecha" && $('#filtro_desde').val() && $('#filtro_hasta').val()) {
+                                query.desde = $('#filtro_desde').val();
+                                query.hasta = $('#filtro_hasta').val();
+                              }
+                              // Cargar todas las páginas hasta completar total_pages
+                              do {
+                                query.page = page;
+                                query.per_page = 100;
+                                const response = await getInvoices(query);
+                                const { data, total_pages } = response;
+
+                                allData.push(...data);
+                                totalPages = total_pages;
+                                page++;
+                              } while (page <= totalPages);
+
+                              // Convertimos a Excel con xlsx
+                              const wb = utils.book_new();
+                              const ws = utils.json_to_sheet(allData.map(item => ({
+                                Fecha: item.timestamp.replace("T", " ").slice(0, 19),
+                                Servicio: item.endpoint,
+                                Acción:
+                                  item.method === "GET"
+                                    ? "CONSULTA"
+                                    : item.method === "POST"
+                                    ? (item.endpoint === "/api/login" ? "INICIO DE SESIÓN" : "CREACIÓN")
+                                    : item.method === "PUT"
+                                    ? "ACTUALIZACIÓN"
+                                    : "DESACTIVACIÓN/ACTIVACIÓN",
+                                Origen: item.request_ip,
+                                Respuesta: item.response_status_code,
+                                "Duración (ms)": item.duration_ms,
+                                Usuario: item.usuario?.email || "",
+                              })));
+
+                              utils.book_append_sheet(wb, ws, "Auditoría");
+
+                              const wbout = XLSX.write(wb, { bookType: "xlsx", type: "array" });
+                              const blob = new Blob([wbout], { type: "application/octet-stream" });
+                              const link = document.createElement("a");
+                              link.href = URL.createObjectURL(blob);
+                              link.download = "Facturas.xlsx";
+                              link.click();
+
+                              $(exportButton).text("Exportar todo (Excel)").prop("disabled", false).attr("style", "pointer-events: auto;");;
+                              toast.success("Archivo exportado correctamente.");
+                            } catch (error) {
+                              $(exportButton).text("Exportar todo (Excel)").prop("disabled", false).attr("style", "pointer-events: auto;");;
+                              console.error("Error al exportar:", error);
+                              toast.error("Error al exportar los datos.");
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  ],
                   language: {
                     decimal: ",",
                     thousands: ".",
@@ -403,20 +539,87 @@ function ListInvoices() {
                       previous: "Anterior"
                     }
                   },
-                  ajax: async (params, callback) => {
+                  ajax: async (dataTablesParams, callback) => {
                     try {
-                      const page = Math.floor(params.start / params.length) + 1;
+                      /*const page = Math.floor(params.start / params.length) + 1;
                       const per_page = params.length;
-                      const response = await getInvoices({ page, per_page });
+                      const response = await getInvoices({ page, per_page });*/
+                      const searchValue = dataTablesParams.search?.value?.toLowerCase() || '';
+                      //console.log('searchValue: ', searchValue);
+                      // DataTables usa start y length, los convertimos a page y per_page
+                      const page = Math.floor(dataTablesParams.start / dataTablesParams.length) + 1;
+                      const per_page = dataTablesParams.length;
+                      const query = {
+                        page,
+                        per_page
+                      };
+
+                      // Añadir filtros según filtro activo
+                      if ($('#filter_type option:selected').val() === "estatus" && $('#filtro_estatus option:selected').val()) query.estatus = $('#filtro_estatus option:selected').val();
+
+                      if ($('#filter_type option:selected').val() === "zona" && $("#filtro_text").val()) query.zona = $("#filtro_text").val();
+
+                      if ($('#filter_type option:selected').val() === "correlativo_interno" && $("#filtro_text").val())
+                        query.correlativo_interno = $("#filtro_text").val();
+
+                      if ($('#filter_type option:selected').val() === "cliente_final_rif" && $("#filtro_text").val())
+                        query.cliente_final_rif = $("#filtro_text").val();
+
+                      if ($('#filter_type option:selected').val() === "rango_fecha" && $('#filtro_desde').val() && $('#filtro_hasta').val()) {
+                        query.desde = $('#filtro_desde').val();
+                        query.hasta = $('#filtro_hasta').val();
+                      }
+
+                      if (searchValue == ''){
+                        //console.log('if');
+                        // Pasamos los filtros al servicio
+                        const response = await getInvoices(query);
+
+                        // Respaldar response anterior
+                        responseCache = response;
+                        //console.log('responseCache: ', responseCache);
+
+                        // Aseguramos que la estructura esperada esté presente
+                        var { data, total } = response;
+                      }else{
+                        //console.log('else');
+                        const CAMPOS_EXCLUIDOS = [
+                          "created_at",
+                          "updated_at"
+                        ];
+                        //console.log('responseCache: ', responseCache);
+                        var filteredData = responseCache.data.filter(item =>
+                          Object.entries(item).some(([key, value]) => {
+                            // Excluir campos internos
+                            if (CAMPOS_EXCLUIDOS.includes(key)) return false;
+
+                            if (!value) return false;
+
+                            // Si es campo de fecha
+                            if (key.includes("fecha_factura")) {
+                              /*console.log('fecha_factura: ', value);
+                              console.log('searchValue: ', searchValue);
+                              console.log('formatDate: ', formatDate(value));*/
+                              return formatDate(value).includes(searchValue.toUpperCase());
+                            }
+
+                            return String(value).toUpperCase().includes(searchValue.toUpperCase());
+                          })
+                        );
+                        //console.log('filteredData: ', filteredData);
+                        var data = filteredData;
+                        var total = filteredData.length;
+                        //var { data, total } = responseCache;
+                      }
                       callback({
-                        draw: params.draw,
-                        recordsTotal: response.total,
-                        recordsFiltered: response.total,
-                        data: response.data
+                        draw: dataTablesParams.draw,
+                        recordsTotal: total,
+                        recordsFiltered: total,
+                        data: data,
                       });
                     } catch {
                       callback({
-                        draw: params.draw,
+                        draw: dataTablesParams.draw,
                         recordsTotal: 0,
                         recordsFiltered: 0,
                         data: []
