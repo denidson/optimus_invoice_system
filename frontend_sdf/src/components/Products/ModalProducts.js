@@ -4,42 +4,39 @@ function ModalProducts({ isOpen, onClose, product }) {
   if (!isOpen || !product) return null;
 
   return (
-    <div style={overlayStyle}>
-      <div style={modalStyle} className="z-50">
-        <div className="flex flex-col h-full">
-          <div className="relative flex flex-col min-w-0 break-words w-full mb-6 rounded-lg bg-blueGray-100 border-0">
-            <div className="rounded-t bg-white mb-0 px-6 py-6">
-              <div className="text-center pb-4">
-                <h6 className="text-blueGray-700 text-xl font-bold">Detalles del Producto</h6>
-              </div>
+    <div className="fixed inset-0 bg-black/50 z-50 flex justify-center items-center">
+      <div className="bg-white w-[75%] h-[90%] rounded-lg shadow-xl overflow-hidden relative">
 
-              <hr className="my-6 border-b-1 border-blueGray-300" />
+        {/* header */}
+        <div className="bg-white p-6 border-b">
+          <h3 className=" font-bold text-center">
+            Detalles del Producto
+          </h3>
+        </div>
 
-              <div className="px-5 text-start space-y-2">
-                <p><strong>SKU:</strong> {product.sku}</p>
-                <p><strong>Nombre:</strong> {product.nombre}</p>
-                <p><strong>Precio Base:</strong> {product.precio_base}</p>
-                <p><strong>Activo:</strong> {product.activo ? "Sí" : "No"}</p>
-                <p><strong>Descripción:</strong> {product.descripcion || "N/A"}</p>
-                <p>
-                  <strong>IVA:</strong>{" "}
-                  {product.iva_categoria
-                    ? `${product.iva_categoria.nombre}`
-                    : "N/A"}
-                </p>
-              </div>
-
-              <hr className="my-6 border-b-1 border-blueGray-300" />
-
-              <div className="text-center">
-                <button
-                  className="bg-slate-800 text-white px-4 py-2 rounded"
-                  onClick={onClose}
-                >
-                  Cerrar
-                </button>
-              </div>
-            </div>
+        {/* contenido scroll */}
+        <div className="p-6 overflow-y-auto h-[calc(100%-120px)]">
+          <div className="px-5 text-start space-y-2">
+            <p><strong>SKU:</strong> {product.sku}</p>
+            <p><strong>Nombre:</strong> {product.nombre}</p>
+            <p><strong>Precio Base:</strong> {product.precio_base}</p>
+            <p><strong>Activo:</strong> {product.activo ? "Sí" : "No"}</p>
+            <p><strong>Descripción:</strong> {product.descripcion || "N/A"}</p>
+            <p>
+              <strong>IVA:</strong>{" "}
+              {product.iva_categoria
+                ? `${product.iva_categoria.nombre}`
+                : "N/A"}
+            </p>
+          </div>
+          {/* botón de cierre */}
+          <div className="absolute bottom-4 w-full flex justify-center">
+            <button
+              onClick={onClose}
+              className="px-6 py-2 bg-twilight-indigo-600 hover:bg-twilight-indigo-500 text-white font-bold rounded shadow"
+            >
+              Cerrar
+            </button>
           </div>
         </div>
       </div>
