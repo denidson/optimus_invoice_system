@@ -14,23 +14,36 @@ export default function CardStats({
 }) {
   return (
     <div
-      className={`relative flex flex-col flex-1 h-full min-w-0 break-words bg-white rounded mb-6 xl:mb-0 shadow-lg ${className}`}
+      className={`relative flex flex-col h-full min-w-0 bg-white rounded shadow-lg ${className}`}
     >
       <div className="flex-auto p-4 flex flex-col justify-between">
         {/* Contenido principal */}
-        <div className="flex flex-wrap">
-          <div className="relative w-full pr-4 max-w-full flex-grow flex-1">
+        <div className="flex flex-wrap items-start gap-y-2">
+          {/* Texto */}
+          <div className="flex-1 min-w-0 pr-4">
             <h5 className="text-blueGray-400 uppercase font-bold text-xs">
               {statSubtitle}
             </h5>
-            <span className="font-bold text-2xl md:text-3xl text-blueGray-700">
+
+            <span
+              className="
+                block
+                font-bold
+                text-blueGray-700
+                whitespace-nowrap
+                leading-tight
+                text-[clamp(1.35rem,2.3vw,2rem)]
+              "
+            >
               {statTitle}
             </span>
           </div>
-          <div className="relative w-auto pl-4 flex-initial">
+
+          {/* Ícono */}
+          <div className="flex-shrink-0 ml-auto">
             <div
               className={
-                "text-white p-3 text-center inline-flex items-center justify-center w-12 h-12 shadow-lg rounded-full " +
+                "text-white inline-flex items-center justify-center w-12 h-12 shadow-lg rounded-full " +
                 statIconColor
               }
             >
@@ -39,46 +52,25 @@ export default function CardStats({
           </div>
         </div>
 
-        {/* Footer / porcentaje */}
-        <p className="text-sm text-blueGray-400 mt-4">
-          <span className={statPercentColor + " mr-2"}>
-            <i
-              className={
-                statArrow === "up"
-                  ? "fas fa-arrow-up"
-                  : statArrow === "down"
-                  ? "fas fa-arrow-down"
-                  : ""
-              }
-            ></i>{" "}
-            {statPercent}%
-          </span>
-          <span className="whitespace-nowrap">{statDescripiron}</span>
-        </p>
+        {/* Footer */}
+        {(statPercent || statDescripiron) && (
+          <p className="text-sm text-blueGray-400 mt-4 flex items-center flex-wrap">
+            <span className={`${statPercentColor} mr-2 whitespace-nowrap`}>
+              <i
+                className={
+                  statArrow === "up"
+                    ? "fas fa-arrow-up"
+                    : statArrow === "down"
+                    ? "fas fa-arrow-down"
+                    : ""
+                }
+              ></i>{" "}
+              {statPercent}%
+            </span>
+            <span className="break-words">{statDescripiron}</span>
+          </p>
+        )}
       </div>
     </div>
   );
 }
-
-CardStats.defaultProps = {
-  statSubtitle: "Traffic",
-  statTitle: "350,897",
-  statArrow: "",
-  statPercent: "",
-  statPercentColor: "text-white",
-  statDescripiron: "",
-  statIconName: "far fa-chart-bar",
-  statIconColor: "bg-red-500",
-};
-
-CardStats.propTypes = {
-  statSubtitle: PropTypes.string,
-  statTitle: PropTypes.string,
-  statArrow: PropTypes.oneOf(["up", "down"]),
-  statPercent: PropTypes.string,
-  statPercentColor: PropTypes.string,
-  statDescripiron: PropTypes.string,
-  statIconName: PropTypes.string,
-  statIconColor: PropTypes.string,
-  className: PropTypes.string,
-};
