@@ -12,7 +12,10 @@ import "datatables.net-buttons-dt/css/buttons.dataTables.css";
 import "datatables.net-buttons/js/buttons.html5";
 import "datatables.net-buttons/js/buttons.print";
 import JSZip from "jszip";
-import { utils, write } from "xlsx";
+//import { utils, write } from "xlsx";
+import * as XLSX from "xlsx";
+const { utils, write } = XLSX;
+import { formatMoney, formatDate, formatDateTime, formatText } from "../../utils/formatters";
 
 window.JSZip = JSZip;
 DataTable.use(DT);
@@ -21,6 +24,7 @@ function ListWithholdings() {
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedWithholding, setSelectedWithholding] = useState(null);
   const [filterType, setFilterType] = useState("");
+  var responseCache = useState(false);
 
   const redirectToCreate = () => {
     window.location.href = "/withholdings/create";
@@ -49,7 +53,11 @@ function ListWithholdings() {
   }, []);
 
   const actionSearch = () => {
-    $("#ListWithholdingsDt").DataTable().ajax.reload();
+    const table = $("#ListWithholdingsDt").DataTable();
+    table.clear();
+    table.search("");
+    table.columns().search("");
+    table.ajax.reload();
   };
 
   const handleCloseModal = () => setModalOpen(false);
@@ -66,21 +74,6 @@ function ListWithholdings() {
             {/* Header */}
             <div className="rounded-t bg-white mb-0 px-6 py-6 flex justify-between items-center border-b">
               <h6 className="text-blueGray-700 text-xl font-bold">Lista de Retenciones</h6>
-              <div className="flex items-center space-x-3">
-                <button
-                  className="bg-twilight-indigo-600 hover:bg-twilight-indigo-500 text-white font-bold py-2 px-4 rounded"
-                  onClick={redirectToCreate}
-                >
-                  Crear Retención
-                </button>
-                {/* <label className="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded cursor-pointer">
-                  Importar Excel/CSV
-                  <input type="file" className="hidden" />
-                </label> */}
-              </div>
-            </div>
-            {/* Filtros */}
-            <div className="block w-full overflow-x-auto px-4 py-4">
               <div className="flex space-x-2 mb-3">
                 <h3 class="text-blueGray-700 font-bold me-3">Buscar por:</h3><br/>
                 <select
@@ -123,115 +116,279 @@ function ListWithholdings() {
                   Buscar
                 </button>
               </div>
-
+              <div className="flex items-center space-x-3">
+                <button
+                  className="bg-twilight-indigo-600 hover:bg-twilight-indigo-500 text-white font-bold py-2 px-4 rounded"
+                  onClick={redirectToCreate}
+                >
+                  Crear Retención
+                </button>
+                {/* <label className="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded cursor-pointer">
+                  Importar Excel/CSV
+                  <input type="file" className="hidden" />
+                </label> */}
+              </div>
+            </div>
+            {/* Filtros */}
+            <div className="block w-full overflow-x-auto px-4 py-4">
               {/* DataTable */}
               <DataTable
                 id="ListWithholdingsDt"
                 className="table-auto w-full text-left"
                 columns={[
-                  { title: "Nro. Comprobante", data: "numero_comprobante" },
-                  { title: "Sujeto Retenido", data: "sujeto_retenido.nombre" },
-                  { title: "RIF", data: "sujeto_retenido.rif" },
-                  { title: "Periodo Fiscal", data: "periodo_fiscal" },
                   {
-                    title: "Base Imponible",
+                    title: "Fecha Emision",
+                    data: "fecha_emision",
+                    className: "dt-center",
+                    render: (data, type, row) => {
+                      return formatDate(data);
+                    }
+                  },
+                  { title: "Periodo Fiscal", data: "periodo_fiscal", className: "dt-center", render: (data, type, row) => {
+                      return formatText(data);
+                    }
+                  },
+                  { title: "Nro. Comprobante", data: "numero_comprobante", className: "dt-center", render: (data, type, row) => {
+                      return formatText(data);
+                    }
+                  },
+                  { title: "RIF", data: "sujeto_retenido.rif", className: "dt-center", render: (data, type, row) => {
+                      return formatText(data);
+                    }
+                  },
+                  { title: "Sujeto Retenido", data: "sujeto_retenido.nombre", render: (data, type, row) => {
+                      return formatText(data);
+                    }
+                  },
+                  {
+                    title: "Base Imponible (Bs.)",
                     data: "monto_base_total",
+                    /*render: (data, type, row) => {
+                      return formatMoney(data);
+                    }*/
                     render: (data, type) =>
                       type === "display"
-                        ? `Bs. ${new Intl.NumberFormat("es-VE", { minimumFractionDigits: 2 }).format(data)}`
+                        ? `${new Intl.NumberFormat("es-VE", { minimumFractionDigits: 2 }).format(data)}`
                         : data,
                   },
                   {
-                    title: "Monto Retenido",
+                    title: "Monto Retenido (Bs.)",
                     data: "monto_retenido_total",
+                    /*render: (data, type, row) => {
+                      return formatMoney(data);
+                    }*/
                     render: (data, type) =>
                       type === "display"
-                        ? `Bs. ${new Intl.NumberFormat("es-VE", { minimumFractionDigits: 2 }).format(data)}`
+                        ? `${new Intl.NumberFormat("es-VE", { minimumFractionDigits: 2 }).format(data)}`
                         : data,
                   },
-                  { title: "Estatus", data: "estatus", className: "capitalize" },
+                  { title: "Estatus", data: "estatus", className: "dt-center", render: (data, type, row) => {
+                      if (data == 'emitido'){
+                        return '<i class="fas fa-circle text-emerald-500 mr-2"></i> ' + formatText(data);
+                      }else if (data == 'normal'){
+                        return '<i class="fas fa-circle text-orange-500 mr-2"></i> ' + formatText(data);
+                      } else {
+                        return '<i class="fas fa-circle text-red-500 mr-2"></i> ' + formatText(data);
+                      }
+                    }
+                  },
+                  { title: "Estatus SENIAT", data: "estatus_seniat", className: "dt-center", render: (data, type, row) => {
+                      if (data == 'emitido'){
+                        return '<i class="fas fa-circle text-emerald-500 mr-2"></i> ' + formatText(data);
+                      }else if (data == 'pendiente'){
+                        return '<i class="fas fa-circle text-orange-500 mr-2"></i> ' + formatText(data);
+                      } else {
+                        return '<i class="fas fa-circle text-red-500 mr-2"></i> ' + formatText(data);
+                      }
+                    }
+                  },
                   {
                     title: "Acciones",
-                    data: null,
-                    render: (row) =>
-                      `<button class="btn-view px-1 py-1 mx-0" data-id="${row.id}"><i class="fa-solid fa-expand"></i></button>`,
+                    orderable: false,
+                    searchable: false,
+                    className: 'no-export',
+                    render: (data, type, row) => {
+                      const viewBtn = `<button class="btn-view px-2 py-1 text-gray-700" data-id="${row.id}"><i class="fa-solid fa-lg fa-expand"></i></button>`;
+                      return `<div style="display:flex;justify-content:center;align-items:center;gap:0.25rem;white-space:nowrap;">${viewBtn}</div>`;
+                    }
                   },
                 ]}
                 options={{
-                  serverSide: true,
+                  columnDefs:[{
+                    targets: [1], // índices de columnas a ocultar (ej: RIF, Zona)
+                    visible: false,
+                    searchable: true // siguen siendo buscables
+                  }],
+                  dom: //B = Buttons, l = LengthMenu (mostrar X registros), f = Filtro (search), t = Tabla, i = Info (mostrando de X a Y de Z), p = Paginación
+                    "<'row'<'col-sm-12 text-start'B>>" +                // Fila 2: botones ocupando todo el ancho
+                    "<'row'<'col-sm-6 text-end'l><'col-sm-6'f>>" +    // Fila 1: lengthMenu izquierda, filtro derecha
+                    "<'row'<'col-sm-12'tr>>" +               // Fila 3: tabla
+                    "<'row'<'col-sm-5 text-start'i><'col-sm-7 text-end'p>>",     // Fila 4: info izquierda, paginación derecha
+                  serverSide: true, // si es true la paginación se debe controlar a traves del servidor
+                  searching: true,
                   processing: true,
                   ajax: async (params, callback) => {
                     try {
+                      const searchValue = params.search?.value?.toLowerCase() || '';
                       const page = Math.floor(params.start / params.length) + 1;
                       const per_page = params.length;
                       const query = { page, per_page };
 
-                      if (filterType === "numero_comprobante" && $("#filtro_numero_comprobante").val())
-                        query.numero_comprobante = $("#filtro_numero_comprobante").val();
-                      if (filterType === "sujeto_retenido_rif" && $("#filtro_rif").val())
-                        query.sujeto_retenido_rif = $("#filtro_rif").val();
-                      if (filterType === "periodo_fiscal" && $("#filtro_periodo").val())
-                        query.periodo_fiscal = $("#filtro_periodo").val();
+                      if (searchValue == ''){
+                        //console.log('if');
+                        if (filterType === "numero_comprobante" && $("#filtro_numero_comprobante").val())
+                          query.numero_comprobante = $("#filtro_numero_comprobante").val();
+                        if (filterType === "sujeto_retenido_rif" && $("#filtro_rif").val())
+                          query.sujeto_retenido_rif = $("#filtro_rif").val();
+                        if (filterType === "periodo_fiscal" && $("#filtro_periodo").val())
+                          query.periodo_fiscal = $("#filtro_periodo").val();
 
-                      const response = await getAllWithholdings(query);
+                        const response = await getAllWithholdings(query);
+
+                        // Respaldar response anterior
+                        responseCache = response;
+                        //console.log('responseCache: ', responseCache);
+
+                        // Aseguramos que la estructura esperada esté presente
+                        var { data, total } = response;
+                      }else{
+                        //console.log('else');
+                        const CAMPOS_EXCLUIDOS = [
+                          "created_at",
+                          "updated_at"
+                        ];
+                        //console.log('responseCache: ', responseCache);
+                        var filteredData = responseCache.data.filter(item =>
+                          Object.entries(item).some(([key, value]) => {
+                            // Excluir campos internos
+                            if (CAMPOS_EXCLUIDOS.includes(key)) return false;
+
+                            if (!value) return false;
+
+                            // Si es campo de fecha
+                            if (key.includes("fecha_emision")) {
+                              /*console.log('fecha_factura: ', value);
+                              console.log('searchValue: ', searchValue);
+                              console.log('formatDate: ', formatDate(value));*/
+                              return formatDate(value).includes(searchValue.toUpperCase());
+                            }
+
+                            return String(value).toUpperCase().includes(searchValue.toUpperCase());
+                          })
+                        );
+                        //console.log('filteredData: ', filteredData);
+                        var data = filteredData;
+                        var total = filteredData.length;
+                        //var { data, total } = responseCache;
+                      }
+
                       callback({
                         draw: params.draw,
-                        recordsTotal: response.total,
-                        recordsFiltered: response.total,
-                        data: response.data,
+                        recordsTotal: total,
+                        recordsFiltered: total,
+                        data: data,
                       });
                     } catch {
                       callback({ draw: params.draw, recordsTotal: 0, recordsFiltered: 0, data: [] });
                     }
                   },
-                  
-                  dom: //B = Buttons, l = LengthMenu (mostrar X registros), f = Filtro (search), t = Tabla, i = Info (mostrando de X a Y de Z), p = Paginación
-                      "<'row'<'col-sm-12 text-center'B>>" +                // Fila 2: botones ocupando todo el ancho
-                      "<'row'<'col-sm-6 text-end'l><'col-sm-6'f>>" +    // Fila 1: lengthMenu izquierda, filtro derecha
-                      "<'row'<'col-sm-12'tr>>" +               // Fila 3: tabla
-                      "<'row'<'col-sm-5 text-start'i><'col-sm-7 text-end'p>>", 
+                  pageLength: 20,         // cantidad inicial por página
+                  lengthMenu: [20, 50, 100], // opciones en el desplegable, false para oculta el selector
                   buttons: [
-                    { extend: "excelHtml5", text: "Excel", title: "Lista de Retenciones", filename: "Lista_Retenciones" },
-                    { extend: "csvHtml5", text: "CSV", title: "Lista de Retenciones", filename: "Lista_Retenciones" },
-                    { extend: "print", text: "Imprimir", title: "Lista de Retenciones" },
                     {
-                      text: "Exportar todo (Excel)",
-                      action: async function (e, dt, node) {
-                        try {
-                          const allData = [];
-                          let page = 1;
-                          let totalPages = 1;
-                          do {
-                            const resp = await getAllWithholdings({ page, per_page: 100 });
-                            allData.push(...resp.data);
-                            totalPages = Math.ceil(resp.total / 100);
-                            page++;
-                          } while (page <= totalPages);
+                      extend: "collection",
+                      text: "Exportar",
+                      className: "bg-slate-700 hover:bg-slate-600 text-white font-bold py-2 px-4 rounded",
+                      buttons: [
+                        {
+                          extend: "copyHtml5",
+                          text: "Copiar",
+                          title: "Lista de Retenciones",   // nombre del documento en el portapapeles
+                        },
+                        {
+                          extend: "excelHtml5",
+                          text: "Excel",
+                          title: "Lista de Retenciones",
+                          filename: "Lista_Retenciones",
+                          exportOptions: {
+                            columns: ':not(.no-export)'
+                          }
+                        },
+                        {
+                          extend: "csvHtml5",
+                          text: "CSV",
+                          title: "Lista de Retenciones",
+                          filename: "Lista_Retenciones",
+                          exportOptions: {
+                            columns: ':not(.no-export)'
+                          }
+                        },
+                        {
+                          extend: "pdfHtml5",
+                          text: "PDF",
+                          title: "Lista de Retenciones",
+                          filename: "Lista_Retenciones",
+                          exportOptions: {
+                            columns: ':not(.no-export)'
+                          },
+                          orientation: "landscape",
+                          //orientation: "landscape",   // opcional
+                          //pageSize: "A4"              // opcional
+                        },
+                        {
+                          extend: "print",
+                          text: "Imprimir",
+                          title: "Lista de Retenciones",
+                          exportOptions: {
+                            columns: ':not(.no-export)'
+                          }
+                        },
+                        {
+                          text: "Exportar todo (Excel)",
+                          title: "Lista de Retenciones",
+                          filename: "Lista_Retenciones",
+                          exportOptions: {
+                            columns: ':not(.no-export)'
+                          },
+                          action: async function (e, dt, node) {
+                            try {
+                              const allData = [];
+                              let page = 1;
+                              let totalPages = 1;
+                              do {
+                                const resp = await getAllWithholdings({ page, per_page: 100 });
+                                allData.push(...resp.data);
+                                totalPages = Math.ceil(resp.total / 100);
+                                page++;
+                              } while (page <= totalPages);
 
-                          const wb = utils.book_new();
-                          const ws = utils.json_to_sheet(
-                            allData.map((r) => ({
-                              "Nro. Comprobante": r.numero_comprobante,
-                              "Sujeto Retenido": r.sujeto_retenido.nombre,
-                              "RIF": r.sujeto_retenido.rif,
-                              "Periodo Fiscal": r.periodo_fiscal,
-                              "Base Imponible": r.monto_base_total,
-                              "Monto Retenido": r.monto_retenido_total,
-                              "Estatus": r.estatus,
-                            }))
-                          );
-                          utils.book_append_sheet(wb, ws, "Retenciones");
-                          const blob = new Blob([write(wb, { bookType: "xlsx", type: "array" })]);
-                          const link = document.createElement("a");
-                          link.href = URL.createObjectURL(blob);
-                          link.download = "Retenciones.xlsx";
-                          link.click();
-                          toast.success("Archivo exportado correctamente");
-                        } catch {
-                          toast.error("Error al exportar");
+                              const wb = utils.book_new();
+                              const ws = utils.json_to_sheet(
+                                allData.map((r) => ({
+                                  "Fecha": formatDate(r.fecha_emision),
+                                  "Nro. Comprobante": r.numero_comprobante,
+                                  "Sujeto Retenido": r.sujeto_retenido.nombre,
+                                  "RIF": r.sujeto_retenido.rif,
+                                  "Periodo Fiscal": r.periodo_fiscal,
+                                  "Base Imponible": r.monto_base_total,
+                                  "Monto Retenido": r.monto_retenido_total,
+                                  "Estatus": r.estatus,
+                                }))
+                              );
+                              utils.book_append_sheet(wb, ws, "Retenciones");
+                              const blob = new Blob([write(wb, { bookType: "xlsx", type: "array" })]);
+                              const link = document.createElement("a");
+                              link.href = URL.createObjectURL(blob);
+                              link.download = "Retenciones.xlsx";
+                              link.click();
+                              toast.success("Archivo exportado correctamente");
+                            } catch {
+                              toast.error("Error al exportar");
+                            }
+                          },
                         }
-                      },
-                    },
+                      ]
+                    }
                   ],
                   language: {
                     decimal: ",",
@@ -241,12 +398,17 @@ function ListWithholdings() {
                     info: "Mostrando de _START_ a _END_ de _TOTAL_ registros",
                     infoEmpty: "No hay registros disponibles",
                     infoFiltered: "(filtrado de _MAX_ registros totales)",
-                    paginate: { first: "Primero", last: "Último", next: "Siguiente", previous: "Anterior" },
+                    search: "Buscar:",
+                    paginate: {
+                      first: "Primero",
+                      last: "Último",
+                      next: "Siguiente",
+                      previous: "Anterior"
+                    }
                   },
                   pageLength: 20,
                   lengthMenu: [20, 50, 100],
                   paging: true,
-                  searching: false,
                   ordering: true,
                   info: true,
                   scrollx: true,

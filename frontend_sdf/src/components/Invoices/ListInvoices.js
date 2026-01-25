@@ -18,9 +18,12 @@ import "datatables.net-buttons/js/buttons.print";
 import JSZip from "jszip";
 import pdfMake from "pdfmake/build/pdfmake";
 import pdfFonts from "pdfmake/build/vfs_fonts";
-import { read, utils } from 'xlsx';
+//import { read, utils } from 'xlsx';
+import * as XLSX from "xlsx";
+const { read, utils } = XLSX;
 import { formatMoney, formatDate, formatDateTime, formatText } from "../../utils/formatters";
 import Papa from 'papaparse';
+
 
 window.JSZip = JSZip;
 DataTable.use(DT);
@@ -281,18 +284,7 @@ function ListInvoices() {
                     title: "Base imponible (Bs.)",
                     data: "total_base",
                     render: (data, type, row) => {
-                      if (type === "display" || type === "filter") {
-                        // Formato de número con separadores para Venezuela
-                        const formatted = new Intl.NumberFormat("es-VE", {
-                          style: "decimal",
-                          minimumFractionDigits: 2,
-                          maximumFractionDigits: 2
-                        }).format(data);
-
-                        return `${formatted}`;
-                      }
-                      // Para ordenamiento y cálculos → devolver el valor numérico real
-                      return data;
+                      return formatMoney(data);
                     }
                   },
                   {
@@ -346,7 +338,6 @@ function ListInvoices() {
                       } else {
                         return '<i class="fas fa-circle text-orange-500 mr-2"></i> ' + formatText(data);
                       }
-
                     }
                   },
                   {
@@ -447,6 +438,7 @@ function ListInvoices() {
                             try {
                               const allData = [];
                               let page = 1;
+                              const per_page = dt.length;
                               let totalPages = 1;
 
                               // Mostrar mensaje de progreso
@@ -486,20 +478,21 @@ function ListInvoices() {
                               // Convertimos a Excel con xlsx
                               const wb = utils.book_new();
                               const ws = utils.json_to_sheet(allData.map(item => ({
-                                Fecha: item.timestamp.replace("T", " ").slice(0, 19),
-                                Servicio: item.endpoint,
-                                Acción:
-                                  item.method === "GET"
-                                    ? "CONSULTA"
-                                    : item.method === "POST"
-                                    ? (item.endpoint === "/api/login" ? "INICIO DE SESIÓN" : "CREACIÓN")
-                                    : item.method === "PUT"
-                                    ? "ACTUALIZACIÓN"
-                                    : "DESACTIVACIÓN/ACTIVACIÓN",
-                                Origen: item.request_ip,
-                                Respuesta: item.response_status_code,
-                                "Duración (ms)": item.duration_ms,
-                                Usuario: item.usuario?.email || "",
+                                "Fecha": formatDate(item.fecha_factura),
+                                "RIF": formatText(item.cliente_final_rif),
+                                "Razon Social": formatText(item.cliente_final_nombre),
+                                "Tipo de documento": item.tipo_documento === "FC"
+                                    ? "FACTURA"
+                                    : item.tipo_documento === "ND" ? "NOTA DE DÉBITO" : "NOTA DE CRÉDITO",
+                                "Correlativo interno": formatText(item.correlativo_interno),
+                                "Factura afectada NC": formatText(item.factura_afectada_rel ? item.factura_afectada_rel.numero_control : ''),
+                                "Base imponible (Bs.)": formatMoney(item.total_base),
+                                "IVA (Bs.)": formatMoney(item.total_impuestos),
+                                "Total (Bs.)": formatMoney(item.total_neto),
+                                "Pago en divisas (Bs.)": formatMoney(item.monto_pagado_divisas),
+                                "IGTF (Bs.)": formatMoney(item.igtf_monto),
+                                "Zona":formatText(item.zona),
+                                "Estatus": formatText(item.estatus),
                               })));
 
                               utils.book_append_sheet(wb, ws, "Auditoría");

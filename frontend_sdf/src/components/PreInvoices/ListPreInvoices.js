@@ -22,7 +22,10 @@ import "datatables.net-buttons-dt/css/buttons.dataTables.css";
 import "datatables.net-buttons/js/buttons.html5";
 import "datatables.net-buttons/js/buttons.print";
 import JSZip from "jszip";
-import { read, utils } from "xlsx";
+//import { read, utils } from "xlsx";
+import * as XLSX from "xlsx";
+const { utils } = XLSX;
+
 import Papa from "papaparse";
 import { formatMoney, formatDate, formatDateTime, formatText } from "../../utils/formatters";
 
@@ -62,8 +65,9 @@ function ListPreInvoices() {
     // Click convertir en factura
     $("#ListPreInvoicesDt tbody").on("click", "button.btn-invoice", function () {
       const id = $(this).data("id");
+      const factura_afectada_id = $(this).data("factura_afectada_id");
       const correlativo_interno = $(this).data("correlativo_interno");
-      handleOpenModalInInvoices(id, correlativo_interno);
+      handleOpenModalInInvoices(id, factura_afectada_id, correlativo_interno);
     });
 
     $("#ListPreInvoicesDt tbody").on("click", "button.btn-delete", function () {
@@ -149,14 +153,14 @@ function ListPreInvoices() {
 
   const handleCloseModalPreinvoices = () => setModalOpenPreinvoices(false);
 
-  const handleOpenModalInInvoices = (id, correlativo_interno) => {
-    setPreInvoicesIdInInvoices({ id, correlativo_interno });
+  const handleOpenModalInInvoices = (id, factura_afectada_id, correlativo_interno) => {
+    setPreInvoicesIdInInvoices({ id, factura_afectada_id, correlativo_interno });
     setModalOpenInInvoices(true);
   };
 
-  const handleActionInInvoices = async (id) => {
+  const handleActionInInvoices = async (id, factura_afectada_id) => {
     try {
-      const data = await convertInInvoice({ prefactura_id: id });
+      const data = await convertInInvoice({ prefactura_id: id, factura_afectada_id, factura_afectada_id });
       toast.success(data.mensaje, { onClose: () => setTimeout(() => refreshPreInvoices(), 2000) });
     } catch {
       toast.error("Error al convertir en factura.");
@@ -165,7 +169,7 @@ function ListPreInvoices() {
 
   const handleConfirmInInvoices = () => {
     if (preInvoicesIdInInvoices) {
-      handleActionInInvoices(preInvoicesIdInInvoices.id);
+      handleActionInInvoices(preInvoicesIdInInvoices.id, preInvoicesIdInInvoices.factura_afectada_id);
       setModalOpenInInvoices(false);
     }
   };
@@ -469,7 +473,7 @@ function ListPreInvoices() {
                       }
                       if (row.estatus.toUpperCase() != 'FACTURADA'){
                         const editBtn = `<button class="btn-edit px-2 py-1 text-blue-600" data-id="${row.id}"><i class="fa-solid fa-lg fa-pen-to-square"></i></button>`;
-                        const invoiceBtn = `<button class="btn-invoice px-1 py-1 mx-0 text-green-600" data-id="${row.id}" data-correlativo_interno="${row.correlativo_interno}"><i class="fa-solid fa-file-invoice fa-lg"></i></button>`;
+                        const invoiceBtn = `<button class="btn-invoice px-1 py-1 mx-0 text-green-600" data-id="${row.id}" data-factura_afectada_id="${row.factura_afectada_rel ? row.factura_afectada_rel.id : 0}" data-correlativo_interno="${row.correlativo_interno}"><i class="fa-solid fa-file-invoice fa-lg"></i></button>`;
                         return `<div style="display:flex;justify-content:center;align-items:center;gap:0.25rem;white-space:nowrap;">${viewBtn}${editBtn}${invoiceBtn}</div>`;
                       }else{
                         return `<div style="display:flex;justify-content:center;align-items:center;gap:0.25rem;white-space:nowrap;">${viewBtn}</div>`;
@@ -642,10 +646,12 @@ function ListPreInvoices() {
                             columns: ':not(.no-export)'
                           },
                           action: async function (e, dt, node, config) {
+                            console.log('dt: ', dt);
                             const exportButton = node;
                             try {
                               const allData = [];
                               let page = 1;
+                              const per_page = dt.length;
                               let totalPages = 1;
 
                               // Mostrar mensaje de progreso
@@ -685,20 +691,21 @@ function ListPreInvoices() {
                               // Convertimos a Excel con xlsx
                               const wb = utils.book_new();
                               const ws = utils.json_to_sheet(allData.map(item => ({
-                                Fecha: item.timestamp.replace("T", " ").slice(0, 19),
-                                Servicio: item.endpoint,
-                                Acción:
-                                  item.method === "GET"
-                                    ? "CONSULTA"
-                                    : item.method === "POST"
-                                    ? (item.endpoint === "/api/login" ? "INICIO DE SESIÓN" : "CREACIÓN")
-                                    : item.method === "PUT"
-                                    ? "ACTUALIZACIÓN"
-                                    : "DESACTIVACIÓN/ACTIVACIÓN",
-                                Origen: item.request_ip,
-                                Respuesta: item.response_status_code,
-                                "Duración (ms)": item.duration_ms,
-                                Usuario: item.usuario?.email || "",
+                                "Fecha": formatDate(item.fecha_factura),
+                                "RIF": formatText(item.cliente_final_rif),
+                                "Razon Social": formatText(item.cliente_final_nombre),
+                                "Tipo de documento": item.tipo_documento === "FC"
+                                    ? "FACTURA"
+                                    : item.tipo_documento === "ND" ? "NOTA DE DÉBITO" : "NOTA DE CRÉDITO",
+                                "Correlativo interno": formatText(item.correlativo_interno),
+                                "Factura afectada NC": formatText(item.factura_afectada_rel ? item.factura_afectada_rel.numero_control : ''),
+                                "Base imponible (Bs.)": formatMoney(item.total_base),
+                                "IVA (Bs.)": formatMoney(item.total_impuestos),
+                                "Total (Bs.)": formatMoney(item.total_neto),
+                                "Pago en divisas (Bs.)": formatMoney(item.monto_pagado_divisas),
+                                "IGTF (Bs.)": formatMoney(item.igtf_monto),
+                                "Zona":formatText(item.zona),
+                                "Estatus": formatText(item.estatus),
                               })));
 
                               utils.book_append_sheet(wb, ws, "Auditoría");
