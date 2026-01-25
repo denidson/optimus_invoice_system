@@ -93,15 +93,15 @@ export default function ListCompanyUsers() {
                     data: "created_at",
                     render: (d) => formatDateTime(d)
                   },
-                  {
-                    title: "Acciones",
-                    data: null,
-                    orderable: false,
-                    searchable: false,
-                    render: (data, type, row) => `
-                     <button class="btn-edit px-2 py-1 text-blue-600" data-id="${row.id}"><i class="fa-solid fa-lg fa-pen-to-square"></i></button>
-                    `
-                  }
+                  // {
+                  //   title: "Acciones",
+                  //   data: null,
+                  //   orderable: false,
+                  //   searchable: false,
+                  //   render: (data, type, row) => `
+                  //    <button class="btn-edit px-2 py-1 text-blue-600" data-id="${row.id}"><i class="fa-solid fa-lg fa-pen-to-square"></i></button>
+                  //   `
+                  // }
                 ]}
 
                 options={{
