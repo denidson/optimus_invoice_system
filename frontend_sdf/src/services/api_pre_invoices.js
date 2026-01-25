@@ -20,8 +20,8 @@ export const getPreInvoices = async (params = {}) => {
     const { rol } = JSON.parse(authData);
 
     const endpoint = rol === 'admin'
-      ? '/admin/pre-invoices'
-      : '/api/pre-invoices';
+      ? '/admin/pre-invoices/'
+      : '/api/pre-invoices/';
 
     const query = new URLSearchParams({
       page,

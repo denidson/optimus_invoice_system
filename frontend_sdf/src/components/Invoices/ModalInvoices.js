@@ -3,7 +3,7 @@ import { formatMoney, formatDateTime, formatText } from "../../utils/formatters"
 
 function ModalPreinvoices({ isOpen, onClose, message }) {
   if (!isOpen) return null;
-  console.log("ModalPreinvoices message:", message);
+
   return (
     <div className="fixed inset-0 z-50 flex justify-center items-center bg-black/50 p-4 overflow-y-auto">
       <div className="bg-white rounded-lg shadow-lg w-full max-w-[1200px] max-h-[90vh] overflow-y-auto relative p-6">
