@@ -302,45 +302,45 @@ function ListPreInvoices() {
               <h6 className="text-blueGray-700 text-xl font-bold">
                 Lista de Pre-Facturas
               </h6>
-              <div className="flex space-x-3">
-                <h3 class="text-blueGray-700 font-bold me-3 my-3">Buscar por:</h3><br/>
-                {/* SELECT PRINCIPAL */}
-                <select id="filter_type" className="border p-2 rounded" value={filterType} onChange={(e) => setFilterType(e.target.value)}>
-                  <option value=""> - </option>
-                  <option value="estatus">Estado</option>
-                  <option value="zona">Zona</option>
-                  <option value="correlativo_interno">Correlativo Interno</option>
-                  <option value="cliente_final_rif">RIF del cliente</option>
-                  <option value="rango_fecha">Rango de fecha</option>
-                </select>
-                {filterType === "estatus" && (
-                  <select id="filtro_estatus" className="border p-2 rounded">
-                    <option value="">Todos</option>
-                    <option value="borrador">Borrador</option>
-                    <option value="facturada">Facturada</option>
-                  </select>
-                )}
-                {(filterType === "zona" || filterType === "correlativo_interno" || filterType === "cliente_final_rif") && (
-                  <input id="filtro_text" className="border p-2 rounded" placeholder="Buscar..."/>
-                )}
-                {filterType === "rango_fecha" && (
-                  <>
-                    <input id="filtro_desde" type="date" className="border p-2 rounded" />
-                    <input id="filtro_hasta" type="date" className="border p-2 rounded" />
-                  </>
-                )}
-                <button
-                  className="bg-twilight-indigo-600 hover:bg-twilight-indigo-500 text-white font-bold py-2 px-4 rounded"
-                  onClick={actionSearch}>
-                  Buscar
-                </button>
-              </div>
+
               {rol != "admin" && (
                 <div className="flex items-center space-x-3">
+                  <div className="flex space-x-2 mb-0">
+                    <h3 class="text-blueGray-700 font-bold me-3 my-3">Buscar por:</h3><br/>
+                    {/* SELECT PRINCIPAL */}
+                    <select id="filter_type" className="border p-2 rounded" value={filterType} onChange={(e) => setFilterType(e.target.value)}>
+                      <option value=""> - </option>
+                      <option value="estatus">Estado</option>
+                      <option value="zona">Zona</option>
+                      <option value="correlativo_interno">Correlativo Interno</option>
+                      <option value="cliente_final_rif">RIF del cliente</option>
+                      <option value="rango_fecha">Rango de fecha</option>
+                    </select>
+                    {filterType === "estatus" && (
+                      <select id="filtro_estatus" className="border p-2 rounded">
+                        <option value="">Todos</option>
+                        <option value="borrador">Borrador</option>
+                        <option value="facturada">Facturada</option>
+                      </select>
+                    )}
+                    {(filterType === "zona" || filterType === "correlativo_interno" || filterType === "cliente_final_rif") && (
+                      <input id="filtro_text" className="border p-2 rounded" placeholder="Buscar..."/>
+                    )}
+                    {filterType === "rango_fecha" && (
+                      <>
+                        <input id="filtro_desde" type="date" className="border p-2 rounded" />
+                        <input id="filtro_hasta" type="date" className="border p-2 rounded" />
+                      </>
+                    )}
+                    <button
+                      className="bg-twilight-indigo-600 hover:bg-twilight-indigo-500 text-white font-bold py-2 px-4 rounded"
+                      onClick={actionSearch}>
+                      Buscar
+                    </button>
+                  </div>
                   <button
                     className="bg-twilight-indigo-600 hover:bg-twilight-indigo-500 text-white font-bold py-2 px-4 rounded"
-                    onClick={redirectToCreate}
-                  >
+                    onClick={redirectToCreate}>
                     Crear Pre-Facturas
                   </button>
                   <label className="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded cursor-pointer">
