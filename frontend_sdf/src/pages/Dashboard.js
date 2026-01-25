@@ -58,7 +58,7 @@ export default function Dashboard() {
     enabled: !!cliente_id,
     keepPreviousData: true,
   });
-
+  
   const topClientsQuery = useQuery({
     queryKey: ["top-clients", cliente_id],
     queryFn: () => getTopClients({ cliente_id }),
@@ -123,7 +123,7 @@ export default function Dashboard() {
           <div className="w-full xl:w-5/12 px-4 pt-6">
             <CardBarChart
               data={salesOverTimeQuery.data?.data || []}
-              currency={salesOverTimeQuery.data?.currency || "USD"}
+              currency={salesOverTimeQuery.data?.currency || ""}
               isLoading={salesOverTimeQuery.isFetching}
             />
           </div>
