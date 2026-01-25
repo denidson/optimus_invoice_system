@@ -11,7 +11,11 @@ export default function FormProductPage() {
     <AdminLayout nombreUsuario={nombreUsuario}>
       {/* Contenedor principal con separación y fondo blanco */}
       <div className="mt-8 px-4 md:px-8">
-        <FormProducts />
+        <FormProducts
+          cliente_id={user?.cliente_id}
+          rol={user?.rol}
+        />
+
       </div>
     </AdminLayout>
   );
