@@ -3,7 +3,7 @@ import { AuthContext } from "../../context/AuthContext";
 import ListInvoices from '../../components/Invoices/ListInvoices';
 import AdminLayout from "../../layouts/AdminLayout";
 
-export default function ListCreditDebit() {
+export default function ListDebitNote() {
   const { user } = useContext(AuthContext);
   const nombreUsuario = user?.nombre || "Usuario";
 
