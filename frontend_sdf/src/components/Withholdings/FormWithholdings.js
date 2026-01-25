@@ -74,6 +74,7 @@ function FormWithholdings() {
     numero_comprobante: "",
     periodo_fiscal: "",
     fecha_emision: "",
+    fecha_entrega: "",
     items: [],
   });
 
@@ -129,6 +130,12 @@ function FormWithholdings() {
       ...prev,
       fecha_emision: value,
       periodo_fiscal: periodo,
+    }));
+  };
+  const handleFechaEntregaChange = (value) => {
+    setWithholding((prev) => ({
+      ...prev,
+      fecha_entrega: value,
     }));
   };
 
@@ -385,6 +392,7 @@ function FormWithholdings() {
       numero_comprobante: withholding.numero_comprobante,
       periodo_fiscal: withholding.periodo_fiscal,
       fecha_emision: withholding.fecha_emision,
+      fecha_entrega: withholding.fecha_entrega,
       items: withholding.items.map((item) => ({
         factura_afectada_numero: item.factura_afectada_numero,
         factura_afectada_control: item.factura_afectada_control,
@@ -479,6 +487,17 @@ function FormWithholdings() {
                   value={withholding.fecha_emision || ""}
                   max={today}
                   onChange={(e) => handleFechaEmisionChange(e.target.value)}
+                />
+              </div>
+
+              <div className="w-full lg:w-3/12 px-4">
+                <label className="block text-blueGray-600 text-xs font-bold mb-2">Fecha Entrega</label>
+                <input
+                  type="date"
+                  className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
+                  value={withholding.fecha_entrega || ""}
+                  max={today}
+                  onChange={(e) => handleFechaEntregaChange(e.target.value)}
                 />
               </div>
 
