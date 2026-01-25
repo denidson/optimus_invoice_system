@@ -368,13 +368,14 @@ function ListWithholdings() {
                               const ws = utils.json_to_sheet(
                                 allData.map((r) => ({
                                   "Fecha": formatDate(r.fecha_emision),
-                                  "Nro. Comprobante": r.numero_comprobante,
-                                  "Sujeto Retenido": r.sujeto_retenido.nombre,
-                                  "RIF": r.sujeto_retenido.rif,
-                                  "Periodo Fiscal": r.periodo_fiscal,
-                                  "Base Imponible": r.monto_base_total,
-                                  "Monto Retenido": r.monto_retenido_total,
-                                  "Estatus": r.estatus,
+                                  "Periodo Fiscal": formatFiscalPeriod(r.periodo_fiscal),
+                                  "Nro. Comprobante": formatText(r.numero_comprobante),
+                                  "RIF": formatText(r.sujeto_retenido.rif),
+                                  "Sujeto Retenido": formatText(r.sujeto_retenido.nombre),
+                                  "Base Imponible": formatMoney(r.monto_base_total),
+                                  "Monto Retenido": formatMoney(r.monto_retenido_total),
+                                  "Estatus": formatText(r.estatus),
+                                  "Estatus SENIAT": formatText(r.estatus_seniat),
                                 }))
                               );
                               utils.book_append_sheet(wb, ws, "Retenciones");
