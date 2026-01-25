@@ -11,7 +11,7 @@ export default function ListInvoicesPage() {
     <AdminLayout nombreUsuario={nombreUsuario}>
       {/* Contenedor principal con separación y fondo blanco */}
       <div className="mt-8 px-4 md:px-8">
-        <ListInvoices title="Lista de Facturas" />
+        <ListInvoices title="Lista de Facturas" type="FC"/>
       </div>
     </AdminLayout>
   );

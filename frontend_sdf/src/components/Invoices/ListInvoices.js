@@ -28,7 +28,7 @@ import Papa from 'papaparse';
 window.JSZip = JSZip;
 DataTable.use(DT);
 
-function ListInvoices({ title }) {
+function ListInvoices({ title, type }) {
   const navigate = useNavigate();
   const [modalOpenInvoices, setModalOpenInvoices] = useState(false);
   const [Invoices, setInvoices] = useState(false);
@@ -194,43 +194,45 @@ function ListInvoices({ title }) {
             {/* Header */}
             <div className="rounded-t bg-white mb-0 px-6 py-6 flex justify-between items-center border-b">
               <h6 className="text-blueGray-700 text-xl font-bold">{title}</h6>
-              <div className="flex space-x-3">
-                <h3 class="text-blueGray-700 font-bold me-3 my-3">Buscar por:</h3><br/>
-                {/* SELECT PRINCIPAL */}
-                <select id="filter_type" className="border p-2 rounded" value={filterType} onChange={(e) => setFilterType(e.target.value)}>
-                  <option value=""> - </option>
-                  <option value="estatus">Estado</option>
-                  <option value="zona">Zona</option>
-                  <option value="correlativo_interno">Correlativo Interno</option>
-                  <option value="cliente_final_rif">RIF del cliente</option>
-                  <option value="rango_fecha">Rango de fecha</option>
-                </select>
-                {filterType === "estatus" && (
-                  <select id="filtro_estatus" className="border p-2 rounded">
-                    <option value="">Todos</option>
-                    <option value="normal">Normal</option>
-                    <option value="anulada">Anulada</option>
+              <div className="flex items-center space-x-3">
+                <div className="flex space-x-3">
+                  <h3 class="text-blueGray-700 font-bold me-3 my-3">Buscar por:</h3><br/>
+                  {/* SELECT PRINCIPAL */}
+                  <select id="filter_type" className="border p-2 rounded" value={filterType} onChange={(e) => setFilterType(e.target.value)}>
+                    <option value=""> - </option>
+                    <option value="estatus">Estado</option>
+                    <option value="zona">Zona</option>
+                    <option value="correlativo_interno">Correlativo Interno</option>
+                    <option value="cliente_final_rif">RIF del cliente</option>
+                    <option value="rango_fecha">Rango de fecha</option>
                   </select>
-                )}
-                {(filterType === "zona" || filterType === "correlativo_interno" || filterType === "cliente_final_rif") && (
-                  <input id="filtro_text" className="border p-2 rounded" placeholder="Buscar..."/>
-                )}
-                {filterType === "rango_fecha" && (
-                  <>
-                    <input id="filtro_desde" type="date" className="border p-2 rounded" />
-                    <input id="filtro_hasta" type="date" className="border p-2 rounded" />
-                  </>
-                )}
-                <button
-                  className="bg-twilight-indigo-600 hover:bg-twilight-indigo-500 text-white font-bold py-2 px-4 rounded"
-                  onClick={actionSearch}>
-                  Buscar
-                </button>
+                  {filterType === "estatus" && (
+                    <select id="filtro_estatus" className="border p-2 rounded">
+                      <option value="">Todos</option>
+                      <option value="normal">Normal</option>
+                      <option value="anulada">Anulada</option>
+                    </select>
+                  )}
+                  {(filterType === "zona" || filterType === "correlativo_interno" || filterType === "cliente_final_rif") && (
+                    <input id="filtro_text" className="border p-2 rounded" placeholder="Buscar..."/>
+                  )}
+                  {filterType === "rango_fecha" && (
+                    <>
+                      <input id="filtro_desde" type="date" className="border p-2 rounded" />
+                      <input id="filtro_hasta" type="date" className="border p-2 rounded" />
+                    </>
+                  )}
+                  <button
+                    className="bg-twilight-indigo-600 hover:bg-twilight-indigo-500 text-white font-bold py-2 px-4 rounded"
+                    onClick={actionSearch}>
+                    Buscar
+                  </button>
+                </div>
+                <label className="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded cursor-pointer">
+                  Importar Excel/CSV
+                  <input type="file" accept=".csv,.xlsx,.xls" className="hidden" onChange={handleFileUpload} />
+                </label>
               </div>
-              <label className="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded cursor-pointer">
-                Importar Excel/CSV
-                <input type="file" accept=".csv,.xlsx,.xls" className="hidden" onChange={handleFileUpload} />
-              </label>
             </div>
 
             {/* Tabla con scroll horizontal contenido en card */}
@@ -447,7 +449,7 @@ function ListInvoices({ title }) {
                                 page,
                                 per_page
                               };
-
+                              query.tipo_documento = type;
                               // Añadir filtros según filtro activo
                               if ($('#filter_type option:selected').val() === "estatus" && $('#filtro_estatus option:selected').val()) query.estatus = $('#filtro_estatus option:selected').val();
 
@@ -463,6 +465,7 @@ function ListInvoices({ title }) {
                                 query.desde = $('#filtro_desde').val();
                                 query.hasta = $('#filtro_hasta').val();
                               }
+                              console.log('query: ', query);
                               // Cargar todas las páginas hasta completar total_pages
                               do {
                                 query.page = page;
@@ -546,7 +549,7 @@ function ListInvoices({ title }) {
                         page,
                         per_page
                       };
-
+                      query.tipo_documento = type;
                       // Añadir filtros según filtro activo
                       if ($('#filter_type option:selected').val() === "estatus" && $('#filtro_estatus option:selected').val()) query.estatus = $('#filtro_estatus option:selected').val();
 

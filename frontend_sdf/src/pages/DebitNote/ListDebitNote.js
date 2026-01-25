@@ -11,7 +11,7 @@ export default function ListDebitNote() {
     <AdminLayout nombreUsuario={nombreUsuario}>
       {/* Contenedor principal con separación y fondo blanco */}
       <div className="mt-8 px-4 md:px-8">
-        <ListInvoices title="Lista de Notas de Débito" />
+        <ListInvoices title="Lista de Notas de Débito" type="ND"/>
       </div>
     </AdminLayout>
   );
