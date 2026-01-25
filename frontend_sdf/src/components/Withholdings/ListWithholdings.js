@@ -13,6 +13,7 @@ import "datatables.net-buttons/js/buttons.html5";
 import "datatables.net-buttons/js/buttons.print";
 import JSZip from "jszip";
 import { utils, write } from "xlsx";
+import { formatMoney, formatFiscalPeriod, formatText } from "../../utils/formatters";
 
 window.JSZip = JSZip;
 DataTable.use(DT);
@@ -66,90 +67,109 @@ function ListWithholdings() {
             {/* Header */}
             <div className="rounded-t bg-white mb-0 px-6 py-6 flex justify-between items-center border-b">
               <h6 className="text-blueGray-700 text-xl font-bold">Lista de Retenciones</h6>
-              <div className="flex items-center space-x-3">
-                <button
-                  className="bg-twilight-indigo-600 hover:bg-twilight-indigo-500 text-white font-bold py-2 px-4 rounded"
-                  onClick={redirectToCreate}
-                >
-                  Crear Retención
-                </button>
+              <div className="flex space-x-3">
+                {/* Filtros */}
+                <div className="flex space-x-2 mb-3">
+                  <h3 class="text-blueGray-700 font-bold me-3 my-3">Buscar por:</h3><br/>
+                  <select
+                    className="border p-2 rounded"
+                    value={filterType}
+                    onChange={(e) => setFilterType(e.target.value)}
+                  >
+                    <option value="">-</option>
+                    <option value="numero_comprobante">Nro. Comprobante</option>
+                    <option value="sujeto_retenido_rif">RIF del sujeto retenido</option>
+                    <option value="periodo_fiscal">Periodo Fiscal</option>
+                  </select>
+
+                  {filterType === "numero_comprobante" && (
+                    <input
+                      id="filtro_numero_comprobante"
+                      className="border p-2 rounded"
+                      placeholder="Ej: 20251100001"
+                    />
+                  )}
+                  {filterType === "sujeto_retenido_rif" && (
+                    <input
+                      id="filtro_rif"
+                      className="border p-2 rounded"
+                      placeholder="J-12345678-9"
+                    />
+                  )}
+                  {filterType === "periodo_fiscal" && (
+                    <input
+                      id="filtro_periodo"
+                      type="month"
+                      className="border p-2 rounded"
+                    />
+                  )}
+                  {/* Botón Buscar */}
+                  <button
+                    className="bg-twilight-indigo-600 hover:bg-twilight-indigo-500 text-white font-bold py-2 px-4 rounded"
+                    onClick={actionSearch}
+                  >
+                    Buscar
+                  </button>
+                  {/* Botón Crear Retención */}
+                  <button
+                    className="bg-twilight-indigo-600 hover:bg-twilight-indigo-500 text-white font-bold py-2 px-4 rounded"
+                    onClick={redirectToCreate}
+                  >
+                    Crear Retención
+                  </button>
+                </div>
+                
                 {/* <label className="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded cursor-pointer">
                   Importar Excel/CSV
                   <input type="file" className="hidden" />
                 </label> */}
               </div>
             </div>
-            {/* Filtros */}
+            {/* Body */}
             <div className="block w-full overflow-x-auto px-4 py-4">
-              <div className="flex space-x-2 mb-3">
-                <h3 class="text-blueGray-700 font-bold me-3">Buscar por:</h3><br/>
-                <select
-                  className="border p-2 rounded"
-                  value={filterType}
-                  onChange={(e) => setFilterType(e.target.value)}
-                >
-                  <option value="">-</option>
-                  <option value="numero_comprobante">Nro. Comprobante</option>
-                  <option value="sujeto_retenido_rif">RIF del sujeto retenido</option>
-                  <option value="periodo_fiscal">Periodo Fiscal</option>
-                </select>
-
-                {filterType === "numero_comprobante" && (
-                  <input
-                    id="filtro_numero_comprobante"
-                    className="border p-2 rounded"
-                    placeholder="Ej: 20251100001"
-                  />
-                )}
-                {filterType === "sujeto_retenido_rif" && (
-                  <input
-                    id="filtro_rif"
-                    className="border p-2 rounded"
-                    placeholder="J-12345678-9"
-                  />
-                )}
-                {filterType === "periodo_fiscal" && (
-                  <input
-                    id="filtro_periodo"
-                    type="month"
-                    className="border p-2 rounded"
-                  />
-                )}
-
-                <button
-                  className="bg-twilight-indigo-600 hover:bg-twilight-indigo-500 text-white font-bold py-2 px-4 rounded"
-                  onClick={actionSearch}
-                >
-                  Buscar
-                </button>
-              </div>
-
               {/* DataTable */}
               <DataTable
                 id="ListWithholdingsDt"
                 className="table-auto w-full text-left"
                 columns={[
-                  { title: "Nro. Comprobante", data: "numero_comprobante" },
-                  { title: "Sujeto Retenido", data: "sujeto_retenido.nombre" },
-                  { title: "RIF", data: "sujeto_retenido.rif" },
-                  { title: "Periodo Fiscal", data: "periodo_fiscal" },
+                  { title: "Nro. Comprobante", className: "dt-center", data: "numero_comprobante" },
+                  { title: "Sujeto Retenido", 
+                    data: "sujeto_retenido.nombre",
+                    render: (data, type, row) => {
+                      return formatText(data);
+                    }
+                  },
+                  { title: "RIF", 
+                    data: "sujeto_retenido.rif", 
+                    render: (data, type, row) => {
+                      return formatText(data);
+                    }
+                  },
+                  { title: "Periodo Fiscal", 
+                    className: "dt-center", 
+                    data: "periodo_fiscal",
+                    render: (data, type, row) => {
+                      return formatFiscalPeriod(data);
+                    }
+                  },
                   {
-                    title: "Base Imponible",
+                    title: "Base Imponible (Bs.)",
                     data: "monto_base_total",
-                    render: (data, type) =>
-                      type === "display"
-                        ? `Bs. ${new Intl.NumberFormat("es-VE", { minimumFractionDigits: 2 }).format(data)}`
-                        : data,
+                    render: (data, type, row) => {
+                      return formatMoney(data);
+                    }
                   },
                   {
-                    title: "Monto Retenido",
+                    title: "Monto Retenido (Bs.)",
                     data: "monto_retenido_total",
-                    render: (data, type) =>
-                      type === "display"
-                        ? `Bs. ${new Intl.NumberFormat("es-VE", { minimumFractionDigits: 2 }).format(data)}`
-                        : data,
+                    render: (data, type, row) => {
+                      return formatMoney(data);
+                    },
                   },
-                  { title: "Estatus", data: "estatus", className: "capitalize" },
+                  { title: "Estatus", 
+                    data: "estatus", 
+                    className: "capitalize" 
+                  },
                   {
                     title: "Acciones",
                     data: null,

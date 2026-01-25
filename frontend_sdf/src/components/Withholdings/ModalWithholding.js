@@ -1,4 +1,5 @@
 import React from "react";
+import { formatMoney, formatFiscalPeriod, formatDate, formatText } from "../../utils/formatters";
 
 const ModalWithholding = ({ data, onClose }) => {
   if (!data) return null;
@@ -9,7 +10,7 @@ const ModalWithholding = ({ data, onClose }) => {
 
         {/* header */}
         <div className="bg-white p-6 border-b">
-          <h3 className="text-2xl font-bold text-center">
+          <h3 className="text-2xl text-twilight-indigo-600 font-bold text-center">
             Retención Nº {data.numero_comprobante}
           </h3>
         </div>
@@ -21,22 +22,22 @@ const ModalWithholding = ({ data, onClose }) => {
           <div className="grid grid-cols-2 gap-6">
             <div>
               <h4 className="font-bold mb-2">Datos del Sujeto Retenido</h4>
-              <p><b>Nombre:</b> {data.sujeto_retenido?.nombre}</p>
-              <p><b>RIF:</b> {data.sujeto_retenido?.rif}</p>
+              <p><b>Nombre:</b> {formatText(data.sujeto_retenido?.nombre)}</p>
+              <p><b>RIF:</b> {formatText(data.sujeto_retenido?.rif)}</p>
             </div>
 
             <div class="capitalize">
               <h4 className="font-bold mb-2">Información</h4>
-              <p><b>Período Fiscal:</b> {data.periodo_fiscal}</p>
-              <p><b>Fecha Emisión:</b> {data.fecha_emision}</p>
+              <p><b>Período Fiscal:</b> {formatFiscalPeriod(data.periodo_fiscal)}</p>
+              <p><b>Fecha Emisión:</b> {formatDate(data.fecha_emision)}</p>
               <p><b>Estatus:</b> {data.estatus}</p>
               <p><b>Estatus Seniat:</b> {data.estatus_seniat}</p>
             </div>
 
             <div>
               <h4 className="font-bold mb-2">Montos</h4>
-              <p><b>Base Imponible Total:</b> Bs. {data.monto_base_total}</p>
-              <p><b>Monto Retenido Total:</b> Bs. {data.monto_retenido_total}</p>
+              <p><b>Base Imponible Total:</b> Bs. {formatMoney(data.monto_base_total)}</p>
+              <p><b>Monto Retenido Total:</b> Bs. {formatMoney(data.monto_retenido_total)}</p>
             </div>
 
             <div>
@@ -51,16 +52,16 @@ const ModalWithholding = ({ data, onClose }) => {
           {/* tabla de items */}
           <h4 className="font-bold mb-3">Documentos Afectados</h4>
 
-          <table className="w-full border text-sm">
+          <table className="w-full border border-twilight-indigo-700 text-sm">
             <thead>
-              <tr className="bg-gray-200 border">
-                <th className="p-2 border">Tipo</th>
-                <th className="p-2 border">Número</th>
-                <th className="p-2 border">Número Control</th>
-                <th className="p-2 border">Fecha</th>
-                <th className="p-2 border">Base Imponible</th>
-                <th className="p-2 border">Retención %</th>
-                <th className="p-2 border">Monto Retenido</th>
+              <tr className="bg-twilight-indigo-100 border border-twilight-indigo-700">
+                <th className="p-2">Tipo</th>
+                <th className="p-2">Número</th>
+                <th className="p-2">Número Control</th>
+                <th className="p-2">Fecha</th>
+                <th className="p-2">Base Imponible</th>
+                <th className="p-2">Retención %</th>
+                <th className="p-2">Monto Retenido</th>
               </tr>
             </thead>
             <tbody>
@@ -82,14 +83,14 @@ const ModalWithholding = ({ data, onClose }) => {
                   }
 
                   return (
-                    <tr key={i.id} className="border">
-                      <td className="p-2 border text-center">{tipoDoc}</td>
-                      <td className="p-2 border">{i.factura_afectada_numero}</td>
-                      <td className="p-2 border">{i.factura_afectada_control}</td>
-                      <td className="p-2 border">{i.factura_afectada_fecha}</td>
-                      <td className="p-2 border text-end">Bs. {i.monto_base_imponible}</td>
-                      <td className="p-2 border text-center">{i.tipo_retencion.porcentaje} %</td>
-                      <td className="p-2 border text-end">Bs. {i.monto_retenido}</td>
+                    <tr key={i.id}>
+                      <td className="p-2 text-center">{tipoDoc}</td>
+                      <td className="p-2 text-center">{i.factura_afectada_numero}</td>
+                      <td className="p-2 text-center">{i.factura_afectada_control}</td>
+                      <td className="p-2 text-center">{formatDate(i.factura_afectada_fecha)}</td>
+                      <td className="p-2 text-end">{formatMoney(i.monto_base_imponible)}</td>
+                      <td className="p-2 text-center">{i.tipo_retencion.porcentaje} %</td>
+                      <td className="p-2 text-end">{formatMoney(i.monto_retenido)}</td>
                     </tr>
                   );
                 })
@@ -110,7 +111,7 @@ const ModalWithholding = ({ data, onClose }) => {
         <div className="absolute bottom-4 w-full flex justify-center">
           <button
             onClick={onClose}
-            className="px-6 py-2 bg-slate-800 text-white rounded shadow"
+            className="px-6 py-2 bg-twilight-indigo-600 hover:bg-twilight-indigo-500 text-white font-bold rounded shadow"
           >
             Cerrar
           </button>

@@ -1,23 +1,32 @@
-import React, { useState } from "react";
+import React from "react";
+import { formatMoney, formatDate, formatText } from "../../utils/formatters";
 
 function ModalPreinvoices({ isOpen, onClose, message }) {
-  if (!isOpen) return null; // Si la modal no está abierta, no renderiza nada
+  if (!isOpen) return null;
 
   return (
-    <div style={overlayStyle}>
-      <div style={modalStyle} class="z-50">
-        <div className="flex flex-wrap h-full">
-          <div className="w-full lg:w-12/12 px-4">
-            <div className="relative flex flex-col min-w-0 break-words w-full mb-6 rounded-lg bg-blueGray-100 border-0">
-              <div class="rounded-t bg-white mb-0 px-6 py-6">
-                <div class="text-center flex justify-center pb-4">
-                  <h6 class="text-blueGray-700 text-xl font-bold">Detalles de la Pre-Factura</h6>
-                </div>
+    <div className="fixed inset-0 bg-black/50 z-50 flex justify-center items-center">
+
+      {/* MODAL */}
+      <div className="bg-white w-[70%] h-[90%] rounded-lg shadow-xl overflow-hidden relative flex flex-col">
+
+        {/* HEADER */}
+        <div className="px-6 py-6 border-b bg-white">
+          <h6 className="text-twilight-indigo-600 font-bold text-center">
+            Detalles de la Pre-Factura
+          </h6>
+        </div>
+
+        {/* BODY CON SCROLL */}
+        <div className="overflow-y-auto h-[calc(100%-120px)] px-4">
+          <div className="flex flex-wrap">
+            <div className="w-full px-4">
+              <div className="relative flex flex-col min-w-0 break-words w-full mb-6 rounded-lg bg-blueGray-100 border-0">
                 <hr class="my-6 border-b-1 border-blueGray-300"/>
                 <div class="px-5 text-center flex justify-between">
                   <div className="lg:w-4/12 text-start">
                     <label class="text-blueGray-700 lg:w-4/12 font-bold me-3">Fecha de Pre-Factura:</label>
-                    <label class="text-blueGray-700 lg:w-8/12">{message.fecha_factura ? message.fecha_factura.replace('T',' ').substr(0, 19) : ''}</label>
+                    <label class="text-blueGray-700 lg:w-8/12">{formatDate(message.fecha_factura) ? formatDate(message.fecha_factura) : ''}</label>
                   </div>
                   <div className="lg:w-4/12 text-start">
                     <label class="text-blueGray-700 lg:w-6/12 font-bold me-3">Correlativo:</label>
@@ -87,7 +96,7 @@ function ModalPreinvoices({ isOpen, onClose, message }) {
                     message.items.map((item) => (
                       <div key={item.id} class="px-5 text-center flex justify-between border-b py-1 border-solid">
                         <div className="lg:w-4/12 text-start">
-                          <label className="text-blueGray-700">{item.producto ? item.producto.sku + '-' + item.producto.nombre : 'N/A' }</label>
+                          <label className="text-blueGray-700 ">{item.producto ? item.producto.sku + '-' + item.producto.nombre : 'N/A' }</label>
                         </div>
                         <div className="lg:w-4/12 text-center">
                           <label className="text-blueGray-700">
@@ -140,7 +149,7 @@ function ModalPreinvoices({ isOpen, onClose, message }) {
                     {(message.monto_pagado_divisas > 0) ?
                       (<div className="lg:w-6/12 text-start pr-10">
                       <div class="px-0 text-center flex justify-between mt-0">
-                        <div className="lg:w-4/12 text-left font-bold me-3">Monto pagado en divisas:</div>
+                        <div className="lg:w-4/12 text-left font-bold me-3 text-nowrap">Monto pagado en divisas:</div>
                         <div className="lg:w-8/12 text-right">
                           <label className="text-blueGray-700">
                             {'Bs. ' + new Intl.NumberFormat("es-VE", {
@@ -254,46 +263,22 @@ function ModalPreinvoices({ isOpen, onClose, message }) {
               </div>
             </div>
           </div>
-          <div style={buttonStyle}>
-            <button className="bg-slate-800 text-white px-4 py-2 rounded " onClick={onClose}>Cancelar</button>
-          </div>
+
+        </div>
+
+        {/* FOOTER */}
+        <div className="absolute bottom-4 w-full flex justify-center">
+          <button
+            onClick={onClose}
+            className="px-6 py-2 bg-twilight-indigo-600 hover:bg-twilight-indigo-500 text-white font-bold rounded shadow"
+          >
+            Cerrar
+          </button>
         </div>
 
       </div>
     </div>
   );
 }
-
-// Estilos para la modal
-const overlayStyle = {
-  position: "fixed",
-  top: 0,
-  left: 0,
-  right: 0,
-  bottom: 0,
-  backgroundColor: "rgba(0, 0, 0, 0.5)", // Fondo oscuro
-  display: "flex",
-  justifyContent: "center",
-  alignItems: "center",
-};
-
-const modalStyle = {
-  backgroundColor: "white",
-  padding: "20px",
-  borderRadius: "8px",
-  boxShadow: "0 4px 8px rgba(0, 0, 0, 0.2)",
-  textAlign: "center",
-  width: "70%",
-  height: "90%",
-};
-
-const buttonStyle = {
-  position: "fixed",
-  justifyContent: "center",
-  alignItems: "center",
-  bottom: "9%",
-  left: "47%",
-  textAlign: "center",
-};
 
 export default ModalPreinvoices;

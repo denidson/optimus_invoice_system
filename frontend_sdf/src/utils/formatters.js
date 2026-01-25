@@ -1,8 +1,11 @@
-export const formatMoney = (value) =>
-  Number(value || 0).toLocaleString("es-ES", {
+export const formatMoney = (value) => {
+  return new Intl.NumberFormat("es-ES", {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
-  });
+    useGrouping: true,
+  }).format(Number(value || 0));
+};
+
 
 export const formatDate = (value) => {
   if (!value) return "";
@@ -40,4 +43,16 @@ export const formatText = (value) => {
     .toString()
     .trim()        // elimina espacios al inicio y al final
     .toUpperCase(); // convierte a mayúsculas
+};
+
+export const formatFiscalPeriod = (value) => {
+  if (!value) return "";
+
+  const date = new Date(value);
+  if (isNaN(date.getTime())) return "";
+
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+
+  return `${year}-${month}`;
 };
