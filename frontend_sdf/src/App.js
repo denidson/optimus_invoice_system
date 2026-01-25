@@ -29,6 +29,8 @@ import ListConfigWithholdings from "./pages/Config/ListConfigWithholdings";
 import ListCompanyUsers from "./pages/CompanyUsers/ListCompanyUsers";
 import ListWithholdings from "./pages/Withholdings/ListWithholding";
 import FormWithholding from "./pages/Withholdings/FormWithholding";
+import ListCreditNote from "./pages/CreditNote/ListCreditNote";
+import ListCreditDebit from "./pages/DebitNote/ListDebitNote";
 
 // Seguridad
 import PrivateRoute from "./components/PrivateRoute";
@@ -240,7 +242,28 @@ function App() {
               </PrivateRoute>
             }
           />
-
+          {/* Notas de Crédito */}
+          <Route
+            path="/credit-note"
+            element={
+              <PrivateRoute>
+                <RoleRoute roles={["admin", "operador_admin", "operador"]}>
+                  <ListCreditNote />
+                </RoleRoute>
+              </PrivateRoute>
+            }
+          />
+          {/* Notas de Débito */}
+          <Route
+            path="/credit-debit"
+            element={
+              <PrivateRoute>
+                <RoleRoute roles={["admin", "operador_admin", "operador"]}>
+                  <ListCreditDebit />
+                </RoleRoute>
+              </PrivateRoute>
+            }
+          />
           {/* Retenciones */}
           <Route
             path="/withholdings"
