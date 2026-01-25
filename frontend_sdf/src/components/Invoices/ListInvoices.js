@@ -25,7 +25,7 @@ import Papa from 'papaparse';
 window.JSZip = JSZip;
 DataTable.use(DT);
 
-function ListInvoices() {
+function ListInvoices({ title }) {
   const navigate = useNavigate();
   const [modalOpenInvoices, setModalOpenInvoices] = useState(false);
   const [Invoices, setInvoices] = useState(false);
@@ -190,7 +190,7 @@ function ListInvoices() {
           <div className="relative bg-white flex flex-col min-w-0 break-words w-full mb-6 shadow-lg rounded-lg bg-blueGray-100 border-0">
             {/* Header */}
             <div className="rounded-t bg-white mb-0 px-6 py-6 flex justify-between items-center border-b">
-              <h6 className="text-blueGray-700 text-xl font-bold">Lista de Facturas</h6>
+              <h6 className="text-blueGray-700 text-xl font-bold">{title}</h6>
               <div className="flex space-x-3">
                 <h3 class="text-blueGray-700 font-bold me-3 my-3">Buscar por:</h3><br/>
                 {/* SELECT PRINCIPAL */}
