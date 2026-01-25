@@ -18,7 +18,9 @@ import "datatables.net-buttons-dt/css/buttons.dataTables.css";
 import "datatables.net-buttons/js/buttons.html5";
 import "datatables.net-buttons/js/buttons.print";
 import JSZip from "jszip";
-import { read, utils } from 'xlsx';
+import * as XLSX from "xlsx";
+const { read, utils } = XLSX;
+import { formatMoney, formatDate, formatDateTime, formatText } from "../../utils/formatters";
 import Papa from 'papaparse';
 window.JSZip = JSZip;
 DataTable.use(DT);
@@ -31,6 +33,7 @@ function ListEndClients() {
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [importData, setImportData] = useState([]);
   const { user } = useContext(AuthContext);
+  var responseCache = useState(false);
   const rol = user?.rol;
 
   // DataTable listeners
@@ -238,19 +241,37 @@ function ListEndClients() {
                 id="ListClientDt"
                 className="table-auto w-full text-left"
                 columns={[
-                  { title: "RIF", data: "rif" },
-                  { title: "Razón social", data: "nombre" },
-                  { title: "Correo electrónico", data: "email" },
-                  { title: "Teléfono", data: "telefono" },
+                  { title: "RIF", data: "rif", render: (data, type, row) => {
+                      return formatText(data);
+                    }
+                  },
+                  { title: "Razón social", data: "nombre", render: (data, type, row) => {
+                      return formatText(data);
+                    }
+                  },
+                  { title: "Correo electrónico", data: "email", render: (data, type, row) => {
+                      return formatText(data);
+                    }
+                  },
+                  { title: "Teléfono", data: "telefono", render: (data, type, row) => {
+                      return formatText(data);
+                    }
+                  },
                   //{ title: "Tipo de contribuyente", data: "tipo_contribuyente.nombre" },
-                  { title: "Dirección", data: "direccion" },
+                  { title: "Dirección", data: "direccion", render: (data, type, row) => {
+                      return formatText(data);
+                    }
+                  },
                   {
                     title: "Condición",
                     data: "activo",
-                    render: (data) =>
-                      data
-                        ? '<label class="bg-emerald-400 text-white py-1 px-3 rounded-full text-center">Activo</label>'
-                        : '<label class="bg-red-400 text-white py-1 px-3 rounded-full text-center">Inactivo</label>',
+                    render: (data, type, row) => {
+                      if (!data){
+                        return '<i class="fas fa-circle text-red-500 mr-2"></i> ' + formatText('Inactivo');
+                      }else{
+                        return '<i class="fas fa-circle text-emerald-500 mr-2"></i> ' + formatText('Activo');
+                      }
+                    }
                   },
                   {
                     title: "Acciones",
@@ -281,12 +302,40 @@ function ListEndClients() {
                       const page = Math.floor(dataTablesParams.start / dataTablesParams.length) + 1;
                       const per_page = dataTablesParams.length;
 
-                      // Llamamos a tu servicio pasando los parámetros de paginación
-                      const response = await getEndClients({ page, per_page });
+                      const searchValue = dataTablesParams.search?.value?.toLowerCase() || '';
 
-                      // Aseguramos que la estructura esperada esté presente
-                      const { data, total } = response;
+                      if (searchValue == ''){
+                        //console.log('if');
+                        // Llamamos a tu servicio pasando los parámetros de paginación
+                        const response = await getEndClients({ page, per_page });
 
+                        // Respaldar response anterior
+                        responseCache = response;
+
+                        // Aseguramos que la estructura esperada esté presente
+                        var { data, total } = response;
+                      }else{
+                        //console.log('else');
+                        const CAMPOS_EXCLUIDOS = [
+                          "created_at",
+                          "updated_at"
+                        ];
+                        //console.log('responseCache: ', responseCache);
+                        var filteredData = responseCache.data.filter(item =>
+                          Object.entries(item).some(([key, value]) => {
+                            // Excluir campos internos
+                            if (CAMPOS_EXCLUIDOS.includes(key)) return false;
+
+                            if (!value) return false;
+
+                            return String(value).toUpperCase().includes(searchValue.toUpperCase());
+                          })
+                        );
+                        //console.log('filteredData: ', filteredData);
+                        var data = filteredData;
+                        var total = filteredData.length;
+                        //var { data, total } = responseCache;
+                      }
                       // Retornamos a DataTables con la estructura esperada
                       callback({
                         draw: dataTablesParams.draw,
@@ -304,14 +353,149 @@ function ListEndClients() {
                       });
                     }
                   },
-                  pageLength: 20, // se sincroniza con per_page del backend
-                  lengthMenu: [20, 50, 100], //[10, 20, 50, 100]
+                  dom: //B = Buttons, l = LengthMenu (mostrar X registros), f = Filtro (search), t = Tabla, i = Info (mostrando de X a Y de Z), p = Paginación
+                    "<'row'<'col-sm-12 text-start'B>>" +                // Fila 2: botones ocupando todo el ancho
+                    "<'row'<'col-sm-6 text-end'l><'col-sm-6'f>>" +    // Fila 1: lengthMenu izquierda, filtro derecha
+                    "<'row'<'col-sm-12'tr>>" +               // Fila 3: tabla
+                    "<'row'<'col-sm-5 text-start'i><'col-sm-7 text-end'p>>",     // Fila 4: info izquierda, paginación derecha
+                  serverSide: true, // si es true la paginación se debe controlar a traves del servidor
+                  searching: true,
+                  processing: true,
+                  scrollX: true,
+                  autoWidth: false,
+                  pageLength: 20,         // cantidad inicial por página
+                  lengthMenu: [20, 50, 100], // opciones en el desplegable, false para oculta el selector
+                  buttons: [
+                    {
+                      extend: "collection",
+                      text: "Exportar",
+                      className: "bg-slate-700 hover:bg-slate-600 text-white font-bold py-2 px-4 rounded",
+                      buttons: [
+                        {
+                          extend: "copyHtml5",
+                          text: "Copiar",
+                          title: "Lista de clientes"   // nombre del documento en el portapapeles
+                        },
+                        {
+                          extend: "excelHtml5",
+                          text: "Excel",
+                          title: "Lista de clientes",  // título dentro del archivo
+                          filename: "Lista_clientes",   // nombre del archivo generado (sin extensión)
+                          exportOptions: {
+                            columns: ':not(.no-export)'
+                          }
+                        },
+                        {
+                          extend: "csvHtml5",
+                          text: "CSV",
+                          title: "Lista de clientes",
+                          filename: "Lista_clientes",
+                          exportOptions: {
+                            columns: ':not(.no-export)'
+                          }
+                        },
+                        {
+                          extend: "pdfHtml5",
+                          text: "PDF",
+                          title: "Lista de clientes",
+                          filename: "Lista_clientes",
+                          exportOptions: {
+                            columns: ':not(.no-export)'
+                          },
+                          orientation: "landscape",
+                          //orientation: "landscape",   // opcional
+                          //pageSize: "A4"              // opcional
+                        },
+                        {
+                          extend: "print",
+                          text: "Imprimir",
+                          title: "Lista de clientes",
+                          exportOptions: {
+                            columns: ':not(.no-export)'
+                          }
+                        },
+                        {
+                          text: "Exportar todo (Excel)",
+                          exportOptions: {
+                            columns: ':not(.no-export)'
+                          },
+                          action: async function (e, dt, node, config) {
+                            const exportButton = node;
+                            try {
+                              const allData = [];
+                              let page = 1;
+                              const per_page = dt.length;
+                              let totalPages = 1;
+
+                              // Mostrar mensaje de progreso
+                              $(exportButton).text("Cargando...").prop("disabled", true).attr("style", "pointer-events: none;");
+                              const query = {
+                                page,
+                                per_page
+                              };
+                              // Cargar todas las páginas hasta completar total_pages
+                              do {
+                                query.page = page;
+                                query.per_page = 100;
+                                const response = await getEndClients(query);
+                                const { data, total_pages } = response;
+
+                                allData.push(...data);
+                                totalPages = total_pages;
+                                page++;
+                              } while (page <= totalPages);
+
+                              // Convertimos a Excel con xlsx
+                              const wb = utils.book_new();
+                              const ws = utils.json_to_sheet(allData.map(item => ({
+                                "RIF": formatText(item.rif),
+                                "Razon Social": formatText(item.nombre),
+                                "Correo electrónico": formatText(item.email),
+                                "Teléfono": formatText(item.telefono),
+                                "Dirección": formatText(item.direccion),
+                                "Región": formatText(item.region),
+                                "Zona":formatText(item.zona),
+                                "Condición": formatText(item.estado
+                                    ? "Activo"
+                                    : "Inactivo")
+                              })));
+
+                              utils.book_append_sheet(wb, ws, "Auditoría");
+
+                              const wbout = XLSX.write(wb, { bookType: "xlsx", type: "array" });
+                              const blob = new Blob([wbout], { type: "application/octet-stream" });
+                              const link = document.createElement("a");
+                              link.href = URL.createObjectURL(blob);
+                              link.download = "Clientes.xlsx";
+                              link.click();
+
+                              $(exportButton).text("Exportar todo (Excel)").prop("disabled", false).attr("style", "pointer-events: auto;");;
+                              toast.success("Archivo exportado correctamente.");
+                            } catch (error) {
+                              $(exportButton).text("Exportar todo (Excel)").prop("disabled", false).attr("style", "pointer-events: auto;");;
+                              console.error("Error al exportar:", error);
+                              toast.error("Error al exportar los datos.");
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  ],
                   language: {
-                    lengthMenu: "Mostrar _MENU_ registros",
+                    decimal: ",",
+                    thousands: ".",
+                    lengthMenu: "Mostrar _MENU_ registros por página",
                     zeroRecords: "No se encontraron resultados",
-                    info: "Mostrando _START_ a _END_ de _TOTAL_ registros",
+                    info: "Mostrando de _START_ a _END_ de _TOTAL_ registros",
+                    infoEmpty: "No hay registros disponibles",
+                    infoFiltered: "(filtrado de _MAX_ registros totales)",
                     search: "Buscar:",
-                    paginate: { next: "Siguiente", previous: "Anterior" },
+                    paginate: {
+                      first: "Primero",
+                      last: "Último",
+                      next: "Siguiente",
+                      previous: "Anterior"
+                    }
                   },
                 }}
               />
