@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { getCompanyUsers, editCompanyUsers, createCompanyUsers } from "../../services/apiCompanyUsers";
+import { formatMoney, formatDate, formatDateTime, formatText } from "../../utils/formatters";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
@@ -41,9 +42,10 @@ export default function ListCompanyUsers() {
 
   const handleEdit = async (id) => {
     try {
-      navigate(`/company-users/edit/${id}`);
+      const hash = encryptText(id.toString());
+      navigate(`/company-users/edit/?id=${encodeURIComponent(hash)}`);
     } catch (error) {
-      toast.error("Error al cargar usuario");
+      toast.error("Error al cargar usuario de la empresa");
     }
   };
 
@@ -57,12 +59,12 @@ export default function ListCompanyUsers() {
             <div className="rounded-t bg-white mb-0 px-6 py-6 border-b flex justify-between items-center">
               <h6 className="text-blueGray-700 text-xl font-bold">Lista de Usuarios</h6>
 
-              {/* <button
+              <button
                 className="bg-twilight-indigo-600 hover:bg-twilight-indigo-500 text-white px-4 py-2 rounded"
                 onClick={() => navigate("/company-users/create")}
               >
                 Crear Usuario
-              </button> */}
+              </button>
             </div>
 
             {/* Tabla */}
@@ -70,36 +72,36 @@ export default function ListCompanyUsers() {
 
               <DataTable
                 id="ListCompanyUsersDt"
-                className="table-auto w-full text-left bg-transparent border-collapse"
+                className="table-auto w-full"
                 columns={[
                   { title: "Nombre", data: "nombre" },
                   { title: "Correo", data: "email" },
                   { 
                     title: "Rol", 
                     data: "rol",
+                    className: "dt-center",
                     render: (v) => v.toUpperCase()
                   },
                   {
                     title: "Debe cambiar clave",
                     data: "must_change_password",
+                    className: "dt-center",
                     render: (v) => (v ? '<i class="fas fa-circle text-orange-500 mr-2"></i> Sí' : '<i class="fas fa-circle text-emerald-500 mr-2"></i> No')
                   },
                   {
                     title: "Creado",
                     data: "created_at",
-                    render: (d) => d ? d.replace("T", " ").substring(0,19) : ""
+                    render: (d) => formatDateTime(d)
                   },
-                  {
-                    title: "Acciones",
-                    data: null,
-                    orderable: false,
-                    searchable: false,
-                    render: (data, type, row) => `
-                      <button class="btn-edit px-1 py-1 mx-0" data-id="${row.id}">
-                        <i class="fa-solid fa-pen-to-square"></i>
-                      </button>
-                    `
-                  }
+                  // {
+                  //   title: "Acciones",
+                  //   data: null,
+                  //   orderable: false,
+                  //   searchable: false,
+                  //   render: (data, type, row) => `
+                  //    <button class="btn-edit px-2 py-1 text-blue-600" data-id="${row.id}"><i class="fa-solid fa-lg fa-pen-to-square"></i></button>
+                  //   `
+                  // }
                 ]}
 
                 options={{
@@ -128,7 +130,7 @@ export default function ListCompanyUsers() {
                         data: data
                       });
                     } catch (error) {
-                      console.error("Error cargando usuarios:", error);
+                      console.error("Error cargando usuarios de la empresa:", error);
                       callback({
                         draw: params.draw,
                         recordsTotal: 0,

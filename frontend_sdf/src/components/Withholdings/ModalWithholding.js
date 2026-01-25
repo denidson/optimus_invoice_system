@@ -30,6 +30,7 @@ const ModalWithholding = ({ data, onClose }) => {
               <h4 className="font-bold mb-2">Información</h4>
               <p><b>Período Fiscal:</b> {formatFiscalPeriod(data.periodo_fiscal)}</p>
               <p><b>Fecha Emisión:</b> {formatDate(data.fecha_emision)}</p>
+              <p><b>Fecha Entrega:</b> {data.fecha_entrega ? formatDate(data.fecha_entrega) : ""}</p>
               <p><b>Estatus:</b> {data.estatus}</p>
               <p><b>Estatus Seniat:</b> {data.estatus_seniat}</p>
             </div>

@@ -11,6 +11,16 @@ export const getCompanyUsers = async ({ page = 1, per_page = 20 } = {}) => {
   }
 };
 
+export const showCompanyUsers = async (id) => {
+  try {
+    const response = await api.get(`/api/company-users/${id}`);
+    return response.data; // Retorna los datos directamente
+  } catch (error) {
+    console.error("Error fetching company users:", error);
+    throw error; // Lanzamos el error para que el componente lo maneje
+  }
+};
+
 // Editar cliente
 export const editCompanyUsers = async (id, body) => {
   try {
