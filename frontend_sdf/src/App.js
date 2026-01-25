@@ -27,6 +27,7 @@ import ListInvoices from "./pages/Invoices/ListInvoices";
 import ListAuditLogs from "./pages/Config/ListAuditLogs";
 import ListConfigWithholdings from "./pages/Config/ListConfigWithholdings";
 import ListCompanyUsers from "./pages/CompanyUsers/ListCompanyUsers";
+import FormCompanyUsers from "./pages/CompanyUsers/FormCompanyUsers";
 import ListWithholdings from "./pages/Withholdings/ListWithholding";
 import FormWithholding from "./pages/Withholdings/FormWithholding";
 import ListCreditNote from "./pages/CreditNote/ListCreditNote";
@@ -303,6 +304,26 @@ function App() {
               <PrivateRoute>
                 <RoleRoute roles={["operador_admin"]}>
                   <ListCompanyUsers />
+                </RoleRoute>
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/company-users/create"
+            element={
+              <PrivateRoute>
+                <RoleRoute roles={["operador_admin", "operador"]}>
+                  <FormCompanyUsers />
+                </RoleRoute>
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/company-users/edit"
+            element={
+              <PrivateRoute>
+                <RoleRoute roles={["operador_admin", "operador"]}>
+                  <FormCompanyUsers />
                 </RoleRoute>
               </PrivateRoute>
             }
