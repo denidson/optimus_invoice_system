@@ -255,7 +255,7 @@ function App() {
           />
           {/* Notas de Débito */}
           <Route
-            path="/credit-debit"
+            path="/debit-note"
             element={
               <PrivateRoute>
                 <RoleRoute roles={["admin", "operador_admin", "operador"]}>

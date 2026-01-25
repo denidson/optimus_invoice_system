@@ -1,4 +1,5 @@
 import React from "react";
+import { formatMoney, formatDateTime, formatText } from "../../utils/formatters";
 
 function ModalPreinvoices({ isOpen, onClose, message }) {
   if (!isOpen) return null;
@@ -77,9 +78,33 @@ function ModalPreinvoices({ isOpen, onClose, message }) {
             <div>{message.estatus.toUpperCase()}</div>
           </div>
         </div>
+                
+        {(message.tipo_documento === 'ND' || message.tipo_documento === 'NC') && message.factura_afectada_rel && (
+          <div className="mb-4 px-2">
+            {/* Título principal */}
+            <label className="font-bold text-blueGray-700 mb-2">Factura afectada:</label>
+            
+            {/* Datos de la factura afectada */}
+            <div className="flex flex-wrap justify-between">
+              <div className="w-1/5 text-start">
+                <label className="font-bold text-blueGray-700">Número de control:</label>
+                <div>{formatText(message.factura_afectada_rel.numero_control)}</div>
+              </div>
+              <div className="w-1/5 text-start">
+                <label className="font-bold text-blueGray-700">Fecha de emisión:</label>
+                <div>{formatDateTime(message.factura_afectada_rel.fecha_emision)}</div>
+              </div>
+              <div className="w-1/5 text-start">
+                <label className="font-bold text-blueGray-700">Total:</label>
+                <div>{formatMoney(message.factura_afectada_rel.total_neto)}</div>
+              </div>
+            </div>
+            <hr className="my-4 border-b border-blueGray-300"/>
+          </div>
+        )}
 
         <hr className="my-4 border-b border-blueGray-300"/>
-
+        
         {/* Tabla de Items */}
         <div className="overflow-x-auto mb-4">
           <div className="flex bg-gray-100 border-b-2 border-gray-300 font-bold text-center">
