@@ -423,7 +423,7 @@ function ListWithholdings() {
                   data={selectedWithholding} 
                   onClose={handleCloseModal} 
                 />
-              }-
+              }
             
             </div>
           </div>
