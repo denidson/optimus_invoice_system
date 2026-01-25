@@ -22,8 +22,10 @@ import "datatables.net-buttons/js/buttons.print";
 import JSZip from "jszip";
 import pdfMake from "pdfmake/build/pdfmake";
 import pdfFonts from "pdfmake/build/vfs_fonts";
-import { read, utils } from 'xlsx';
+import * as XLSX from "xlsx";
+const { read, utils } = XLSX;3
 import Papa from 'papaparse';
+import { formatMoney, formatDate, formatDateTime, formatText } from "../../utils/formatters";
 
 window.JSZip = JSZip;
 DataTable.use(DT);
@@ -237,16 +239,34 @@ function ListProducts() {
                 id="ListProductDt"
                 className="table-auto w-full text-left items-center bg-transparent border-collapse"
                 columns={[
-                  { title: "SKU", data: "sku" },
+                  { title: "SKU", data: "sku", className: "dt-center", render: (data, type, row) => {
+                      return formatText(data);
+                    }
+                  },
                   { title: "Nombre", data: "nombre" },
                   { title: "Descripción", data: "descripcion" },
-                  { title: "Precio Base", data: "precio_base" },
-                  { title: "IVA", data: "iva_categoria", render: d => d ? `${d.tasa_porcentaje}%` : "N/A" },
-                  { title: "Condición", data: "activo", render: d => d
-                      ? '<label class="bg-emerald-400 text-white py-1 px-3 rounded-full text-center">Activo</label>'
-                      : '<label class="bg-red-400 text-white py-1 px-3 rounded-full text-center">Inactivo</label>'
+                  { title: "IVA (%)", data: "iva_categoria", className: "dt-center", render: (data, type, row) => {
+                      return data ? formatMoney(data.tasa_porcentaje) : '';
+                    }
                   },
-                  { title: "Acciones", data: "activo", orderable: false, searchable: false,
+                  { title: "Precio Base (Bs.)", data: "precio_base", render: (data, type, row) => {
+                      return formatMoney(data);
+                    }
+                  },
+                  { title: "Condición", data: "activo", className: "dt-center", render: (data, type, row) => {
+                      if (!data){
+                        return '<i class="fas fa-circle text-red-500 mr-2"></i> ' + formatText('Inactivo');
+                      }else{
+                        return '<i class="fas fa-circle text-emerald-500 mr-2"></i> ' + formatText('Activo');
+                      }
+                    }
+                  },
+                  {
+                    title: "Acciones",
+                    data: "activo",
+                    orderable: false,
+                    searchable: false,
+                    className: 'no-export',
                     render: (data, type, row) => {
                       const viewBtn = `<button class="btn-view px-2 py-1 text-gray-700" data-id="${row.id}"><i class="fa-solid fa-lg fa-expand"></i></button>`;
                       const editBtn = `<button class="btn-edit px-2 py-1 text-blue-600" data-id="${row.id}"><i class="fa-solid fa-lg fa-pen-to-square"></i></button>`;
@@ -258,11 +278,11 @@ function ListProducts() {
                   }
                 ]}
                 options={{
-                  dom:
-                    "<'row'<'col-sm-12 text-center'B>>" +
-                    "<'row'<'col-sm-6 text-end'l><'col-sm-6'f>>" +
-                    "<'row'<'col-sm-12'tr>>" +
-                    "<'row'<'col-sm-5 text-start'i><'col-sm-7 text-end'p>>",
+                  dom: //B = Buttons, l = LengthMenu (mostrar X registros), f = Filtro (search), t = Tabla, i = Info (mostrando de X a Y de Z), p = Paginación
+                    "<'row'<'col-sm-12 text-start'B>>" +                // Fila 2: botones ocupando todo el ancho
+                    "<'row'<'col-sm-6 text-end'l><'col-sm-6'f>>" +    // Fila 1: lengthMenu izquierda, filtro derecha
+                    "<'row'<'col-sm-12'tr>>" +               // Fila 3: tabla
+                    "<'row'<'col-sm-5 text-start'i><'col-sm-7 text-end'p>>",     // Fila 4: info izquierda, paginación derecha
                   serverSide: false,
                   processing: true,
                   ajax: async (dataTablesParams, callback) => {
@@ -297,25 +317,76 @@ function ListProducts() {
                   ordering: true,
                   info: true,
                   responsive: true,
-                  pageLength: 10,
-                  lengthMenu: [5,10,25,50,100],
+                  pageLength: 20,         // cantidad inicial por página
+                  lengthMenu: [20, 50, 100], // opciones en el desplegable, false para oculta el selector
                   buttons: [
-                    { extend:"copyHtml5", text:"Copiar", title:"Lista de productos" },
-                    { extend:"excelHtml5", text:"Excel", title:"Lista de productos", filename:"Lista_productos" },
-                    { extend:"csvHtml5", text:"CSV", title:"Lista de productos", filename:"Lista_productos" },
-                    { extend:"pdfHtml5", text:"PDF", title:"Lista de productos", filename:"Lista_productos" },
-                    { extend:"print", text:"Imprimir", title:"Lista de productos" }
+                    {
+                      extend: "collection",
+                      text: "Exportar",
+                      className: "bg-slate-700 hover:bg-slate-600 text-white font-bold py-2 px-4 rounded",
+                      buttons: [
+                        {
+                          extend: "copyHtml5",
+                          text: "Copiar",
+                          title: "Lista de productos"   // nombre del documento en el portapapeles
+                        },
+                        {
+                          extend: "excelHtml5",
+                          text: "Excel",
+                          title: "Lista de productos",  // título dentro del archivo
+                          filename: "Lista_productos",   // nombre del archivo generado (sin extensión)
+                          exportOptions: {
+                            columns: ':not(.no-export)'
+                          }
+                        },
+                        {
+                          extend: "csvHtml5",
+                          text: "CSV",
+                          title: "Lista de productos",
+                          filename: "Lista_productos",
+                          exportOptions: {
+                            columns: ':not(.no-export)'
+                          }
+                        },
+                        {
+                          extend: "pdfHtml5",
+                          text: "PDF",
+                          title: "Lista de productos",
+                          filename: "Lista_productos",
+                          exportOptions: {
+                            columns: ':not(.no-export)'
+                          },
+                          orientation: "landscape",
+                          //orientation: "landscape",   // opcional
+                          //pageSize: "A4"              // opcional
+                        },
+                        {
+                          extend: "print",
+                          text: "Imprimir",
+                          title: "Lista de productos",
+                          exportOptions: {
+                            columns: ':not(.no-export)'
+                          }
+                        },
+                      ]
+                    }
                   ],
                   language: {
-                    decimal:",", thousands:".",
-                    lengthMenu:"Mostrar _MENU_ registros por página",
-                    zeroRecords:"No se encontraron resultados",
-                    info:"Mostrando de _START_ a _END_ de _TOTAL_ registros",
-                    infoEmpty:"No hay registros disponibles",
-                    infoFiltered:"(filtrado de _MAX_ registros totales)",
-                    search:"Buscar:",
-                    paginate:{ first:"Primero", last:"Último", next:"Siguiente", previous:"Anterior" }
-                  }
+                    decimal: ",",
+                    thousands: ".",
+                    lengthMenu: "Mostrar _MENU_ registros por página",
+                    zeroRecords: "No se encontraron resultados",
+                    info: "Mostrando de _START_ a _END_ de _TOTAL_ registros",
+                    infoEmpty: "No hay registros disponibles",
+                    infoFiltered: "(filtrado de _MAX_ registros totales)",
+                    search: "Buscar:",
+                    paginate: {
+                      first: "Primero",
+                      last: "Último",
+                      next: "Siguiente",
+                      previous: "Anterior"
+                    }
+                  },
                 }}
               />
 

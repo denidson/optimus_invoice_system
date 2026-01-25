@@ -22,6 +22,7 @@ import pdfMake from "pdfmake/build/pdfmake";
 import pdfFonts from "pdfmake/build/vfs_fonts";
 import { read, utils } from 'xlsx';
 import Papa from 'papaparse';
+import { formatMoney, formatDate, formatDateTime, formatText } from "../../utils/formatters";
 
 window.JSZip = JSZip;
 DataTable.use(DT);
@@ -51,15 +52,21 @@ function ListTypeTaxpayer() {
                 id="ListTypeTaxpayerDt"
                 className="table-auto w-full text-left items-center w-full bg-transparent border-collapse"
                 columns={[
-                  { title: "Nombre", data: "nombre" },
-                  { title: "Descripción", data: "descripcion" },
+                  { title: "Nombre", data: "nombre", render: (data, type, row) => {
+                      return formatText(data);
+                    }
+                  },
+                  { title: "Descripción", data: "descripcion", render: (data, type, row) => {
+                      return formatText(data);
+                    }
+                  },
                 ]}
                 options={{
-                  dom:
-                    "<'row'<'col-sm-12 text-center'B>>" +
-                    "<'row'<'col-sm-6 text-end'l><'col-sm-6'f>>" +
-                    "<'row'<'col-sm-12'tr>>" +
-                    "<'row'<'col-sm-5 text-start'i><'col-sm-7 text-end'p>>",
+                  dom: //B = Buttons, l = LengthMenu (mostrar X registros), f = Filtro (search), t = Tabla, i = Info (mostrando de X a Y de Z), p = Paginación
+                    "<'row'<'col-sm-12 text-start'B>>" +                // Fila 2: botones ocupando todo el ancho
+                    "<'row'<'col-sm-6 text-end'l><'col-sm-6'f>>" +    // Fila 1: lengthMenu izquierda, filtro derecha
+                    "<'row'<'col-sm-12'tr>>" +               // Fila 3: tabla
+                    "<'row'<'col-sm-5 text-start'i><'col-sm-7 text-end'p>>",     // Fila 4: info izquierda, paginación derecha
                   serverSide: false,
                   processing: true,
                   ajax: async (dataTablesParams, callback) => {
@@ -80,14 +87,59 @@ function ListTypeTaxpayer() {
                   ordering: true,
                   info: true,
                   responsive: true,
-                  pageLength: 10,
-                  lengthMenu: [5, 10, 25, 50, 100],
+                  pageLength: 20,         // cantidad inicial por página
+                  lengthMenu: [20, 50, 100], // opciones en el desplegable, false para oculta el selector
                   buttons: [
-                    { extend: "copyHtml5", text: "Copiar", title: "Lista de productos" },
-                    { extend: "excelHtml5", text: "Excel", title: "Lista de productos", filename: "Lista_productos" },
-                    { extend: "csvHtml5", text: "CSV", title: "Lista de productos", filename: "Lista_productos" },
-                    { extend: "pdfHtml5", text: "PDF", title: "Lista de productos", filename: "Lista_productos" },
-                    { extend: "print", text: "Imprimir", title: "Lista de productos" }
+                    {
+                      extend: "collection",
+                      text: "Exportar",
+                      className: "bg-slate-700 hover:bg-slate-600 text-white font-bold py-2 px-4 rounded",
+                      buttons: [
+                        {
+                          extend: "copyHtml5",
+                          text: "Copiar",
+                          title: "Lista de producto"   // nombre del documento en el portapapeles
+                        },
+                        {
+                          extend: "excelHtml5",
+                          text: "Excel",
+                          title: "Lista de productos",  // título dentro del archivo
+                          filename: "Lista_productos",   // nombre del archivo generado (sin extensión)
+                          exportOptions: {
+                            columns: ':not(.no-export)'
+                          }
+                        },
+                        {
+                          extend: "csvHtml5",
+                          text: "CSV",
+                          title: "Lista de productos",
+                          filename: "Lista_productos",
+                          exportOptions: {
+                            columns: ':not(.no-export)'
+                          }
+                        },
+                        {
+                          extend: "pdfHtml5",
+                          text: "PDF",
+                          title: "Lista de productos",
+                          filename: "Lista_productos",
+                          exportOptions: {
+                            columns: ':not(.no-export)'
+                          },
+                          orientation: "landscape",
+                          //orientation: "landscape",   // opcional
+                          //pageSize: "A4"              // opcional
+                        },
+                        {
+                          extend: "print",
+                          text: "Imprimir",
+                          title: "Lista de productos",
+                          exportOptions: {
+                            columns: ':not(.no-export)'
+                          }
+                        },
+                      ]
+                    }
                   ],
                   language: {
                     decimal: ",",
@@ -104,7 +156,7 @@ function ListTypeTaxpayer() {
                       next: "Siguiente",
                       previous: "Anterior"
                     }
-                  }
+                  },
                 }}
               />
             </div>

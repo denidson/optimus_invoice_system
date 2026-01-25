@@ -241,7 +241,7 @@ function ListEndClients() {
                 id="ListClientDt"
                 className="table-auto w-full text-left"
                 columns={[
-                  { title: "RIF", data: "rif", render: (data, type, row) => {
+                  { title: "RIF", data: "rif", className: "dt-center",render: (data, type, row) => {
                       return formatText(data);
                     }
                   },
@@ -249,11 +249,11 @@ function ListEndClients() {
                       return formatText(data);
                     }
                   },
-                  { title: "Correo electrónico", data: "email", render: (data, type, row) => {
+                  { title: "Correo electrónico", data: "email", className: "dt-center", render: (data, type, row) => {
                       return formatText(data);
                     }
                   },
-                  { title: "Teléfono", data: "telefono", render: (data, type, row) => {
+                  { title: "Teléfono", data: "telefono", className: "dt-center", render: (data, type, row) => {
                       return formatText(data);
                     }
                   },
