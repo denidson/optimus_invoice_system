@@ -23,7 +23,7 @@ DataTable.use(DT);
 
 export default function ListCompanyUsers() {
   const navigate = useNavigate();
-
+  var responseCache = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
 
   useEffect(() => {
@@ -74,24 +74,41 @@ export default function ListCompanyUsers() {
                 id="ListCompanyUsersDt"
                 className="table-auto w-full"
                 columns={[
-                  { title: "Nombre", data: "nombre" },
-                  { title: "Correo", data: "email" },
+                  { title: "Nombre", data: "nombre", render: (data, type, row) => {
+                      return formatText(data);
+                    }
+                  },
+                  { title: "Correo", data: "email", render: (data, type, row) => {
+                      return formatText(data);
+                    }
+                  },
                   { 
                     title: "Rol", 
                     data: "rol",
                     className: "dt-center",
-                    render: (v) => v.toUpperCase()
+                    render: (data, type, row) => {
+                      return formatText(data);
+                    }
                   },
                   {
                     title: "Debe cambiar clave",
                     data: "must_change_password",
                     className: "dt-center",
-                    render: (v) => (v ? '<i class="fas fa-circle text-orange-500 mr-2"></i> Sí' : '<i class="fas fa-circle text-emerald-500 mr-2"></i> No')
+                    render: (data, type, row) => {
+                      if (!data){
+                        return '<i class="fas fa-circle text-red-500 mr-2"></i> ' + formatText('No');
+                      }else{
+                        return '<i class="fas fa-circle text-emerald-500 mr-2"></i> ' + formatText('Si');
+                      }
+                    }
                   },
                   {
                     title: "Creado",
                     data: "created_at",
-                    render: (d) => formatDateTime(d)
+                    className: "dt-center",
+                    render: (data, type, row) => {
+                      return formatDateTime(data);
+                    }
                   },
                   // {
                   //   title: "Acciones",
@@ -105,23 +122,48 @@ export default function ListCompanyUsers() {
                 ]}
 
                 options={{
-                  dom:
-                    "<'row'<'col-sm-12 text-center'B>>" +
-                    "<'row'<'col-sm-6 text-end'l><'col-sm-6'f>>" +
-                    "<'row'<'col-sm-12'tr>>" +
-                    "<'row'<'col-sm-5 text-start'i><'col-sm-7 text-end'p>>",
+                  dom: //B = Buttons, l = LengthMenu (mostrar X registros), f = Filtro (search), t = Tabla, i = Info (mostrando de X a Y de Z), p = Paginación
+                    "<'row'<'col-sm-12 text-start'B>>" +                // Fila 2: botones ocupando todo el ancho
+                    "<'row'<'col-sm-6 text-end'l><'col-sm-6'f>>" +    // Fila 1: lengthMenu izquierda, filtro derecha
+                    "<'row'<'col-sm-12'tr>>" +               // Fila 3: tabla
+                    "<'row'<'col-sm-5 text-start'i><'col-sm-7 text-end'p>>",     // Fila 4: info izquierda, paginación derecha
 
                   serverSide: true,
                   processing: true,
-
                   ajax: async (params, callback) => {
                     try {
                       const page = Math.floor(params.start / params.length) + 1;
                       const per_page = params.length;
+                      const searchValue = params.search?.value?.toLowerCase() || '';
+                      //console.log('searchValue: ', searchValue);
+                      if (searchValue == ''){
+                        const response = await getCompanyUsers({ page, per_page });
+                        // Respaldar response anterior
+                        responseCache = response;
+                        //console.log('response: ', response);
+                        var { data, total } = response;
+                      }else{
+                        //console.log('else');
+                        const CAMPOS_EXCLUIDOS = [
+                          "created_at",
+                          "updated_at"
+                        ];
+                        //console.log('responseCache: ', responseCache);
+                        var filteredData = responseCache.data.filter(item =>
+                          Object.entries(item).some(([key, value]) => {
+                            // Excluir campos internos
+                            if (CAMPOS_EXCLUIDOS.includes(key)) return false;
 
-                      const response = await getCompanyUsers({ page, per_page });
+                            if (!value) return false;
 
-                      const { data, total } = response;
+                            return String(value).toUpperCase().includes(searchValue.toUpperCase());
+                          })
+                        );
+                        //console.log('filteredData: ', filteredData);
+                        var data = filteredData;
+                        var total = filteredData.length;
+                        //var { data, total } = responseCache;
+                      }
 
                       callback({
                         draw: params.draw,
@@ -145,25 +187,68 @@ export default function ListCompanyUsers() {
                   ordering: true,
                   info: true,
                   responsive: true,
-                  pageLength: 20,
-                  lengthMenu: [20, 50, 100],
-
+                  pageLength: 20,         // cantidad inicial por página
+                  lengthMenu: [20, 50, 100], // opciones en el desplegable, false para oculta el selector
                   buttons: [
-                    { extend: "copyHtml5", text: "Copiar", title: "Usuarios" },
-                    { extend: "excelHtml5", text: "Excel", filename: "Usuarios" },
-                    { extend: "csvHtml5", text: "CSV", filename: "Usuarios" },
-                    { extend: "pdfHtml5", text: "PDF", filename: "Usuarios" },
-                    { extend: "print", text: "Imprimir", title: "Usuarios" },
+                    {
+                      extend: "collection",
+                      text: "Exportar",
+                      className: "bg-slate-700 hover:bg-slate-600 text-white font-bold py-2 px-4 rounded",
+                      buttons: [
+                        {
+                          extend: "copyHtml5",
+                          text: "Copiar",
+                          title: "Lista de usuarios"   // nombre del documento en el portapapeles
+                        },
+                        {
+                          extend: "excelHtml5",
+                          text: "Excel",
+                          title: "Lista de usuarios",  // título dentro del archivo
+                          filename: "Lista_usuarios",   // nombre del archivo generado (sin extensión)
+                          exportOptions: {
+                            columns: ':not(.no-export)'
+                          }
+                        },
+                        {
+                          extend: "csvHtml5",
+                          text: "CSV",
+                          title: "Lista de usuarios",
+                          filename: "Lista_usuarios",
+                          exportOptions: {
+                            columns: ':not(.no-export)'
+                          }
+                        },
+                        {
+                          extend: "pdfHtml5",
+                          text: "PDF",
+                          title: "Lista de usuarios",
+                          filename: "Lista_usuarios",
+                          exportOptions: {
+                            columns: ':not(.no-export)'
+                          },
+                          orientation: "landscape",
+                          //orientation: "landscape",   // opcional
+                          //pageSize: "A4"              // opcional
+                        },
+                        {
+                          extend: "print",
+                          text: "Imprimir",
+                          title: "Lista de usuarios",
+                          exportOptions: {
+                            columns: ':not(.no-export)'
+                          }
+                        },
+                      ]
+                    }
                   ],
-
                   language: {
                     decimal: ",",
                     thousands: ".",
-                    lengthMenu: "Mostrar _MENU_ registros",
-                    zeroRecords: "No hay registros",
-                    info: "Mostrando _START_ a _END_ de _TOTAL_",
-                    infoEmpty: "No hay información",
-                    infoFiltered: "(filtrado de _MAX_ registros)",
+                    lengthMenu: "Mostrar _MENU_ registros por página",
+                    zeroRecords: "No se encontraron resultados",
+                    info: "Mostrando de _START_ a _END_ de _TOTAL_ registros",
+                    infoEmpty: "No hay registros disponibles",
+                    infoFiltered: "(filtrado de _MAX_ registros totales)",
                     search: "Buscar:",
                     paginate: {
                       first: "Primero",
@@ -171,7 +256,7 @@ export default function ListCompanyUsers() {
                       next: "Siguiente",
                       previous: "Anterior"
                     }
-                  }
+                  },
                 }}
               />
 

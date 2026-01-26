@@ -144,6 +144,7 @@ function ListPreInvoices() {
   const handleOpenModalPreinvoices = async (id) => {
     try {
       const data = await showPreInvoice(id);
+      //console.log('data: ', data);
       setPreInvoicesIdToDeactivate(data);
       setModalOpenPreinvoices(true);
     } catch {

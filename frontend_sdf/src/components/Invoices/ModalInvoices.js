@@ -3,7 +3,9 @@ import { formatMoney, formatDateTime, formatText } from "../../utils/formatters"
 
 function ModalPreinvoices({ isOpen, onClose, message }) {
   if (!isOpen) return null;
-
+  const hasNotaDebitoItems =
+    message?.tipo_documento === "ND" &&
+    message?.nota_debito_detalle?.items?.length > 0;
   return (
     <div className="fixed inset-0 z-50 flex justify-center items-center bg-black/50 p-4 overflow-y-auto">
       <div className="bg-white rounded-lg shadow-lg w-full max-w-[1200px] max-h-[90vh] overflow-y-auto relative p-6">
@@ -106,16 +108,18 @@ function ModalPreinvoices({ isOpen, onClose, message }) {
         <hr className="my-4 border-b border-blueGray-300"/>
         
         {/* Tabla de Items */}
+        {!hasNotaDebitoItems && (
         <div className="overflow-x-auto mb-4">
-          <div className="flex bg-gray-100 border-b-2 border-gray-300 font-bold text-center">
-            <div className="w-1/4 px-2 py-1">Producto</div>
-            <div className="w-1/6 px-2 py-1">Cantidad</div>
-            <div className="w-1/12 px-2 py-1">Impuesto</div>
-            <div className="w-1/6 px-2 py-1">Precio Unitario</div>
-            <div className="w-1/12 px-2 py-1">Desc %</div>
-            <div className="w-1/4 px-2 py-1">Total</div>
-          </div>
-          {message.items && message.items.length > 0 ? (
+
+            <div className="flex bg-gray-100 border-b-2 border-gray-300 font-bold text-center">
+              <div className="w-1/4 px-2 py-1">Producto</div>
+              <div className="w-1/6 px-2 py-1">Cantidad</div>
+              <div className="w-1/12 px-2 py-1">Impuesto</div>
+              <div className="w-1/6 px-2 py-1">Precio Unitario</div>
+              <div className="w-1/12 px-2 py-1">Desc %</div>
+              <div className="w-1/4 px-2 py-1">Total</div>
+            </div>
+          {!hasNotaDebitoItems && message.items && message.items.length > 0 ? (
             message.items.map((item) => (
               <div key={item.id} className="flex border-b border-gray-300 text-center">
                 <div className="w-1/4 px-2 py-1 text-left">{item.producto ? item.producto.sku + '-' + item.producto.nombre : 'N/A'}</div>
@@ -129,17 +133,41 @@ function ModalPreinvoices({ isOpen, onClose, message }) {
               </div>
             ))
           ) : (
-            <div className="flex text-center border-b border-gray-300">
+            <div className="flex text-center border-b border-gray-300" >
               <div className="w-full px-2 py-2">No hay líneas asociadas</div>
             </div>
           )}
         </div>
+        )}
+        {hasNotaDebitoItems && (
+          <div className="px-5 flex justify-between border-4 border-double p-2 mb-2">
+            <span className="lg:w-8/12 text-center font-bold">Concepto</span>
+            <span className="lg:w-4/12 text-center font-bold">Monto</span>
+          </div>
+        )}
+        {hasNotaDebitoItems && (
+          message.nota_debito_detalle.items.map(item => (
+            <div key={item.id} className="px-5 flex justify-between border-b py-1">
+              <span className="lg:w-8/12 text-start">
+                {formatText(item.concepto)}
+              </span>
+              <span className="lg:w-4/12 text-right">
+                {formatMoney(item.monto)}
+              </span>
+            </div>
+          ))
+        )}
 
         {/* Totales */}
         <div className="flex flex-wrap justify-between px-2 text-right font-bold mb-4">
           {message.monto_pagado_divisas > 0 && (
             <div className="w-1/2 text-left">
               Monto pagado en divisas: Bs. {message.monto_pagado_divisas.toLocaleString("es-VE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            </div>
+          )}
+          {message.monto_pagado_divisas == 0 && (
+            <div className="w-1/2 text-left">
+
             </div>
           )}
           <div className="w-1/2">
@@ -150,6 +178,11 @@ function ModalPreinvoices({ isOpen, onClose, message }) {
           {message.igtf_monto > 0 && (
             <div className="w-1/2 text-left">
               IGTF ({message.igtf_porcentaje.toLocaleString("es-VE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}%): Bs. {message.igtf_monto.toLocaleString("es-VE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            </div>
+          )}
+          {message.igtf_monto == 0 && (
+            <div className="w-1/2 text-left">
+
             </div>
           )}
           <div className="w-1/2">

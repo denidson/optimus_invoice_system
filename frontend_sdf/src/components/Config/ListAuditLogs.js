@@ -16,7 +16,7 @@ import "datatables.net-buttons/js/dataTables.buttons";
 import "datatables.net-buttons-dt/css/buttons.dataTables.css";
 import "datatables.net-buttons/js/buttons.html5";
 import "datatables.net-buttons/js/buttons.print";
-
+import { formatMoney, formatDate, formatDateTime, formatText } from "../../utils/formatters";
 import JSZip from "jszip";
 import pdfMake from "pdfmake/build/pdfmake";
 import pdfFonts from "pdfmake/build/vfs_fonts";
@@ -31,6 +31,7 @@ function ListAuditLogs() {
   const navigate = useNavigate();
   const [modalOpenAuditLogs, setModalOpenAuditLogs] = useState(false); // Estado para manejar la visibilidad de la modal
   const [auditLogs, setAuditLogs] = useState(false);
+  var responseCache = useState(false);
 
   useEffect(() => {
     const table = $("#ListAuditLogsDt").DataTable();
@@ -84,13 +85,18 @@ function ListAuditLogs() {
                   {
                     title: "Fecha",
                     data: "timestamp",
+                    className: "dt-center",
                     render: (data, type, row) => {
-                      return data ? data.toString().replace('T', ' ').substr(0,19) : '';
+                      return formatDateTime(data);
                     }
                   },
-                  { title: "Servicio", data: "endpoint" },
+                  { title: "Servicio", data: "endpoint", className: "dt-center",
+                    render: (data, type, row) => {
+                      return formatText(data);
+                    }
+                  },
                   {
-                    title: "Accion", data: "method",
+                    title: "Accion", data: "method", className: "dt-center",
                     render: (data, type, row) => {
                       if (data == 'GET'){
                         return 'CONSULTA';
@@ -107,28 +113,43 @@ function ListAuditLogs() {
                       }
                     }
                   },
-                  { title: "Origen", data: "request_ip" },
-                  { title: "Respuesta", data: "response_status_code" },
-                  { title: "Duracion (Ms)", data: "duration_ms" },
-                  { title: "Usuario", data: "usuario.email" },
+                  { title: "Origen", data: "request_ip", className: "dt-center",
+                    render: (data, type, row) => {
+                      return formatText(data);
+                    }
+                  },
+                  { title: "Respuesta", data: "response_status_code", className: "dt-center",
+                    render: (data, type, row) => {
+                      return formatText(data);
+                    }
+                  },
+                  { title: "Duracion (Ms)", data: "duration_ms", className: "dt-center",
+                    render: (data, type, row) => {
+                      return formatText(data);
+                    }
+                  },
+                  { title: "Usuario", data: "usuario.email", className: "dt-center",
+                    render: (data, type, row) => {
+                      return formatText(data);
+                    }
+                  },
                   {
                     title: "Acciones",
                     data: null,
                     orderable: false,
                     searchable: false,
                     render: (data, type, row) => {
-                      return `
-                        <button class="btn-view px-1 py-1 mx-0" data-id="${row.id}"><i class="fa-solid fa-lg fa-expand"></i></button>
-                      `;
+                      const viewBtn = `<button class="btn-view px-2 py-1 text-gray-700" data-id="${row.id}"><i class="fa-solid fa-lg fa-expand"></i></button>`;
+                      return `<div style="display:flex;justify-content:center;align-items:center;gap:0.25rem;white-space:nowrap;">${viewBtn}</div>`;
                     }
                   },
                 ]}
                 options={{
-                  dom:
-                    "<'row'<'col-sm-12 text-center'B>>" +
-                    "<'row'<'col-sm-6 text-end'l><'col-sm-6'f>>" +
-                    "<'row'<'col-sm-12'tr>>" +
-                    "<'row'<'col-sm-5 text-start'i><'col-sm-7 text-end'p>>",
+                  dom: //B = Buttons, l = LengthMenu (mostrar X registros), f = Filtro (search), t = Tabla, i = Info (mostrando de X a Y de Z), p = Paginación
+                    "<'row'<'col-sm-12 text-start'B>>" +                // Fila 2: botones ocupando todo el ancho
+                    "<'row'<'col-sm-6 text-end'l><'col-sm-6'f>>" +    // Fila 1: lengthMenu izquierda, filtro derecha
+                    "<'row'<'col-sm-12'tr>>" +               // Fila 3: tabla
+                    "<'row'<'col-sm-5 text-start'i><'col-sm-7 text-end'p>>",     // Fila 4: info izquierda, paginación derecha
                   serverSide: true, // <--- importante
                   processing: true,
                   ajax: async (dataTablesParams, callback) => {
@@ -168,69 +189,117 @@ function ListAuditLogs() {
                   pageLength: 20, // se sincroniza con per_page del backend
                   lengthMenu: [20, 50, 100], //[10, 20, 50, 100]
                   buttons: [
-                    { extend: "copyHtml5", text: "Copiar", title: "Registro de auditoría" },
-                    { extend: "excelHtml5", text: "Excel", title: "Registro de auditoría", filename: "Registro_de_auditoria" },
-                    { extend: "csvHtml5", text: "CSV", title: "Registro de auditoría", filename: "Registro_de_auditoria" },
-                    { extend: "pdfHtml5", text: "PDF", title: "Registro de auditoría", filename: "Registro_de_auditoria" },
-                    { extend: "print", text: "Imprimir", title: "Registro de auditoría" },
                     {
-                      text: "Exportar todo (Excel)",
-                      action: async function (e, dt, node, config) {
-                        const exportButton = node;
-                        try {
-                          const allData = [];
-                          let page = 1;
-                          let totalPages = 1;
+                      extend: "collection",
+                      text: "Exportar",
+                      className: "bg-slate-700 hover:bg-slate-600 text-white font-bold py-2 px-4 rounded",
+                      buttons: [
+                        {
+                          extend: "copyHtml5",
+                          text: "Copiar",
+                          title: "Lista de Facturas"   // nombre del documento en el portapapeles
+                        },
+                        {
+                          extend: "excelHtml5",
+                          text: "Excel",
+                          title: "Lista de Facturas",  // título dentro del archivo
+                          filename: "Lista_facturas",   // nombre del archivo generado (sin extensión)
+                          exportOptions: {
+                            columns: ':not(.no-export)'
+                          }
+                        },
+                        {
+                          extend: "csvHtml5",
+                          text: "CSV",
+                          title: "Lista de Facturas",
+                          filename: "Lista_facturas",
+                          exportOptions: {
+                            columns: ':not(.no-export)'
+                          }
+                        },
+                        {
+                          extend: "pdfHtml5",
+                          text: "PDF",
+                          title: "Lista de Facturas",
+                          filename: "Lista_facturas",
+                          exportOptions: {
+                            columns: ':not(.no-export)'
+                          },
+                          orientation: "landscape",
+                          //orientation: "landscape",   // opcional
+                          //pageSize: "A4"              // opcional
+                        },
+                        {
+                          extend: "print",
+                          text: "Imprimir",
+                          title: "Lista de Facturas",
+                          exportOptions: {
+                            columns: ':not(.no-export)'
+                          }
+                        },
+                        {
+                          text: "Exportar todo (Excel)",
+                          exportOptions: {
+                            columns: ':not(.no-export)'
+                          },
+                          action: async function (e, dt, node, config) {
+                            const exportButton = node;
+                            try {
+                              const allData = [];
+                              let page = 1;
+                              let totalPages = 1;
 
-                          // Mostrar mensaje de progreso
-                          $(exportButton).text("Cargando...").prop("disabled", true).attr("style", "pointer-events: none;");
+                              // Mostrar mensaje de progreso
+                              $(exportButton).text("Cargando...").prop("disabled", true).attr("style", "pointer-events: none;");
 
-                          // Cargar todas las páginas hasta completar total_pages
-                          do {
-                            const response = await getAuditLogs({ page, per_page: 100 });
-                            const { data, total_pages } = response;
+                              // Cargar todas las páginas hasta completar total_pages
+                              do {
+                                const response = await getAuditLogs({ page, per_page: 100 });
+                                const { data, total_pages } = response;
 
-                            allData.push(...data);
-                            totalPages = total_pages;
-                            page++;
-                          } while (page <= totalPages);
+                                allData.push(...data);
+                                totalPages = total_pages;
+                                page++;
+                              } while (page <= totalPages);
 
-                          // Convertimos a Excel con xlsx
-                          const wb = utils.book_new();
-                          const ws = utils.json_to_sheet(allData.map(item => ({
-                            Fecha: item.timestamp.replace("T", " ").slice(0, 19),
-                            Servicio: item.endpoint,
-                            Acción:
-                              item.method === "GET"
-                                ? "CONSULTA"
-                                : item.method === "POST"
-                                ? (item.endpoint === "/api/login" ? "INICIO DE SESIÓN" : "CREACIÓN")
-                                : item.method === "PUT"
-                                ? "ACTUALIZACIÓN"
-                                : "DESACTIVACIÓN/ACTIVACIÓN",
-                            Origen: item.request_ip,
-                            Respuesta: item.response_status_code,
-                            "Duración (ms)": item.duration_ms,
-                            Usuario: item.usuario?.email || "",
-                          })));
+                              // Convertimos a Excel con xlsx
+                              const wb = utils.book_new();
+                              const ws = utils.json_to_sheet(allData.map(item => ({
+                                Fecha: item.timestamp.replace("T", " ").slice(0, 19),
+                                Servicio: item.endpoint,
+                                Acción:
+                                  item.method === "GET"
+                                    ? "CONSULTA"
+                                    : item.method === "POST"
+                                    ? (item.endpoint === "/api/login" ? "INICIO DE SESIÓN" : "CREACIÓN")
+                                    : item.method === "PUT"
+                                    ? "ACTUALIZACIÓN"
+                                    : "DESACTIVACIÓN/ACTIVACIÓN",
+                                Origen: item.request_ip,
+                                Respuesta: item.response_status_code,
+                                "Duración (ms)": item.duration_ms,
+                                Usuario: item.usuario?.email || "",
+                              })));
 
-                          utils.book_append_sheet(wb, ws, "Auditoría");
+                              utils.book_append_sheet(wb, ws, "Auditoría");
 
-                          const wbout = XLSX.write(wb, { bookType: "xlsx", type: "array" });
-                          const blob = new Blob([wbout], { type: "application/octet-stream" });
-                          const link = document.createElement("a");
-                          link.href = URL.createObjectURL(blob);
-                          link.download = "Registro_de_auditoria.xlsx";
-                          link.click();
+                              const wbout = XLSX.write(wb, { bookType: "xlsx", type: "array" });
+                              const blob = new Blob([wbout], { type: "application/octet-stream" });
+                              const link = document.createElement("a");
+                              link.href = URL.createObjectURL(blob);
+                              link.download = "Registro_de_auditoria.xlsx";
+                              link.click();
 
-                          $(exportButton).text("Exportar todo (Excel)").prop("disabled", false).attr("style", "pointer-events: auto;");;
-                          toast.success("Archivo exportado correctamente.");
-                        } catch (error) {
-                          $(exportButton).text("Exportar todo (Excel)").prop("disabled", false).attr("style", "pointer-events: auto;");;
-                          console.error("Error al exportar:", error);
-                          toast.error("Error al exportar los datos.");
+                              $(exportButton).text("Exportar todo (Excel)").prop("disabled", false).attr("style", "pointer-events: auto;");;
+                              toast.success("Archivo exportado correctamente.");
+                            } catch (error) {
+                              $(exportButton).text("Exportar todo (Excel)").prop("disabled", false).attr("style", "pointer-events: auto;");;
+                              console.error("Error al exportar:", error);
+                              toast.error("Error al exportar los datos.");
+                            }
+                          }
                         }
-                      }
+                      ]
                     }
                   ],
                   language: {
@@ -248,7 +317,7 @@ function ListAuditLogs() {
                       next: "Siguiente",
                       previous: "Anterior"
                     }
-                  }
+                  },
                 }}
               />
               {/* Modal de confirmación */}

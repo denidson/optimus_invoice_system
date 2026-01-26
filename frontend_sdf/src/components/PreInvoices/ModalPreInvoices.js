@@ -108,7 +108,7 @@ function ModalPreinvoices({ isOpen, onClose, message }) {
                 {message.items && message.items.length > 0 ? (
                   message.items.map(item => (
                     <div key={item.id} className="px-5 flex justify-between border-b py-1">
-                      <span className="lg:w-4/12 text-start">{item.producto ? `${item.producto.sku}-${item.producto.nombre}` : 'N/A'}</span>
+                      <span className="lg:w-4/12 text-start">{item.producto ? `${item.producto.sku}-${item.producto.nombre}` : item.tipo_documento !== 'ND' ? `${item.descripcion}`: 'N/A'}</span>
                       <span className="lg:w-4/12 text-center">{item.cantidad.toLocaleString("es-VE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                       <span className="lg:w-2/12 text-center">{item.iva_categoria_id ? item.iva_categoria.tasa_porcentaje.toLocaleString("es-VE", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : 0}</span>
                       <span className="lg:w-4/12 text-right">{item.precio_unitario.toLocaleString("es-VE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
@@ -131,6 +131,11 @@ function ModalPreinvoices({ isOpen, onClose, message }) {
                         <span>{`Bs. ${message.monto_pagado_divisas.toLocaleString("es-VE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}</span>
                       </div>
                     )}
+                    {message.monto_pagado_divisas == 0 && (
+                      <div className="w-1/2 text-left">
+
+                      </div>
+                    )}
                   </div>
                   <div className="lg:w-6/12 text-right">
                     <div className="flex justify-between">
@@ -146,6 +151,11 @@ function ModalPreinvoices({ isOpen, onClose, message }) {
                       <div className="flex justify-between">
                         <span className="font-bold">{`IGTF (${message.igtf_porcentaje.toLocaleString("es-VE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}%):`}</span>
                         <span>{`Bs. ${message.igtf_monto.toLocaleString("es-VE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}</span>
+                      </div>
+                    )}
+                    {message.igtf_monto == 0 && (
+                      <div className="w-1/2 text-left">
+
                       </div>
                     )}
                   </div>
