@@ -353,7 +353,7 @@ function ListInvoices({ title, type }) {
                       if (rol === "admin") {
                         return `<div style="display:flex;justify-content:center;align-items:center;gap:0.25rem;white-space:nowrap;">${viewBtn}</div>`;
                       }
-                      if (rol !== "admin" && row.estatus.toUpperCase() != 'ANULADA'){
+                      if (rol !== "admin" && row.estatus.toUpperCase() != 'ANULADA' && row.tipo_documento == 'FC'){
                         const creditNoteBtn = `<button class="btn-credit-note px-2 py-1 text-red-600" data-id="${row.id}"><i class="fa-solid fa-lg fa-file-invoice"></i></button>`;
                         const debitNoteBtn = `<button class="btn-debit-note px-1 py-1 mx-0 text-green-600" data-id="${row.id}" data-correlativo_interno="${row.correlativo_interno}"><i class="fa-solid fa-file-invoice fa-lg"></i></button>`;
                         return `<div style="display:flex;justify-content:center;align-items:center;gap:0.25rem;white-space:nowrap;">${viewBtn}${creditNoteBtn}${debitNoteBtn}</div>`;

@@ -21,6 +21,7 @@ import JSZip from "jszip";
 import { read, utils } from 'xlsx';
 import Papa from 'papaparse';
 window.JSZip = JSZip;
+import { formatMoney, formatDate, formatDateTime, formatText } from "../../utils/formatters";
 DataTable.use(DT);
 
 function ListClients() {
@@ -232,41 +233,69 @@ function ListClients() {
                 id="ListClientDt"
                 className="table-auto w-full text-left"
                 columns={[
-                  { title: "RIF", data: "rif" },
-                  { title: "Razón social", data: "nombre_empresa" },
-                  { title: "Correo electrónico", data: "email" },
-                  { title: "Teléfono", data: "telefono" },
-                  { title: "Tipo de contribuyente", data: "tipo_contribuyente.nombre" },
-                  { title: "Dirección", data: "direccion" },
-                  { title: "Zona", data: "zona" },
-                  { title: "Estado", data: "estado" },
-                  { title: "Región", data: "region" },
+                  { title: "RIF", data: "rif", className: "dt-center", render: (data, type, row) => {
+                      return formatText(data);
+                    }
+                  },
+                  { title: "Razón social", data: "nombre_empresa", render: (data, type, row) => {
+                      return formatText(data);
+                    }
+                  },
+                  { title: "Correo electrónico", data: "email", className: "dt-center", render: (data, type, row) => {
+                      return formatText(data);
+                    }
+                  },
+                  { title: "Teléfono", data: "telefono", className: "dt-center", render: (data, type, row) => {
+                      return formatText(data);
+                    }
+                  },
+                  { title: "Tipo de contribuyente", data: "tipo_contribuyente.nombre", className: "dt-center", render: (data, type, row) => {
+                      return formatText(data);
+                    }
+                  },
+                  { title: "Dirección", data: "direccion", render: (data, type, row) => {
+                      return formatText(data);
+                    }
+                  },
+                  { title: "Zona", data: "zona", className: "dt-center", render: (data, type, row) => {
+                      return formatText(data);
+                    }
+                  },
+                  { title: "Estado", data: "estado", className: "dt-center", render: (data, type, row) => {
+                      return formatText(data);
+                    }
+                  },
+                  { title: "Región", data: "region", className: "dt-center", render: (data, type, row) => {
+                      return formatText(data);
+                    }
+                  },
                   {
                     title: "Condición",
                     data: "activo",
-                    render: (data) =>
-                      data
-                        ? '<label class="bg-emerald-400 text-white py-1 px-3 rounded-full text-center">Activo</label>'
-                        : '<label class="bg-red-400 text-white py-1 px-3 rounded-full text-center">Inactivo</label>',
+                    className: "dt-center",
+                    orderable: true,
+                    searchable: true,
+                    render: (data, type, row) => {
+                      if (!data){
+                        return '<i class="fas fa-circle text-red-500 mr-2"></i> ' + formatText('Inactivo');
+                      }else{
+                        return '<i class="fas fa-circle text-emerald-500 mr-2"></i> ' + formatText('Activo');
+                      }
+                    }
                   },
                   {
                     title: "Acciones",
                     data: "activo",
-                    render: (data, type, row) => `
-                      <div class="flex justify-center items-center space-x-2">
-                        <button class="btn-view text-gray-700 hover:text-gray-900" data-id="${row.id}" title="Ver">
-                          <i class="fa-solid fa-lg fa-expand"></i>
-                        </button>
-                        <button class="btn-edit text-blue-600 hover:text-blue-800" data-id="${row.id}" title="Editar">
-                          <i class="fa-solid fa-lg fa-pen-to-square"></i>
-                        </button>
-                        <button class="btn-delete ${data ? "text-red-600 hover:text-red-800" : "text-green-600 hover:text-green-800"}"
-                          data-id="${row.id}" data-nombre="${row.nombre_empresa}" data-action="${data ? "delete" : "active"}"
-                          title="${data ? "Desactivar" : "Activar"}">
-                          <i class="fa-regular fa-rectangle-xmark fa-lg"></i>
-                        </button>
-                      </div>
-                    `,
+                    orderable: false,
+                    searchable: false,
+                    className: 'no-export',
+                    render: (data, type, row) => {
+                      const viewBtn = `<button class="btn-view px-2 py-1 text-gray-700" data-id="${row.id}" title="Ver"><i class="fa-solid fa-lg fa-expand"></i></button>`;
+                      const editBtn = `<button class="btn-edit text-blue-600 hover:text-blue-800" data-id="${row.id}" title="Editar"><i class="fa-solid fa-lg fa-pen-to-square"></i></button>`;
+                      const deleteBtn = `<button class="btn-delete ${data ? "text-red-600 hover:text-red-800" : "text-green-600 hover:text-green-800"}" data-id="${row.id}" data-nombre="${row.nombre_empresa}" data-action="${data ? "delete" : "active"}"
+                          title="${data ? "Desactivar" : "Activar"}"><i class="fa-regular fa-rectangle-xmark fa-lg"></i></button>`;
+                      return `<div style="display:flex;justify-content:center;align-items:center;gap:0.25rem;white-space:nowrap;">${viewBtn}${editBtn}${deleteBtn}</div>`;
+                    }
                   },
                 ]}
                 options={{
@@ -279,13 +308,84 @@ function ListClients() {
                       recordsFiltered: response.length,
                     });
                   },
-                  pageLength: 10,
+                  dom: //B = Buttons, l = LengthMenu (mostrar X registros), f = Filtro (search), t = Tabla, i = Info (mostrando de X a Y de Z), p = Paginación
+                    "<'row'<'col-sm-12 text-start'B>>" +                // Fila 2: botones ocupando todo el ancho
+                    "<'row'<'col-sm-6 text-end'l><'col-sm-6'f>>" +    // Fila 1: lengthMenu izquierda, filtro derecha
+                    "<'row'<'col-sm-12'tr>>" +               // Fila 3: tabla
+                    "<'row'<'col-sm-5 text-start'i><'col-sm-7 text-end'p>>",     // Fila 4: info izquierda, paginación derecha
+                  searching: true,
+                  processing: true,
+                  scrollX: true,
+                  autoWidth: false,
+                  pageLength: 20,         // cantidad inicial por página
+                  lengthMenu: [20, 50, 100], // opciones en el desplegable, false para oculta el selector
+                  buttons: [
+                    {
+                      extend: "collection",
+                      text: "Exportar",
+                      className: "bg-slate-700 hover:bg-slate-600 text-white font-bold py-2 px-4 rounded",
+                      buttons: [
+                        {
+                          extend: "copyHtml5",
+                          text: "Copiar",
+                          title: "Lista de Clientes"   // nombre del documento en el portapapeles
+                        },
+                        {
+                          extend: "excelHtml5",
+                          text: "Excel",
+                          title: "Lista de Clientes",  // título dentro del archivo
+                          filename: "Lista_clientes",   // nombre del archivo generado (sin extensión)
+                          exportOptions: {
+                            columns: ':not(.no-export)'
+                          }
+                        },
+                        {
+                          extend: "csvHtml5",
+                          text: "CSV",
+                          title: "Lista de Clientes",
+                          filename: "Lista_clientes",
+                          exportOptions: {
+                            columns: ':not(.no-export)'
+                          }
+                        },
+                        {
+                          extend: "pdfHtml5",
+                          text: "PDF",
+                          title: "Lista de Clientes",
+                          filename: "Lista_clientes",
+                          exportOptions: {
+                            columns: ':not(.no-export)'
+                          },
+                          orientation: "landscape",
+                          //orientation: "landscape",   // opcional
+                          //pageSize: "A4"              // opcional
+                        },
+                        {
+                          extend: "print",
+                          text: "Imprimir",
+                          title: "Lista de Clientes",
+                          exportOptions: {
+                            columns: ':not(.no-export)'
+                          }
+                        }
+                      ]
+                    }
+                  ],
                   language: {
-                    lengthMenu: "Mostrar _MENU_ registros",
+                    decimal: ",",
+                    thousands: ".",
+                    lengthMenu: "Mostrar _MENU_ registros por página",
                     zeroRecords: "No se encontraron resultados",
-                    info: "Mostrando _START_ a _END_ de _TOTAL_ registros",
+                    info: "Mostrando de _START_ a _END_ de _TOTAL_ registros",
+                    infoEmpty: "No hay registros disponibles",
+                    infoFiltered: "(filtrado de _MAX_ registros totales)",
                     search: "Buscar:",
-                    paginate: { next: "Siguiente", previous: "Anterior" },
+                    paginate: {
+                      first: "Primero",
+                      last: "Último",
+                      next: "Siguiente",
+                      previous: "Anterior"
+                    }
                   },
                 }}
               />
