@@ -16,6 +16,7 @@ import JSZip from "jszip";
 import * as XLSX from "xlsx";
 const { utils, write } = XLSX;
 import { formatMoney, formatDate, formatDateTime, formatText, formatFiscalPeriod } from "../../utils/formatters";
+import { tooltipBtn } from "../../utils/datatableTooltip";
 
 window.JSZip = JSZip;
 DataTable.use(DT);
@@ -210,7 +211,17 @@ function ListWithholdings() {
                     searchable: false,
                     className: 'no-export',
                     render: (data, type, row) => {
-                      const viewBtn = `<button class="btn-view px-2 py-1 text-gray-700" data-id="${row.id}"><i class="fa-solid fa-lg fa-expand"></i></button>`;
+                      let tooltipText = 'Ver retenciones';
+                      const viewBtn = tooltipBtn({
+                        html: `
+                          <button class="btn-view px-2 py-1 text-gray-700"
+                            data-id="${row.id}">
+                            <i class="fa-solid fa-lg fa-expand"></i>
+                          </button>
+                        `,
+                        text: tooltipText
+                      });
+                      // const viewBtn = `<button class="btn-view px-2 py-1 text-gray-700" data-id="${row.id}"><i class="fa-solid fa-lg fa-expand"></i></button>`;
                       return `<div style="display:flex;justify-content:center;align-items:center;gap:0.25rem;white-space:nowrap;">${viewBtn}</div>`;
                     }
                   },

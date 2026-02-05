@@ -23,6 +23,7 @@ import * as XLSX from "xlsx";
 const { read, utils } = XLSX;
 import { formatMoney, formatDate, formatDateTime, formatText } from "../../utils/formatters";
 import Papa from 'papaparse';
+import { tooltipBtn } from "../../utils/datatableTooltip";
 
 
 window.JSZip = JSZip;
@@ -195,7 +196,7 @@ function ListInvoices({ title, type }) {
             <div className="rounded-t bg-white mb-0 px-6 py-6 flex justify-between items-center border-b">
               <h6 className="text-blueGray-700 text-xl font-bold">{title}</h6>
               <div className="flex items-center space-x-3">
-                <div className="flex space-x-3">
+                <div className="flex space-x-2 mb-3">
                   <h3 class="text-blueGray-700 font-bold me-3 my-3">Buscar por:</h3><br/>
                   {/* SELECT PRINCIPAL */}
                   <select id="filter_type" className="border p-2 rounded" value={filterType} onChange={(e) => setFilterType(e.target.value)}>
@@ -227,11 +228,12 @@ function ListInvoices({ title, type }) {
                     onClick={actionSearch}>
                     Buscar
                   </button>
+                  
+                  <label className="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded cursor-pointer">
+                    Importar Excel/CSV
+                    <input type="file" accept=".csv,.xlsx,.xls" className="hidden" onChange={handleFileUpload} />
+                  </label>
                 </div>
-                <label className="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded cursor-pointer">
-                  Importar Excel/CSV
-                  <input type="file" accept=".csv,.xlsx,.xls" className="hidden" onChange={handleFileUpload} />
-                </label>
               </div>
             </div>
 
@@ -349,13 +351,47 @@ function ListInvoices({ title, type }) {
                     searchable: false,
                     className: 'no-export',
                     render: (data, type, row) => {
-                      const viewBtn = `<button class="btn-view px-2 py-1 text-gray-700" data-id="${row.id}"><i class="fa-solid fa-lg fa-expand"></i></button>`;
+                      // const viewBtn = `<button class="btn-view px-2 py-1 text-gray-700" data-id="${row.id}"><i class="fa-solid fa-lg fa-expand"></i></button>`;
+                      const viewBtn = tooltipBtn({
+                        html: `
+                          <button class="btn-view px-2 py-1 text-gray-700" data-id="${row.id}">
+                            <i class="fa-solid fa-lg fa-expand"></i>
+                          </button>
+                        `,
+                        text:
+                          row.tipo_documento === "FC"
+                            ? "Ver factura"
+                            : row.tipo_documento === "NC"
+                            ? "Ver nota de crédito"
+                            : "Ver nota de débito"
+                      });
                       if (rol === "admin") {
                         return `<div style="display:flex;justify-content:center;align-items:center;gap:0.25rem;white-space:nowrap;">${viewBtn}</div>`;
                       }
                       if (rol !== "admin" && row.estatus.toUpperCase() != 'ANULADA' && row.tipo_documento == 'FC'){
-                        const creditNoteBtn = `<button class="btn-credit-note px-2 py-1 text-red-600" data-id="${row.id}"><i class="fa-solid fa-lg fa-file-invoice"></i></button>`;
-                        const debitNoteBtn = `<button class="btn-debit-note px-1 py-1 mx-0 text-green-600" data-id="${row.id}" data-correlativo_interno="${row.correlativo_interno}"><i class="fa-solid fa-file-invoice fa-lg"></i></button>`;
+                        // const creditNoteBtn = `<button class="btn-credit-note px-2 py-1 text-red-600" data-id="${row.id}"><i class="fa-solid fa-lg fa-file-invoice"></i></button>`;
+                        // const debitNoteBtn = `<button class="btn-debit-note px-1 py-1 mx-0 text-green-600" data-id="${row.id}" data-correlativo_interno="${row.correlativo_interno}"><i class="fa-solid fa-file-invoice fa-lg"></i></button>`;
+                        const creditNoteBtn = tooltipBtn({
+                          html: `
+                            <button class="btn-credit-note px-2 py-1 text-red-600"
+                              data-id="${row.id}">
+                              <i class="fa-solid fa-lg fa-file-invoice"></i>
+                            </button>
+                          `,
+                          text: "Crear nota de crédito"
+                        });
+                        const debitNoteBtn = tooltipBtn({
+                          html: `
+                            <button class="btn-debit-note px-1 py-1 mx-0 text-green-600"
+                              data-id="${row.id}"
+                              data-correlativo_interno="${row.correlativo_interno}">
+                              <i class="fa-solid fa-lg fa-file-invoice"></i>
+                            </button>
+                          `,
+                          text: "Crear nota de débito"
+                        });
+
+
                         return `<div style="display:flex;justify-content:center;align-items:center;gap:0.25rem;white-space:nowrap;">${viewBtn}${creditNoteBtn}${debitNoteBtn}</div>`;
                       }else{
                         return `<div style="display:flex;justify-content:center;align-items:center;gap:0.25rem;white-space:nowrap;">${viewBtn}</div>`;
@@ -623,12 +659,15 @@ function ListInvoices({ title, type }) {
                     }
                   },
                   createdRow: function (row) {
-                    // Reducir tamaño de fuente y forzar nowrap en todas las celdas
                     $(row).find("td").css({
                       "font-size": "0.85rem",
                       "white-space": "nowrap",
                       "overflow": "hidden",
                       "text-overflow": "ellipsis"
+                    });
+
+                    $(row).find("td:last-child").css({
+                      "overflow": "visible"
                     });
                   },
                   headerCallback: function(thead) {
