@@ -28,6 +28,7 @@ const { utils } = XLSX;
 
 import Papa from "papaparse";
 import { formatMoney, formatDate, formatDateTime, formatText } from "../../utils/formatters";
+import { tooltipBtn } from "../../utils/datatableTooltip";
 
 window.JSZip = JSZip;
 DataTable.use(DT);
@@ -467,62 +468,47 @@ function ListPreInvoices() {
                     className: 'no-export',
                     render: (data, type, row) => {
                       // const viewBtn = `<button class="btn-view px-2 py-1 text-gray-700" data-id="${row.id}"><i class="fa-solid fa-lg fa-expand"></i></button>`;
-                      const viewBtn = `
-                        <div class="relative group">
+                      const viewBtn = tooltipBtn({
+                        html: `
                           <button
                             class="btn-view px-2 py-1 text-gray-700"
-                            data-id="${row.id}"
-                          >
+                            data-id="${row.id}">
                             <i class="fa-solid fa-lg fa-expand"></i>
                           </button>
-                          <span class="absolute bottom-full mb-2 left-1/2 -translate-x-1/2
-                            px-2 py-1 text-xs text-white bg-gray-800 rounded
-                            opacity-0 group-hover:opacity-100 transition-opacity
-                            whitespace-nowrap pointer-events-none z-30">
-                            Consultar prefactura
-                          </span>
-                        </div>
-                      `;
+                        `,
+                        text: "Ver prefactura"
+                      });
+
                       if (rol === "admin") {
                         return `<div style="display:flex;justify-content:center;align-items:center;gap:0.25rem;white-space:nowrap;">${viewBtn}</div>`;
                       }
                       if (row.estatus.toUpperCase() != 'FACTURADA'){
                         // const editBtn = `<button class="btn-edit px-2 py-1 text-blue-600" data-id="${row.id}"><i class="fa-solid fa-lg fa-pen-to-square"></i></button>`;
                         // const invoiceBtn = `<button class="btn-invoice px-1 py-1 mx-0 text-green-600" data-id="${row.id}" data-factura_afectada_id="${row.factura_afectada_rel ? row.factura_afectada_rel.id : 0}" data-correlativo_interno="${row.correlativo_interno}"><i class="fa-solid fa-file-invoice fa-lg"></i></button>`;
-                        const editBtn = `
-                          <div class="relative group">
+                        const editBtn = tooltipBtn({
+                          html: `
                             <button
                               class="btn-edit px-2 py-1 text-blue-600"
-                              data-id="${row.id}"
-                            >
+                              data-id="${row.id}">
                               <i class="fa-solid fa-lg fa-pen-to-square"></i>
                             </button>
-                            <span class="absolute bottom-full mb-2 left-1/2 -translate-x-1/2
-                              px-2 py-1 text-xs text-white bg-gray-800 rounded
-                              opacity-0 group-hover:opacity-100 transition-opacity
-                              whitespace-nowrap pointer-events-none z-30">
-                              Editar prefactura
-                            </span>
-                          </div>
-                        `;
-                        const invoiceBtn = `
-                          <div class="relative group">
+                          `,
+                          text: "Editar prefactura"
+                        });
+                        const invoiceBtn = tooltipBtn({
+                          html: `
                             <button
                               class="btn-invoice px-1 py-1 mx-0 text-green-600"
                               data-id="${row.id}"
-                              data-factura_afectada_id="${row.factura_afectada_rel ? row.factura_afectada_rel.id : 0}"
-                              data-correlativo_interno="${row.correlativo_interno}"
-                            >
+                              data-factura_afectada_id="${
+                                row.factura_afectada_rel ? row.factura_afectada_rel.id : 0
+                              }"
+                              data-correlativo_interno="${row.correlativo_interno}">
                               <i class="fa-solid fa-file-invoice fa-lg"></i>
                             </button>
-                            <span class="absolute bottom-full mb-2 left-1/2 -translate-x-1/2
-                              px-2 py-1 text-xs text-white bg-gray-800 rounded
-                              opacity-0 group-hover:opacity-100 transition-opacity
-                              whitespace-nowrap pointer-events-none z-30">
-                              Convertir en factura
-                            </span>
-                          </div>
-                        `;
+                          `,
+                          text: "Convertir en factura"
+                        });
                         return `<div style="display:flex;justify-content:center;align-items:center;gap:0.25rem;white-space:nowrap;">${viewBtn}${editBtn}${invoiceBtn}</div>`;
                       }else{
                         return `<div style="display:flex;justify-content:center;align-items:center;gap:0.25rem;white-space:nowrap;">${viewBtn}</div>`;
