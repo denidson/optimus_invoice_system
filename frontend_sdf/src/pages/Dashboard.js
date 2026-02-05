@@ -16,16 +16,27 @@ import {
   getTopProducts,
 } from "../services/apiReports";
 
+import { getClients } from "../services/api_clients";
+
 export default function Dashboard() {
   const { user } = useContext(AuthContext);
+
+  const isAdmin = user?.rol === "admin";
   const cliente_id = user?.cliente_id;
   const nombreUsuario = user?.nombre || "Usuario";
 
+  /* ========================
+     FILTROS
+  ========================= */
   const [draftStartDate, setDraftStartDate] = useState("");
   const [draftEndDate, setDraftEndDate] = useState("");
 
   const [appliedStartDate, setAppliedStartDate] = useState("");
   const [appliedEndDate, setAppliedEndDate] = useState("");
+
+  const [selectedClientId, setSelectedClientId] = useState(
+    isAdmin ? "" : cliente_id
+  );
 
   const applyFilter = () => {
     setAppliedStartDate(draftStartDate);
@@ -37,49 +48,89 @@ export default function Dashboard() {
     setDraftEndDate("");
     setAppliedStartDate("");
     setAppliedEndDate("");
+    if (isAdmin) setSelectedClientId("");
   };
 
+  /* ========================
+     CLIENTES (solo admin)
+  ========================= */
+  const clientsQuery = useQuery({
+    queryKey: ["clients"],
+    queryFn: getClients,
+    enabled: isAdmin,
+  });
+
+  /* ========================
+     PARAMS COMUNES
+  ========================= */
+  const effectiveClientId = isAdmin
+    ? selectedClientId || undefined
+    : cliente_id;
+
   const params = {
-    cliente_id,
+    ...(effectiveClientId && { cliente_id: effectiveClientId }),
     ...(appliedStartDate && { start_date: appliedStartDate }),
     ...(appliedEndDate && { end_date: appliedEndDate }),
   };
 
+  /* ========================
+     QUERIES
+  ========================= */
   const summaryQuery = useQuery({
     queryKey: ["sales-summary", params],
     queryFn: () => getSalesSummary(params),
-    enabled: !!cliente_id,
+    enabled: isAdmin || !!cliente_id,
     keepPreviousData: true,
   });
 
   const salesOverTimeQuery = useQuery({
     queryKey: ["sales-over-time", params],
     queryFn: () => getSalesOverTime(params),
-    enabled: !!cliente_id,
+    enabled: isAdmin || !!cliente_id,
     keepPreviousData: true,
   });
-  
+
   const topClientsQuery = useQuery({
-    queryKey: ["top-clients", cliente_id],
-    queryFn: () => getTopClients({ cliente_id }),
-    enabled: !!cliente_id,
+    queryKey: ["top-clients", params],
+    queryFn: () => getTopClients(params),
+    enabled: isAdmin || !!cliente_id,
   });
 
   const topProductsQuery = useQuery({
-    queryKey: ["top-products", cliente_id],
-    queryFn: () => getTopProducts({ cliente_id }),
-    enabled: !!cliente_id,
+    queryKey: ["top-products", params],
+    queryFn: () => getTopProducts(params),
+    enabled: isAdmin || !!cliente_id,
   });
 
+  /* ========================
+     RENDER
+  ========================= */
   return (
     <AdminLayout nombreUsuario={nombreUsuario}>
       {/* FILTRO */}
       <div className="px-4 md:px-8 mx-auto w-full bg-twilight-indigo-400">
         <div className="flex flex-wrap gap-2 items-center p-4">
           <span className="text-sm text-white font-semibold">
-            Filtrar por periodo:
+            Filtrar por:
           </span>
 
+          {/* CLIENTE (solo admin) */}
+          {isAdmin && (
+            <select
+              value={selectedClientId}
+              onChange={(e) => setSelectedClientId(e.target.value)}
+              className="border rounded px-2 py-1 text-sm"
+            >
+              <option value="">Todos los clientes</option>
+              {clientsQuery.data?.map((client) => (
+                <option key={client.id} value={client.id}>
+                  {client.nombre_empresa}
+                </option>
+              ))}
+            </select>
+          )}
+
+          {/* FECHAS */}
           <input
             type="date"
             value={draftStartDate}
@@ -139,7 +190,6 @@ export default function Dashboard() {
             />
           </div>
         </div>
-
       </div>
     </AdminLayout>
   );
