@@ -300,13 +300,11 @@ function ListPreInvoices() {
           <div className="relative bg-white flex flex-col min-w-0 break-words w-full mb-6 shadow-lg rounded-lg bg-blueGray-100 border-0">
             {/* Header */}
             <div className="rounded-t bg-white mb-0 px-6 py-6 flex justify-between items-center border-b">
-              <h6 className="text-blueGray-700 text-xl font-bold">
-                Lista de Pre-Facturas
-              </h6>
+              <h6 className="text-blueGray-700 text-xl font-bold">Lista de Pre-Facturas</h6>
 
               {rol != "admin" && (
                 <div className="flex items-center space-x-3">
-                  <div className="flex space-x-2 mb-0">
+                  <div className="flex space-x-2 mb-3">
                     <h3 class="text-blueGray-700 font-bold me-3 my-3">Buscar por:</h3><br/>
                     {/* SELECT PRINCIPAL */}
                     <select id="filter_type" className="border p-2 rounded" value={filterType} onChange={(e) => setFilterType(e.target.value)}>
@@ -338,21 +336,21 @@ function ListPreInvoices() {
                       onClick={actionSearch}>
                       Buscar
                     </button>
+                    <button
+                      className="bg-twilight-indigo-600 hover:bg-twilight-indigo-500 text-white font-bold py-2 px-4 rounded"
+                      onClick={redirectToCreate}>
+                      Crear Pre-Facturas
+                    </button>
+                    <label className="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded cursor-pointer">
+                      Importar Excel/CSV
+                      <input
+                        type="file"
+                        accept=".csv,.xlsx,.xls"
+                        className="hidden"
+                        onChange={handleFileUpload}
+                      />
+                    </label>
                   </div>
-                  <button
-                    className="bg-twilight-indigo-600 hover:bg-twilight-indigo-500 text-white font-bold py-2 px-4 rounded"
-                    onClick={redirectToCreate}>
-                    Crear Pre-Facturas
-                  </button>
-                  <label className="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded cursor-pointer">
-                    Importar Excel/CSV
-                    <input
-                      type="file"
-                      accept=".csv,.xlsx,.xls"
-                      className="hidden"
-                      onChange={handleFileUpload}
-                    />
-                  </label>
                 </div>
               )}
             </div>
@@ -468,13 +466,63 @@ function ListPreInvoices() {
                     searchable: false,
                     className: 'no-export',
                     render: (data, type, row) => {
-                      const viewBtn = `<button class="btn-view px-2 py-1 text-gray-700" data-id="${row.id}"><i class="fa-solid fa-lg fa-expand"></i></button>`;
+                      // const viewBtn = `<button class="btn-view px-2 py-1 text-gray-700" data-id="${row.id}"><i class="fa-solid fa-lg fa-expand"></i></button>`;
+                      const viewBtn = `
+                        <div class="relative group">
+                          <button
+                            class="btn-view px-2 py-1 text-gray-700"
+                            data-id="${row.id}"
+                          >
+                            <i class="fa-solid fa-lg fa-expand"></i>
+                          </button>
+                          <span class="absolute bottom-full mb-2 left-1/2 -translate-x-1/2
+                            px-2 py-1 text-xs text-white bg-gray-800 rounded
+                            opacity-0 group-hover:opacity-100 transition-opacity
+                            whitespace-nowrap pointer-events-none z-30">
+                            Consultar prefactura
+                          </span>
+                        </div>
+                      `;
                       if (rol === "admin") {
                         return `<div style="display:flex;justify-content:center;align-items:center;gap:0.25rem;white-space:nowrap;">${viewBtn}</div>`;
                       }
                       if (row.estatus.toUpperCase() != 'FACTURADA'){
-                        const editBtn = `<button class="btn-edit px-2 py-1 text-blue-600" data-id="${row.id}"><i class="fa-solid fa-lg fa-pen-to-square"></i></button>`;
-                        const invoiceBtn = `<button class="btn-invoice px-1 py-1 mx-0 text-green-600" data-id="${row.id}" data-factura_afectada_id="${row.factura_afectada_rel ? row.factura_afectada_rel.id : 0}" data-correlativo_interno="${row.correlativo_interno}"><i class="fa-solid fa-file-invoice fa-lg"></i></button>`;
+                        // const editBtn = `<button class="btn-edit px-2 py-1 text-blue-600" data-id="${row.id}"><i class="fa-solid fa-lg fa-pen-to-square"></i></button>`;
+                        // const invoiceBtn = `<button class="btn-invoice px-1 py-1 mx-0 text-green-600" data-id="${row.id}" data-factura_afectada_id="${row.factura_afectada_rel ? row.factura_afectada_rel.id : 0}" data-correlativo_interno="${row.correlativo_interno}"><i class="fa-solid fa-file-invoice fa-lg"></i></button>`;
+                        const editBtn = `
+                          <div class="relative group">
+                            <button
+                              class="btn-edit px-2 py-1 text-blue-600"
+                              data-id="${row.id}"
+                            >
+                              <i class="fa-solid fa-lg fa-pen-to-square"></i>
+                            </button>
+                            <span class="absolute bottom-full mb-2 left-1/2 -translate-x-1/2
+                              px-2 py-1 text-xs text-white bg-gray-800 rounded
+                              opacity-0 group-hover:opacity-100 transition-opacity
+                              whitespace-nowrap pointer-events-none z-30">
+                              Editar prefactura
+                            </span>
+                          </div>
+                        `;
+                        const invoiceBtn = `
+                          <div class="relative group">
+                            <button
+                              class="btn-invoice px-1 py-1 mx-0 text-green-600"
+                              data-id="${row.id}"
+                              data-factura_afectada_id="${row.factura_afectada_rel ? row.factura_afectada_rel.id : 0}"
+                              data-correlativo_interno="${row.correlativo_interno}"
+                            >
+                              <i class="fa-solid fa-file-invoice fa-lg"></i>
+                            </button>
+                            <span class="absolute bottom-full mb-2 left-1/2 -translate-x-1/2
+                              px-2 py-1 text-xs text-white bg-gray-800 rounded
+                              opacity-0 group-hover:opacity-100 transition-opacity
+                              whitespace-nowrap pointer-events-none z-30">
+                              Convertir en factura
+                            </span>
+                          </div>
+                        `;
                         return `<div style="display:flex;justify-content:center;align-items:center;gap:0.25rem;white-space:nowrap;">${viewBtn}${editBtn}${invoiceBtn}</div>`;
                       }else{
                         return `<div style="display:flex;justify-content:center;align-items:center;gap:0.25rem;white-space:nowrap;">${viewBtn}</div>`;
