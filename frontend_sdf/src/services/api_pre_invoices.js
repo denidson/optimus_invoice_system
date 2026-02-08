@@ -120,14 +120,20 @@ export const editPreInvoice = async (id, body) => {
 };
 
 // Crear un pre-facturas
-export const createPreInvoice = async (body) => {
+export const createPreInvoice = async (body, client_id=false) => {
   try {
-    const response = await api.post(`/api/invoices`, body);
+    var response;
+    if (client_id == false){
+      response = await api.post(`/api/invoices`, body);
+    }else{
+      console.log('createPreInvoice-response: ', `/admin/clients/${client_id}/pre-invoices`);
+      response = await api.post(`/admin/clients/${client_id}/pre-invoices`, body);
+    }
     console.log('createPreInvoice-response: ', response);
     return response.data;
   } catch (error) {
     console.error("Error al crear el pre-facturas:", error);
-    throw error;
+    return response;
   }
 };
 

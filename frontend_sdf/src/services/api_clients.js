@@ -12,7 +12,7 @@ export const getClients = async () => {
       }else{
         response = await api.get('/api/clients');
       }
-      return response.data.data;
+      return response.data;
     }
   } catch (error) {
     console.error("Error al obtener los clientes:", error);

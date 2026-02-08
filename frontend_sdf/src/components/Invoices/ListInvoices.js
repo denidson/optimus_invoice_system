@@ -401,7 +401,7 @@ function ListInvoices({ title, type }) {
                 ]}
                 options={{
                   columnDefs:[{
-                    targets: [4, 5, 6, 7, 9, 10, 11], // índices de columnas a ocultar (ej: RIF, Zona)
+                    targets: [5, 6, 7, 9, 10, 11], // índices de columnas a ocultar (ej: RIF, Zona)
                     visible: false,
                     searchable: true // siguen siendo buscables
                   }],

@@ -1,7 +1,7 @@
 import api from "./axiosConfig"; // Importa la configuración centralizada de axios
 
 // Obtener todos los clientes
-export const getEndClients = async ({ page = 1, per_page = 20, request_type=false } = {}) => {
+export const getEndClients = async ({ page = 1, per_page = 20, request_type=false, client_id=false } = {}) => {
   try {
     const authData = localStorage.getItem("authData");
     if (authData) {
@@ -10,7 +10,11 @@ export const getEndClients = async ({ page = 1, per_page = 20, request_type=fals
       //if (rol == 'admin'){
         //response = await api.get('/admin/clients');
       //}else{
-      response = await api.get(`/api/final-clients?page=${page}&per_page=${per_page}` + (request_type != false ? `?request_type=${request_type}` : ``));
+      if (client_id == false){
+        response = await api.get(`/api/final-clients?page=${page}&per_page=${per_page}` + (request_type != false ? `?request_type=${request_type}` : ``));
+      }else{
+        response = await api.get(`/api/final-clients?client_id=${client_id}`);
+      }
       //}
       return response.data;
     }

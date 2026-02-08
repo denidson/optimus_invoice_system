@@ -303,7 +303,6 @@ function ListPreInvoices() {
             <div className="rounded-t bg-white mb-0 px-6 py-6 flex justify-between items-center border-b">
               <h6 className="text-blueGray-700 text-xl font-bold">Lista de Pre-Facturas</h6>
 
-              {rol != "admin" && (
                 <div className="flex items-center space-x-3">
                   <div className="flex space-x-2 mb-3">
                     <h3 class="text-blueGray-700 font-bold me-3 my-3">Buscar por:</h3><br/>
@@ -342,18 +341,20 @@ function ListPreInvoices() {
                       onClick={redirectToCreate}>
                       Crear Pre-Facturas
                     </button>
-                    <label className="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded cursor-pointer">
-                      Importar Excel/CSV
-                      <input
-                        type="file"
-                        accept=".csv,.xlsx,.xls"
-                        className="hidden"
-                        onChange={handleFileUpload}
-                      />
-                    </label>
+                    {rol != "admin" && (
+                      <label className="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded cursor-pointer">
+                        Importar Excel/CSV
+                        <input
+                          type="file"
+                          accept=".csv,.xlsx,.xls"
+                          className="hidden"
+                          onChange={handleFileUpload}
+                        />
+                      </label>
+                    )}
                   </div>
                 </div>
-              )}
+
             </div>
 
             {/* DataTable */}

@@ -303,9 +303,9 @@ function ListClients() {
                   ajax: async (params, callback) => {
                     const response = await getClients();
                     callback({
-                      data: response,
-                      recordsTotal: response.length,
-                      recordsFiltered: response.length,
+                      data: response.data,
+                      recordsTotal: response.data.length,
+                      recordsFiltered: response.data.length,
                     });
                   },
                   dom: //B = Buttons, l = LengthMenu (mostrar X registros), f = Filtro (search), t = Tabla, i = Info (mostrando de X a Y de Z), p = Paginación

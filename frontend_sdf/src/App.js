@@ -30,6 +30,8 @@ import ListCompanyUsers from "./pages/CompanyUsers/ListCompanyUsers";
 import FormCompanyUsers from "./pages/CompanyUsers/FormCompanyUsers";
 import ListWithholdings from "./pages/Withholdings/ListWithholding";
 import FormWithholding from "./pages/Withholdings/FormWithholding";
+import ListDispatchGuide from "./pages/DispatchGuide/ListDispatchGuide";
+import FormDispatchGuide from "./pages/DispatchGuide/FormDispatchGuide";
 import ListCreditNote from "./pages/CreditNote/ListCreditNote";
 import ListCreditDebit from "./pages/DebitNote/ListDebitNote";
 
@@ -281,6 +283,25 @@ function App() {
             element={
               <PrivateRoute>
                 <FormWithholding />
+              </PrivateRoute>
+            }
+          />
+        {/* Guia de despacho */}
+          <Route
+            path="/dispatch-guide"
+            element={
+              <PrivateRoute>
+                <RoleRoute roles={["admin", "operador_admin", "operador"]}>
+                  <ListDispatchGuide />
+                </RoleRoute>
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/dispatch-guide/create"
+            element={
+              <PrivateRoute>
+                <FormDispatchGuide />
               </PrivateRoute>
             }
           />

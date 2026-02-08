@@ -4,6 +4,7 @@ import { getPreInvoices, showPreInvoice, createPreInvoice, editPreInvoice } from
 import { showInvoice } from '../../services/api_invoices'; // Importa el servicio
 import { getProducts, showProduct, createProduct } from '../../services/apiProducts'; // Importa el servicio
 import { getEndClients, showEndClient, createEndClient } from '../../services/api_end_clients'; // Importa el servicio
+import { getClients, showClient } from '../../services/api_clients';
 import { useNavigate } from "react-router-dom"; // Para la redirección
 import { decryptText } from '../../services/api'; // Importa el servicio para encriptar/desencriptar parametros
 import { useLocation } from "react-router-dom"; // Para la obtener el parametro de la url
@@ -70,8 +71,10 @@ function ProductoEditCell({ params, products }) {
 function FormPreInvoices() {
   const navigate = useNavigate(); // Hook para redirección
   const [products, setProducts] = useState(null);
+  const [clients, setClients] = useState(null);
   const [endClients, setEndClients] = useState(null);
   const [filterResults, setFilterResults] = useState([]);
+  const [filterResultsAdmin, setFilterResultsAdmin] = useState([]);
   const [showResults, setShowResults] = useState(false);
 
   // Obtener los query parameters con `useLocation`
@@ -85,7 +88,9 @@ function FormPreInvoices() {
   const [buttonDisabled, setButtonDisabled] = useState(false);
   const [tab, setTab] = useState("productos"); // Estado para controlar qué DataGrids mostrar
   const authData = localStorage.getItem("authData");
+  const rol = authData ? JSON.parse(authData)["rol"] : "";
   var authclientId;
+  //console.log('rol: ', rol);
   if (authData) {
     authclientId = JSON.parse(authData)['cliente_id'];
   }
@@ -264,10 +269,19 @@ function FormPreInvoices() {
   useEffect(() => {
     const fetchPreInvoice = async () => {
       try {
-        const datapts = await getProducts();
-        setProducts(datapts);
-        const datacls = await getEndClients({ page: 1, per_page: 20, request_type: 'export' });
-        setEndClients(datacls.data);
+        if (rol != 'admin'){
+          const datapts = await getProducts();
+          setProducts(datapts);
+          const datacls = await getEndClients({ page: 1, per_page: 20, request_type: 'export' });
+          setEndClients(datacls.data);
+        }else{
+          setProducts([]);
+          setEndClients([]);
+        }
+        if (rol == 'admin'){
+          const dataclsAdmin = await getClients({ page: 1, per_page: 20, request_type: 'export' });
+          setClients(dataclsAdmin.data);
+        }
         var data;
         if (preInvoiceId != null){
           console.log('type: ', type);
@@ -296,6 +310,9 @@ function FormPreInvoices() {
         }else{
           setPreInvoice({
             id: "#",
+            cliente_id: "",
+            cliente_rif: "",
+            cliente_nombre: "",
             cliente_final_id: "",
             cliente_final_nombre: "",
             cliente_final_rif: "",
@@ -433,15 +450,26 @@ function FormPreInvoices() {
         delete preInvoice.id;
         if (preInvoice.cliente_final_id == '#'){
           delete preInvoice.cliente_final_id;
-          if (preInvoice.tipo_documento != 'ND'){
-            delete preInvoice.conceptos_nd;
-          }
+        }
+        if (preInvoice.tipo_documento != 'ND'){
+          delete preInvoice.conceptos_nd;
+        }
+        for (var i = 0; i < preInvoice.items.length; i++){
+          delete preInvoice.items[i].id;
         }
         action = 'create';
         //preInvoice.total = totalAmount;
         console.log("preInvoice(F):", preInvoice);
         var preInvoiceList = [preInvoice];
-        data = await createPreInvoice(preInvoiceList); // Llamamos a createClient con el ID
+        if (rol == 'admin'){
+          var cliente_id = preInvoice.cliente_id;
+          delete preInvoice.cliente_id;
+          delete preInvoice.cliente_rif;
+          delete preInvoice.cliente_nombre;
+          data = await createPreInvoice(preInvoiceList, cliente_id); // Llamamos a createClient con el ID
+        }else{
+          data = await createPreInvoice(preInvoiceList); // Llamamos a createClient con el ID
+        }
         console.log("preInvoice(F)-data:", data);
       }else{
         action = 'update';
@@ -450,8 +478,8 @@ function FormPreInvoices() {
       //console.log('editPreInvoice-data: ', data);
       //setPreInvoice(data.resultados[0]); // Guardamos los datos del preInvoice en el estado
       // Mostrar una notificación de éxito
-      console.log('editPreInvoice-status: ', data);
-      if (action == 'create' && data.resultados[0].status == 'prefactura_creada'){
+      console.log(action +'-status: ', data);
+      if (data.resultados != undefined && action == 'create' && data.resultados[0].status == 'prefactura_creada'){
         console.log('CreatePreInvoice-toast:==>');
         toast.success('Pre-Factura creada satisfactoriamente.', {
           onClose: () => {
@@ -472,7 +500,7 @@ function FormPreInvoices() {
           },
         });
       }else{
-        toast.error("Error al actualizar la Pre-Factura");
+        toast.error(data.error.toUpperCase());
         setButtonDisabled(false);
       }
     } catch (err) {
@@ -614,8 +642,9 @@ const processRowUpdateNd = (newRow, oldRow) => {
   return updatedRow; // obligatorio retornar la fila actualizada
 };
 
-const handleSearchRif = (value) => {
-  console.log('handleSearchRif-value: ', value);
+const handleSearchRif = (value, type) => {
+  //console.log('handleSearchRif-value: ', value);
+  //console.log('handleSearchRif-type: ', type);
   value = value.toUpperCase();
 
   // Elimina caracteres no válidos (solo letras, números y guiones)
@@ -644,65 +673,123 @@ const handleSearchRif = (value) => {
         const [, letra, numeros, verificador] = match;
         value = `${letra}-${numeros}${numeros.length === 8 ? "-" : ""}${verificador || ""}`;
       } else {
-        value = preInvoice.cliente_final_rif;
+        value = type == 'admin' ? preInvoice.cliente_rif : preInvoice.cliente_final_rif;
       }
     }
   }
 
   // Actualiza el campo
-  setPreInvoice((prev) => ({ ...prev, cliente_final_rif: value }));
+  if (type == 'admin'){
+    setPreInvoice((prev) => ({ ...prev, cliente_rif: value }));
+  }else{
+    setPreInvoice((prev) => ({ ...prev, cliente_final_rif: value }));
+  }
 
   if (value.length < 2) {
-    setFilterResults([]);
+    if (type == 'admin'){
+      setFilterResultsAdmin([]);
+    }else{
+      setFilterResults([]);
+    }
     setShowResults(false);
     return;
   }
-
-  const results = endClients.filter((c) =>
-    c.rif.toUpperCase().includes(value) ||
-    c.nombre.toUpperCase().includes(value)
-  );
+  var results;
+  if (type == 'admin'){
+    console.log('clients: ', clients);
+    results = clients.filter((c) =>
+      c.rif.toUpperCase().includes(value) ||
+      c.nombre_empresa.toUpperCase().includes(value)
+    );
+  }else{
+    console.log('endClients: ', endClients);
+    results = endClients.filter((c) =>
+      c.rif.toUpperCase().includes(value) ||
+      c.nombre.toUpperCase().includes(value)
+    );
+  }
   console.log('handleSearchRif-results.length: ', results.length);
   if (results.length == 0){
     $('#div_none_endclients').attr('style', "width: 600px;");
     $('.form-client-complement').addClass('mt-10');
-    setPreInvoice((prev) => ({
-    ...prev,
-      cliente_final_id: '#',
-      //cliente_final_rif: '',
-      cliente_final_nombre: '',
-      cliente_final_telefono: '',
-      cliente_final_email: '',
-      cliente_final_direccion: '',
-    }));
+    if (type == 'admin'){
+      setPreInvoice((prev) => ({
+      ...prev,
+        cliente_final_id: '#',
+        //cliente_final_rif: '',
+        cliente_nombre: '',
+      }));
+    }else{
+      setPreInvoice((prev) => ({
+      ...prev,
+        cliente_final_id: '#',
+        //cliente_final_rif: '',
+        cliente_final_nombre: '',
+        cliente_final_telefono: '',
+        cliente_final_email: '',
+        cliente_final_direccion: '',
+      }));
+    }
+
   }else{
     $('#div_none_endclients').removeAttr('style');
     $('.form-client-complement').removeClass('mt-10');
+  }
+  if (type == 'admin'){
+    setFilterResultsAdmin(results);
+  }else{
+    setFilterResults(results);
   }
   setFilterResults(results);
   setShowResults(true);
 };
 
-const selectClient = (client) => {
-  setPreInvoice((prev) => ({
-    ...prev,
-    cliente_final_id: client.id || '#',
-    cliente_final_rif: client.rif || '',
-    cliente_final_nombre: client.nombre || '',
-    cliente_final_telefono: client.telefono || '',
-    cliente_final_email: client.email || '',
-    cliente_final_direccion: client.direccion || '',
-  }));
-
-  setFilterResults([]);
+const selectClient = async (client, type) => {
+  if (type == 'admin'){
+    setPreInvoice((prev) => ({
+      ...prev,
+      cliente_id: client.id || '#',
+      cliente_rif: client.rif || '',
+      cliente_nombre: client.nombre_empresa || '',
+    }));
+    if (client && client.id){
+      console.log('selectClient-client: ', client);
+      const datacls = await getEndClients({ client_id: client.id });
+      setEndClients(datacls.data);
+      const datapts = await getProducts({ client_id: client.id });
+      setProducts(datapts);
+    }
+  }else{
+    setPreInvoice((prev) => ({
+      ...prev,
+      cliente_final_id: client.id || '#',
+      cliente_final_rif: client.rif || '',
+      cliente_final_nombre: client.nombre || '',
+      cliente_final_telefono: client.telefono || '',
+      cliente_final_email: client.email || '',
+      cliente_final_direccion: client.direccion || '',
+    }));
+  }
+  if (type == 'admin'){
+    setFilterResultsAdmin([]);
+  }else{
+    setFilterResults([]);
+  }
   setShowResults(false);
 };
 
-const reduceRif = (rif) => {
-  setPreInvoice((prev) => ({
-    ...prev,
-    cliente_final_rif: rif || '',
-  }));
+const reduceRif = (rif, type) => {
+  if (type == 'admin'){
+    setPreInvoice((prev) => ({
+      ...prev,
+      cliente_final_rif: rif || '',
+    }));
+  }else{
+    setPreInvoice((prev) => ({
+      ...prev,
+      cliente_final_rif: rif || '',
+    }));
+  }
 };
 
 const handleRadioChange = (event) => {
@@ -722,7 +809,74 @@ const handleRadioChange = (event) => {
               </div>
             </div>
             <div className="flex-auto px-4 lg:px-10 py-10 pt-0">
-              <h6 class="text-blueGray-400 text-sm mt-3 my-6 font-bold uppercase">Informacion de la Pre-Factura</h6>
+              <div className="w-full flex flex-wrap px-4 pt-4">
+                <div className="w-full lg:w-3/12 px-0">
+                  <h6 class="text-blueGray-400 text-sm mt-3 my-6 font-bold uppercase">Informacion de la Pre-Factura</h6>
+                </div>
+                {rol == 'admin' && (
+                  <div className="relative lg:w-3/12 mb-3">
+                      <label className="block text-blueGray-600 text-xs font-bold mb-2">Empresa Afiliada (RIF)</label>
+                      <input
+                        type="text"
+                        className="hidden border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
+                        value={preInvoice.cliente_id}
+                        onChange={(e) => setPreInvoice({ ...preInvoice, cliente_id: e.target.value })}
+                      />
+                      <div className="relative">
+                        <Autocomplete
+                            freeSolo
+                            options={showResults && preInvoice.cliente_rif != '' ? filterResultsAdmin : clients}
+                            getOptionLabel={(opt) =>
+                              opt?.rif ? `${opt.rif} — ${opt.nombre_empresa}` : ""
+                            }
+                            filterOptions={(options) => options} // usamos tu propio filtro manual
+                            inputValue={preInvoice.cliente_rif}
+                            onInputChange={(e, value) => handleSearchRif(value, 'admin')}
+                            onChange={(event, newValue) => {
+                              if (newValue) selectClient(newValue, 'admin');
+                            }}
+                            renderInput={(params) => (
+                              <TextField
+                                {...params}
+                                label="RIF"
+                                placeholder="V-12345678-9"
+                                variant="outlined"
+                                size="small"
+                                onKeyDown={(e) => {
+                                  // Si el usuario presiona Backspace
+                                  if (e.key === "Backspace") {
+                                    if (preInvoice.cliente_rif.substr(preInvoice.cliente_rif.length - 1, preInvoice.cliente_rif.length) == '-'){
+                                      reduceRif(preInvoice.cliente_rif.substr(0, preInvoice.cliente_rif.length - 1), 'admin');
+                                    }
+                                  }
+                                  // ENTER para seleccionar primer elemento si no se ha elegido uno
+                                  if (e.key === "Enter") {
+                                    if (filterResultsAdmin.length > 0) {
+                                      e.preventDefault();
+                                      selectClient(filterResultsAdmin[0], 'admin');
+                                    }
+                                  }
+                                }}
+                              />
+                            )}
+                          />
+                      </div>
+                  </div>
+                )}
+                {rol == 'admin' && (
+                  <div className="w-full lg:w-6/12 px-4">
+                    <div className="relative w-full mb-3">
+                      <label className="block text-blueGray-600 text-xs font-bold mb-2">Razon Social</label>
+                      <input
+                        type="text"
+                        className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
+                        value={preInvoice.cliente_nombre} readonly="readonly"
+                        onChange={(e) => setPreInvoice({ ...preInvoice, cliente_nombre: e.target.value.toString().toUpperCase() })}
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
               <form onSubmit={handleSubmit}>
                 <hr class="my-6 border-b-1 border-blueGray-300"/>
                 <div className="flex flex-wrap">
@@ -791,15 +945,15 @@ const handleRadioChange = (event) => {
                         />*/}
                         <Autocomplete
                             freeSolo
-                            options={endClients || []}
+                            options={showResults && preInvoice.cliente_final_rif != '' ? filterResults : endClients}
                             getOptionLabel={(opt) =>
                               opt?.rif ? `${opt.rif} — ${opt.nombre}` : ""
                             }
                             filterOptions={(options) => options} // usamos tu propio filtro manual
                             inputValue={preInvoice.cliente_final_rif}
-                            onInputChange={(e, value) => handleSearchRif(value)}
+                            onInputChange={(e, value) => handleSearchRif(value, 'client')}
                             onChange={(event, newValue) => {
-                              if (newValue) selectClient(newValue);
+                              if (newValue) selectClient(newValue, 'client');
                             }}
                             renderInput={(params) => (
                               <TextField
@@ -812,14 +966,14 @@ const handleRadioChange = (event) => {
                                   // Si el usuario presiona Backspace
                                   if (e.key === "Backspace") {
                                     if (preInvoice.cliente_final_rif.substr(preInvoice.cliente_final_rif.length - 1, preInvoice.cliente_final_rif.length) == '-'){
-                                      reduceRif(preInvoice.cliente_final_rif.substr(0, preInvoice.cliente_final_rif.length - 1));
+                                      reduceRif(preInvoice.cliente_final_rif.substr(0, preInvoice.cliente_final_rif.length - 1), 'client');
                                     }
                                   }
                                   // ENTER para seleccionar primer elemento si no se ha elegido uno
                                   if (e.key === "Enter") {
                                     if (filterResults.length > 0) {
                                       e.preventDefault();
-                                      selectClient(filterResults[0]);
+                                      selectClient(filterResults[0], 'client');
                                     }
                                   }
                                 }}
