@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useContext } from 'react';
+import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { getClients, deleteClient, showClient, createClient, activateClient } from '../../services/api_clients';
 import { AuthContext } from "../../context/AuthContext";
@@ -18,7 +19,8 @@ import "datatables.net-buttons-dt/css/buttons.dataTables.css";
 import "datatables.net-buttons/js/buttons.html5";
 import "datatables.net-buttons/js/buttons.print";
 import JSZip from "jszip";
-import { read, utils } from 'xlsx';
+import { read, utils} from "xlsx";
+import { writeFile, utils as XLSXUtils } from "xlsx";
 import Papa from 'papaparse';
 window.JSZip = JSZip;
 import { formatMoney, formatDate, formatDateTime, formatText } from "../../utils/formatters";
@@ -34,6 +36,48 @@ function ListClients() {
   const { user } = useContext(AuthContext);
   const rol = user?.rol;
 
+  const {
+    data: tipoContribuyente = [],
+    isLoading: loadingTipoContribuyente,
+    error: errorTipoContribuyente,
+  } = useQuery({
+    queryKey: ["tipo-contribuyente"],
+    queryFn: getTypeTaxpayer,
+    staleTime: Infinity,   // nunca se vuelve a pedir
+    cacheTime: Infinity,   // se mantiene en cache
+  });
+
+  const downloadExcelDemo = () => {
+    const demoData = [
+      {
+        rif: "J-12345678-9",
+        nombre_empresa: "Empresa Demo",
+        email: "demo@empresa.com",
+        telefono: "0414-1234567",
+        tipo_contribuyente_id: "Ordinario",
+        region: "Central",
+        estado: "Aragua",
+        zona: "Zona 1",
+        direccion: "Calle Falsa 123",
+      },
+      {
+        rif: "J-98765432-1",
+        nombre_empresa: "Otra Demo",
+        email: "demo2@empresa.com",
+        telefono: "0424-7654321",
+        tipo_contribuyente_id: "Especial",
+        region: "Capital",
+        estado: "Miranda",
+        zona: "Zona 2",
+        direccion: "Avenida Siempre Viva 742",
+      },
+    ];
+
+    const ws = XLSXUtils.json_to_sheet(demoData);
+    const wb = XLSXUtils.book_new();
+    XLSXUtils.book_append_sheet(wb, ws, "Demo Clientes");
+    writeFile(wb, "Demo_Importacion_Clientes.xlsx");
+  };
   // DataTable listeners
   useEffect(() => {
     const table = $("#ListClientDt").DataTable();
@@ -180,8 +224,7 @@ function ListClients() {
   // API de selects
   const apiSelects = {
     tipo_contribuyente_id: async () => {
-      const data = await getTypeTaxpayer();
-      return data || [];
+      return tipoContribuyente;
     },
   };
 
@@ -224,6 +267,23 @@ function ListClients() {
                     />
                   </label>
                 )}
+                {rol === "admin" && (
+                  <div className="relative group inline-block">
+                    <button
+                      onClick={downloadExcelDemo}
+                      className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded flex items-center gap-2"
+                    >
+                      <i className="fas fa-download"></i>
+                    </button>
+                    <span className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2
+                      px-2 py-1 text-xs text-white bg-gray-800 rounded
+                      opacity-0 group-hover:opacity-100 transition-opacity
+                      whitespace-nowrap pointer-events-none z-50">
+                      Descargar Excel de ejemplo
+                    </span>
+                  </div>
+                )}
+
               </div>
             </div>
 
