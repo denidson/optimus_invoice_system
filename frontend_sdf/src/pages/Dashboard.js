@@ -114,21 +114,21 @@ export default function Dashboard() {
     },
   });
 
-  useEffect(() => {
-    console.group("📊 DASHBOARD DEBUG");
-    console.log("clients:", clientsQuery.data);
-    console.log("summary:", summaryQuery.data);
-    console.log("salesOverTime:", salesOverTimeQuery.data);
-    console.log("topClients:", topClientsQuery.data);
-    console.log("topProducts:", topProductsQuery.data);
-    console.groupEnd();
-  }, [
-    clientsQuery.data,
-    summaryQuery.data,
-    salesOverTimeQuery.data,
-    topClientsQuery.data,
-    topProductsQuery.data,
-  ]);
+  // useEffect(() => {
+  //   console.group("📊 DASHBOARD DEBUG");
+  //   console.log("clients:", clientsQuery.data);
+  //   console.log("summary:", summaryQuery.data);
+  //   console.log("salesOverTime:", salesOverTimeQuery.data);
+  //   console.log("topClients:", topClientsQuery.data);
+  //   console.log("topProducts:", topProductsQuery.data);
+  //   console.groupEnd();
+  // }, [
+  //   clientsQuery.data,
+  //   summaryQuery.data,
+  //   salesOverTimeQuery.data,
+  //   topClientsQuery.data,
+  //   topProductsQuery.data,
+  // ]);
 
   return (
     <AdminLayout nombreUsuario={nombreUsuario}>
