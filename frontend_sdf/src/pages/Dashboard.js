@@ -81,6 +81,10 @@ export default function Dashboard() {
     queryKey: ["sales-over-time", params],
     enabled: isAdmin || !!cliente_id,
     keepPreviousData: true,
+    initialData: {
+      currency: "",
+      data: [],
+    },
     queryFn: async () => {
       const res = await getSalesOverTime(params);
       return {
