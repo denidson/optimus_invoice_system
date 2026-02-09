@@ -23,7 +23,7 @@ DataTable.use(DT);
 
 function ListDispatchGuide() {
   const [modalOpen, setModalOpen] = useState(false);
-  const [selectedWithholding, setSelectedWithholding] = useState(null);
+  const [selectedDispatchGuide, setSelectedDispatchGuide] = useState(null);
   const [filterType, setFilterType] = useState("");
   var responseCache = useState(false);
   const authData = localStorage.getItem("authData");
@@ -42,8 +42,8 @@ function ListDispatchGuide() {
     $("#ListDispatchGuideDt tbody").on("click", "button.btn-view", async function () {
       const id = $(this).data("id");
       try {
-        const data = await showWithholding(id);
-        setSelectedWithholding(data);
+        const data = await showDispatchGuide(id);
+        setSelectedDispatchGuide(data);
         setModalOpen(true);
       } catch {
         toast.error("Error al consultar la Guía de despacho");
@@ -203,7 +203,7 @@ function ListDispatchGuide() {
                 ]}
                 options={{
                   columnDefs:[{
-                    targets: [1], // índices de columnas a ocultar (ej: RIF, Zona)
+                    targets: [], // índices de columnas a ocultar (ej: RIF, Zona)
                     visible: false,
                     searchable: true // siguen siendo buscables
                   }],
@@ -291,13 +291,13 @@ function ListDispatchGuide() {
                         {
                           extend: "copyHtml5",
                           text: "Copiar",
-                          title: "Lista de Retenciones",   // nombre del documento en el portapapeles
+                          title: "Lista de Guias de despacho",   // nombre del documento en el portapapeles
                         },
                         {
                           extend: "excelHtml5",
                           text: "Excel",
-                          title: "Lista de Retenciones",
-                          filename: "Lista_Retenciones",
+                          title: "Lista de Guias de despacho",
+                          filename: "Lista_Guias_de_despacho",
                           exportOptions: {
                             columns: ':not(.no-export)'
                           }
@@ -305,8 +305,8 @@ function ListDispatchGuide() {
                         {
                           extend: "csvHtml5",
                           text: "CSV",
-                          title: "Lista de Retenciones",
-                          filename: "Lista_Retenciones",
+                          title: "Lista de Guias de despacho",
+                          filename: "Lista_Guias_de_despacho",
                           exportOptions: {
                             columns: ':not(.no-export)'
                           }
@@ -314,27 +314,26 @@ function ListDispatchGuide() {
                         {
                           extend: "pdfHtml5",
                           text: "PDF",
-                          title: "Lista de Retenciones",
-                          filename: "Lista_Retenciones",
+                          title: "Lista de Guias de despacho",
+                          filename: "Lista_Guias_de_despacho",
                           exportOptions: {
                             columns: ':not(.no-export)'
                           },
-                          orientation: "landscape",
                           //orientation: "landscape",   // opcional
                           //pageSize: "A4"              // opcional
                         },
                         {
                           extend: "print",
                           text: "Imprimir",
-                          title: "Lista de Retenciones",
+                          title: "Lista de Guias de despacho",
                           exportOptions: {
                             columns: ':not(.no-export)'
                           }
                         },
                         {
                           text: "Exportar todo (Excel)",
-                          title: "Lista de Retenciones",
-                          filename: "Lista_Retenciones",
+                          title: "Lista de Guias de despacho",
+                          filename: "Lista_Guias_de_despacho",
                           exportOptions: {
                             columns: ':not(.no-export)'
                           },
@@ -344,7 +343,7 @@ function ListDispatchGuide() {
                               let page = 1;
                               let totalPages = 1;
                               do {
-                                const resp = await getAllDispatchGuide({ page, per_page: 100 });
+                                const resp = await getAllDispatchGuides({ page, per_page: 100 });
                                 allData.push(...resp.data);
                                 totalPages = Math.ceil(resp.total / 100);
                                 page++;
@@ -353,22 +352,22 @@ function ListDispatchGuide() {
                               const wb = utils.book_new();
                               const ws = utils.json_to_sheet(
                                 allData.map((r) => ({
-                                  "Fecha": formatDate(r.fecha_emision),
-                                  "Periodo Fiscal": formatFiscalPeriod(r.periodo_fiscal),
-                                  "Nro. Comprobante": formatText(r.numero_comprobante),
-                                  "RIF": formatText(r.sujeto_retenido.rif),
-                                  "Sujeto Retenido": formatText(r.sujeto_retenido.nombre),
-                                  "Base Imponible": formatMoney(r.monto_base_total),
-                                  "Monto Retenido": formatMoney(r.monto_retenido_total),
+                                  "Fecha de salida": formatDate(r.fecha_salida),
+                                  "Fecha de la factura": formatDate(r.factura.fecha_emision),
+                                  "Factura - Nro. control": formatText(r.factura.numero_control),
+                                  "Ubic. de origen": formatText(r.origen),
+                                  "Dir. de destino": formatText(r.destino),
+                                  "Transportista": formatText(r.transportista),
+                                  "Chofer": formatText(r.chofer),
+                                  "Placa": formatText(r.placa),
                                   "Estatus": formatText(r.estatus),
-                                  "Estatus SENIAT": formatText(r.estatus_seniat),
                                 }))
                               );
-                              utils.book_append_sheet(wb, ws, "Retenciones");
+                              utils.book_append_sheet(wb, ws, "Guias de despacho");
                               const blob = new Blob([write(wb, { bookType: "xlsx", type: "array" })]);
                               const link = document.createElement("a");
                               link.href = URL.createObjectURL(blob);
-                              link.download = "Retenciones.xlsx";
+                              link.download = "Guias de despacho.xlsx";
                               link.click();
                               toast.success("Archivo exportado correctamente");
                             } catch {
@@ -406,8 +405,8 @@ function ListDispatchGuide() {
               />
 
               {modalOpen && 
-                <ModalWithholding 
-                  data={selectedWithholding} 
+                <ModalDispatchGuide
+                  data={selectedDispatchGuide}
                   onClose={handleCloseModal} 
                 />
               }

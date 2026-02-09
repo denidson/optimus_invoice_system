@@ -42,6 +42,7 @@ function FormDispatchGuides() {
     "factura_numero_control": '',
     "origen": "Almacén Principal",
     "destino": "",
+    "motivo_traslado": "",
     "transportista": "",
     "chofer": "",
   });
@@ -70,9 +71,9 @@ function FormDispatchGuides() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const data = await getDispatchGuides();
-        setDispatchGuides(data);
-
+        //const data = await getDispatchGuides();
+        //setDispatchGuides(data);
+        console.log('dispatchGuide_id: ', dispatchGuide_id);
         if (dispatchGuide_id) {
           const dataDispatchGuide = await showDispatchGuide(
             decryptText(dispatchGuide_id)
@@ -257,7 +258,7 @@ function FormDispatchGuides() {
                   className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
                   value={dispatchGuide.fecha_salida || ""}
                   max={today}
-                  onChange={(e) => handleFechaEntregaChange(e.target.value.toLowerCase())}
+                  onChange={(e) => handleFechaEntregaChange(e.target.value.toUpperCase())}
                 />
               </div>
             </div>
@@ -279,7 +280,7 @@ function FormDispatchGuides() {
                       {...params}
                       label="Buscar factura por Nro. Control"
                       value={searchControl}
-                      onChange={(e) => handleSearchChange(e.target.value.toLowerCase())}
+                      onChange={(e) => handleSearchChange(e.target.value.toUpperCase())}
                       size="small"
                       fullWidth
                     />
@@ -289,56 +290,56 @@ function FormDispatchGuides() {
               <div className="w-full lg:w-6/12 px-4"></div>
               <div className="w-full lg:w-3/12 px-4 mt-4">
                 <label className="block text-blueGray-600 text-xs font-bold mb-2">R.I.F. (Cliente)</label>
-                <input
+                <input disabled
                   type="text"
                   className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
                   value={dispatchGuide.factura_cliente_final_rif || ""}
                   onChange={(e) =>
-                    setDispatchGuide((prev) => ({ ...prev, factura_cliente_final_rif: e.target.value.toLowerCase() }))
+                    setDispatchGuide((prev) => ({ ...prev, factura_cliente_final_rif: e.target.value.toUpperCase() }))
                   }
                 />
               </div>
               <div className="w-full lg:w-3/12 px-4 mt-4">
                 <label className="block text-blueGray-600 text-xs font-bold mb-2">Razón social (Cliente)</label>
-                <input
+                <input disabled
                   type="text"
                   className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
                   value={dispatchGuide.factura_cliente_final_nombre || ""}
                   onChange={(e) =>
-                    setDispatchGuide((prev) => ({ ...prev, factura_cliente_final_nombre: e.target.value.toLowerCase() }))
+                    setDispatchGuide((prev) => ({ ...prev, factura_cliente_final_nombre: e.target.value.toUpperCase() }))
                   }
                 />
               </div>
               <div className="w-full lg:w-3/12 px-4 mt-4">
                 <label className="block text-blueGray-600 text-xs font-bold mb-2">Número de factura</label>
-                <input
+                <input disabled
                   type="text"
                   className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
                   value={dispatchGuide.factura_numero_factura || ""}
                   onChange={(e) =>
-                    setDispatchGuide((prev) => ({ ...prev, factura_numero_factura: e.target.value.toLowerCase() }))
+                    setDispatchGuide((prev) => ({ ...prev, factura_numero_factura: e.target.value.toUpperCase() }))
                   }
                 />
               </div>
               <div className="w-full lg:w-3/12 px-4 mt-4">
                 <label className="block text-blueGray-600 text-xs font-bold mb-2">Número de control</label>
-                <input
+                <input disabled
                   type="text"
                   className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
                   value={dispatchGuide.factura_numero_control || ""}
                   onChange={(e) =>
-                    setDispatchGuide((prev) => ({ ...prev, factura_numero_control: e.target.value.toLowerCase() }))
+                    setDispatchGuide((prev) => ({ ...prev, factura_numero_control: e.target.value.toUpperCase() }))
                   }
                 />
               </div>
               <div className="w-full lg:w-6/12 px-4 mt-4">
-                <label className="block text-blueGray-600 text-xs font-bold mb-2">origen</label>
+                <label className="block text-blueGray-600 text-xs font-bold mb-2">Origen</label>
                 <input
                   type="text"
                   className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
                   value={dispatchGuide.origen || ""}
                   onChange={(e) =>
-                    setDispatchGuide((prev) => ({ ...prev, origen: e.target.value.toLowerCase() }))
+                    setDispatchGuide((prev) => ({ ...prev, origen: e.target.value.toUpperCase() }))
                   }
                 />
               </div>
@@ -349,7 +350,18 @@ function FormDispatchGuides() {
                   className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
                   value={dispatchGuide.destino || ""}
                   onChange={(e) =>
-                    setDispatchGuide((prev) => ({ ...prev, destino: e.target.value.toLowerCase() }))
+                    setDispatchGuide((prev) => ({ ...prev, destino: e.target.value.toUpperCase() }))
+                  }
+                />
+              </div>
+              <div className="w-full lg:w-4/12 px-4 mt-4">
+                <label className="block text-blueGray-600 text-xs font-bold mb-2">Motivo de traslado</label>
+                <input
+                  type="text"
+                  className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
+                  value={dispatchGuide.motivo_traslado || ""}
+                  onChange={(e) =>
+                    setDispatchGuide((prev) => ({ ...prev, motivo_traslado: e.target.value.toUpperCase() }))
                   }
                 />
               </div>
@@ -360,29 +372,29 @@ function FormDispatchGuides() {
                   className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
                   value={dispatchGuide.transportista || ""}
                   onChange={(e) =>
-                    setDispatchGuide((prev) => ({ ...prev, transportista: e.target.value.toLowerCase() }))
+                    setDispatchGuide((prev) => ({ ...prev, transportista: e.target.value.toUpperCase() }))
                   }
                 />
               </div>
-              <div className="w-full lg:w-4/12 px-4 mt-4">
+              <div className="w-full lg:w-2/12 px-4 mt-4">
                 <label className="block text-blueGray-600 text-xs font-bold mb-2">Chofer (Opcional)</label>
                 <input
                   type="text"
                   className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
                   value={dispatchGuide.chofer || ""}
                   onChange={(e) =>
-                    setDispatchGuide((prev) => ({ ...prev, chofer: e.target.value.toLowerCase() }))
+                    setDispatchGuide((prev) => ({ ...prev, chofer: e.target.value.toUpperCase() }))
                   }
                 />
               </div>
-              <div className="w-full lg:w-4/12 px-4 mt-4">
+              <div className="w-full lg:w-2/12 px-4 mt-4">
                 <label className="block text-blueGray-600 text-xs font-bold mb-2">Placa (Opcional)</label>
                 <input
                   type="text"
                   className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
                   value={dispatchGuide.placa || ""}
                   onChange={(e) =>
-                    setDispatchGuide((prev) => ({ ...prev, placa: e.target.value.toLowerCase() }))
+                    setDispatchGuide((prev) => ({ ...prev, placa: e.target.value.toUpperCase() }))
                   }
                 />
               </div>

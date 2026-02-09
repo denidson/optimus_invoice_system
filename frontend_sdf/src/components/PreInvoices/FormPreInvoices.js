@@ -691,7 +691,6 @@ const handleSearchRif = (value, type) => {
     }else{
       setFilterResults([]);
     }
-    setShowResults(false);
     return;
   }
   var results;
@@ -825,12 +824,16 @@ const handleRadioChange = (event) => {
                       <div className="relative">
                         <Autocomplete
                             freeSolo
-                            options={showResults && preInvoice.cliente_rif != '' ? filterResultsAdmin : clients}
+                            options={
+                              showResults && preInvoice.cliente_rif !== ''
+                                ? filterResultsAdmin ?? []
+                                : clients ?? []}
                             getOptionLabel={(opt) =>
                               opt?.rif ? `${opt.rif} — ${opt.nombre_empresa}` : ""
                             }
                             filterOptions={(options) => options} // usamos tu propio filtro manual
-                            inputValue={preInvoice.cliente_rif}
+                            value={null}
+                            inputValue={preInvoice.cliente_rif || ""}
                             onInputChange={(e, value) => handleSearchRif(value, 'admin')}
                             onChange={(event, newValue) => {
                               if (newValue) selectClient(newValue, 'admin');
@@ -945,12 +948,17 @@ const handleRadioChange = (event) => {
                         />*/}
                         <Autocomplete
                             freeSolo
-                            options={showResults && preInvoice.cliente_final_rif != '' ? filterResults : endClients}
+                            options={
+                                showResults && preInvoice.cliente_final_rif !== ''
+                                  ? filterResults ?? []
+                                  : endClients ?? []
+                              }
                             getOptionLabel={(opt) =>
                               opt?.rif ? `${opt.rif} — ${opt.nombre}` : ""
                             }
                             filterOptions={(options) => options} // usamos tu propio filtro manual
-                            inputValue={preInvoice.cliente_final_rif}
+                            value={null}
+                            inputValue={preInvoice.cliente_final_rif || ""}
                             onInputChange={(e, value) => handleSearchRif(value, 'client')}
                             onChange={(event, newValue) => {
                               if (newValue) selectClient(newValue, 'client');
