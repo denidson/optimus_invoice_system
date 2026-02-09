@@ -1,5 +1,4 @@
-// Dashboard.jsx
-import React, { useContext, useState } from "react";
+import React, { useContext, useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { AuthContext } from "../context/AuthContext";
 
@@ -103,6 +102,45 @@ export default function Dashboard() {
   });
 
   /* ========================
+     DEBUG (VERCEL / PROD)
+  ========================= */
+  useEffect(() => {
+    console.group("📊 DASHBOARD DEBUG");
+
+    console.log("👤 user:", user);
+    console.log("🛡️ isAdmin:", isAdmin);
+    console.log("🆔 cliente_id:", cliente_id);
+    console.log("🧾 params:", params);
+
+    console.log("👥 clientsQuery.data:", clientsQuery.data);
+    console.log("👥 clientsQuery.error:", clientsQuery.error);
+
+    console.log("📈 summaryQuery.data:", summaryQuery.data);
+    console.log("📈 summaryQuery.error:", summaryQuery.error);
+
+    console.log("⏱️ salesOverTimeQuery.data:", salesOverTimeQuery.data);
+    console.log("⏱️ salesOverTimeQuery.error:", salesOverTimeQuery.error);
+
+    console.log("🏆 topClientsQuery.data:", topClientsQuery.data);
+    console.log("🏆 topClientsQuery.error:", topClientsQuery.error);
+
+    console.log("📦 topProductsQuery.data:", topProductsQuery.data);
+    console.log("📦 topProductsQuery.error:", topProductsQuery.error);
+
+    console.groupEnd();
+  }, [
+    user,
+    isAdmin,
+    cliente_id,
+    params,
+    clientsQuery.data,
+    summaryQuery.data,
+    salesOverTimeQuery.data,
+    topClientsQuery.data,
+    topProductsQuery.data,
+  ]);
+
+  /* ========================
      RENDER
   ========================= */
   return (
@@ -122,11 +160,12 @@ export default function Dashboard() {
               className="border rounded px-2 py-1 text-sm"
             >
               <option value="">Todos los clientes</option>
-              {clientsQuery.data?.map((client) => (
-                <option key={client.id} value={client.id}>
-                  {client.nombre_empresa}
-                </option>
-              ))}
+              {Array.isArray(clientsQuery.data) &&
+                clientsQuery.data.map((client) => (
+                  <option key={client.id} value={client.id}>
+                    {client.nombre_empresa}
+                  </option>
+                ))}
             </select>
           )}
 
@@ -173,7 +212,11 @@ export default function Dashboard() {
           {/* GRÁFICO */}
           <div className="w-full xl:w-5/12 px-4 pt-6">
             <CardBarChart
-              data={salesOverTimeQuery.data?.data || []}
+              data={
+                Array.isArray(salesOverTimeQuery.data?.data)
+                  ? salesOverTimeQuery.data.data
+                  : []
+              }
               currency={salesOverTimeQuery.data?.currency || ""}
               isLoading={salesOverTimeQuery.isFetching}
             />
@@ -182,11 +225,19 @@ export default function Dashboard() {
           {/* RANKINGS */}
           <div className="w-full xl:w-7/12 px-4 pt-6 grid grid-cols-1 xl:grid-cols-2 gap-6">
             <CardTopClients
-              clients={topClientsQuery.data?.slice(0, 10) || []}
+              clients={
+                Array.isArray(topClientsQuery.data)
+                  ? topClientsQuery.data.slice(0, 10)
+                  : []
+              }
             />
 
             <CardTopProducts
-              products={topProductsQuery.data?.slice(0, 10) || []}
+              products={
+                Array.isArray(topProductsQuery.data)
+                  ? topProductsQuery.data.slice(0, 10)
+                  : []
+              }
             />
           </div>
         </div>
