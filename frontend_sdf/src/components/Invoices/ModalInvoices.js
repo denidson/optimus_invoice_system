@@ -6,19 +6,29 @@ function ModalPreinvoices({ isOpen, onClose, message }) {
   const hasNotaDebitoItems =
     message?.tipo_documento === "ND" &&
     message?.nota_debito_detalle?.items?.length > 0;
+  //console.log('hasNotaDebitoItems: ', hasNotaDebitoItems);
+  var itemsList;
+  if (message.tipo_documento == 'ND' && message.nota_debito_detalle?.items?.length > 0){
+    itemsList = message.nota_debito_detalle?.items;
+  }else if (message.tipo_documento == 'NC' && message.nota_credito_detalle?.items?.length > 0){
+    itemsList = message.nota_credito_detalle?.items;
+  }else{
+    itemsList = message.items;
+  }
+  //console.log('itemsList: ', itemsList);
   return (
     <div className="fixed inset-0 z-50 flex justify-center items-center bg-black/50 p-4 overflow-y-auto">
       <div className="bg-white rounded-lg shadow-lg w-full max-w-[1200px] max-h-[90vh] overflow-y-auto relative p-6">
         {/* Header */}
         <div className="text-center mb-6">
-          <h6 className="text-xl font-bold text-blueGray-700">Detalles de la Factura</h6>
+          <h6 className="text-xl font-bold text-blueGray-700">Detalles de la {(message.tipo_documento == 'FC' ? 'Factura' : (message.tipo_documento == 'ND' ? 'Nota de Débito' : 'Nota de Crédito') )}</h6>
           <hr className="my-4 border-b border-blueGray-300"/>
         </div>
 
         {/* Información general */}
         <div className="flex flex-wrap justify-between px-2 mb-4">
           <div className="w-1/5 text-start">
-            <label className="font-bold text-blueGray-700">Fecha de Factura:</label>
+            <label className="font-bold text-blueGray-700">Fecha de {(message.tipo_documento == 'FC' ? 'Factura' : (message.tipo_documento == 'ND' ? 'Nota de Débito' : 'Nota de Crédito') )}:</label>
             <div>{message.fecha_factura ? message.fecha_factura.replace('T',' ').substr(0,19) : ''}</div>
           </div>
           <div className="w-1/5 text-start">
@@ -80,25 +90,29 @@ function ModalPreinvoices({ isOpen, onClose, message }) {
             <div>{message.estatus.toUpperCase()}</div>
           </div>
         </div>
-                
+
+        {(message.tipo_documento === 'ND' || message.tipo_documento === 'NC') && message.factura_afectada_rel && (
+          <hr className="my-4 border-b border-blueGray-300"/>
+        )}
+
         {(message.tipo_documento === 'ND' || message.tipo_documento === 'NC') && message.factura_afectada_rel && (
           <div className="mb-4 px-2">
             {/* Título principal */}
             <label className="font-bold text-blueGray-700 mb-2">Factura afectada:</label>
             
             {/* Datos de la factura afectada */}
-            <div className="flex flex-wrap justify-between">
+            <div className="flex flex-wrap justify-between mt-3">
               <div className="w-1/5 text-start">
                 <label className="font-bold text-blueGray-700">Número de control:</label>
                 <div>{formatText(message.factura_afectada_rel.numero_control)}</div>
               </div>
-              <div className="w-1/5 text-start">
+              <div className="w-1/5 text-center">
                 <label className="font-bold text-blueGray-700">Fecha de emisión:</label>
                 <div>{formatDateTime(message.factura_afectada_rel.fecha_emision)}</div>
               </div>
-              <div className="w-1/5 text-start">
+              <div className="w-1/5 text-end">
                 <label className="font-bold text-blueGray-700">Total:</label>
-                <div>{formatMoney(message.factura_afectada_rel.total_neto)}</div>
+                <div>{'Bs. ' + formatMoney(message.factura_afectada_rel.total_neto)}</div>
               </div>
             </div>
             <hr className="my-4 border-b border-blueGray-300"/>
@@ -119,16 +133,16 @@ function ModalPreinvoices({ isOpen, onClose, message }) {
               <div className="w-1/12 px-2 py-1">Desc %</div>
               <div className="w-1/4 px-2 py-1">Total</div>
             </div>
-          {!hasNotaDebitoItems && message.items && message.items.length > 0 ? (
-            message.items.map((item) => (
+          {!hasNotaDebitoItems && itemsList && itemsList.length > 0 ? (
+            itemsList.map((item) => (
               <div key={item.id} className="flex border-b border-gray-300 text-center">
                 <div className="w-1/4 px-2 py-1 text-left">{item.producto ? item.producto.sku + '-' + item.producto.nombre : 'N/A'}</div>
                 <div className="w-1/6 px-2 py-1">{item.cantidad.toLocaleString("es-VE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
                 <div className="w-1/12 px-2 py-1">{item.iva_categoria_id ? item.iva_categoria.tasa_porcentaje.toLocaleString("es-VE", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : 0}</div>
-                <div className="w-1/6 px-2 py-1 text-right">{item.precio_unitario.toLocaleString("es-VE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+                <div className="w-1/6 px-2 py-1 text-right">{(message.tipo_documento == 'FC' ? item.precio_unitario : item.monto_unitario).toLocaleString("es-VE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
                 <div className="w-1/12 px-2 py-1">{item.descuento_porcentaje ? item.descuento_porcentaje.toLocaleString("es-VE", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : 0}</div>
                 <div className="w-1/4 px-2 py-1 text-right">
-                  {(item.cantidad * (item.precio_unitario - (item.precio_unitario * (item.descuento_porcentaje || 0)/100))).toLocaleString("es-VE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  {(item.cantidad * ((message.tipo_documento == 'FC' ? item.precio_unitario : item.monto_unitario) - ((message.tipo_documento == 'FC' ? item.precio_unitario : item.monto_unitario) * (item.descuento_porcentaje || 0)/100))).toLocaleString("es-VE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 </div>
               </div>
             ))
@@ -146,7 +160,7 @@ function ModalPreinvoices({ isOpen, onClose, message }) {
           </div>
         )}
         {hasNotaDebitoItems && (
-          message.nota_debito_detalle.items.map(item => (
+          itemsList.map(item => (
             <div key={item.id} className="px-5 flex justify-between border-b py-1">
               <span className="lg:w-8/12 text-start">
                 {formatText(item.concepto)}

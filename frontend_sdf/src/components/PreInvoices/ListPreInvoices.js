@@ -508,7 +508,7 @@ function ListPreInvoices() {
                               <i class="fa-solid fa-file-invoice fa-lg"></i>
                             </button>
                           `,
-                          text: "Convertir en factura"
+                          text: "Convertir en " + ((row.tipo_documento == 'FC' ? 'Factura' : (row.tipo_documento == 'ND' ? 'Nota de Débito' : 'Nota de Crédito') ))
                         });
                         return `<div style="display:flex;justify-content:center;align-items:center;gap:0.25rem;white-space:nowrap;">${viewBtn}${editBtn}${invoiceBtn}</div>`;
                       }else{

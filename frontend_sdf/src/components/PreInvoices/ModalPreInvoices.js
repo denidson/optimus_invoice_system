@@ -71,23 +71,25 @@ function ModalPreinvoices({ isOpen, onClose, message }) {
                     <span className="text-blueGray-700">{message.estatus.toUpperCase()}</span>
                   </div>
                 </div>
-
+                {(message.tipo_documento === 'ND' || message.tipo_documento === 'NC') && message.factura_afectada_rel && (
+                  <hr className="my-4 border-b border-blueGray-300"/>
+                )}
                 {/* Factura afectada */}
                 {(message.tipo_documento === 'ND' || message.tipo_documento === 'NC') && message.factura_afectada_rel && (
-                  <div className="mb-4 px-2 mt-6">
+                  <div className="mb-4 px-2 mt-0">
                     <h6 className="text-lg font-bold text-blueGray-700 mb-2">Factura afectada</h6>
                     <div className="flex flex-wrap justify-between">
                       <div className="w-1/5 text-start">
                         <label className="font-bold text-blueGray-700">Número de control:</label>
-                        <span>{formatText(message.factura_afectada_rel.numero_control)}</span>
+                        <div>{formatText(message.factura_afectada_rel.numero_control)}</div>
                       </div>
-                      <div className="w-1/5 text-start">
+                      <div className="w-1/5 text-center">
                         <label className="font-bold text-blueGray-700">Fecha de emisión:</label>
-                        <span>{formatDateTime(message.factura_afectada_rel.fecha_emision)}</span>
+                        <div>{formatDateTime(message.factura_afectada_rel.fecha_emision)}</div>
                       </div>
-                      <div className="w-1/5 text-start">
+                      <div className="w-1/5 text-end">
                         <label className="font-bold text-blueGray-700">Total:</label>
-                        <span>{formatMoney(message.factura_afectada_rel.total_neto)}</span>
+                        <div>{'Bs. ' + formatMoney(message.factura_afectada_rel.total_neto)}</div>
                       </div>
                     </div>
                     <hr className="my-4 border-b border-blueGray-300"/>
