@@ -50,18 +50,16 @@ export default function Dashboard() {
     if (isAdmin) setSelectedClientId("");
   };
 
-  /* ========================
-     CLIENTES (solo admin)
-  ========================= */
   const clientsQuery = useQuery({
     queryKey: ["clients"],
-    queryFn: getClients,
     enabled: isAdmin,
+    initialData: [],
+    queryFn: async () => {
+      const res = await getClients();
+      return Array.isArray(res?.data) ? res.data : [];
+    },
   });
 
-  /* ========================
-     PARAMS COMUNES
-  ========================= */
   const effectiveClientId = isAdmin
     ? selectedClientId || undefined
     : cliente_id;
@@ -72,67 +70,55 @@ export default function Dashboard() {
     ...(appliedEndDate && { end_date: appliedEndDate }),
   };
 
-  /* ========================
-     QUERIES
-  ========================= */
   const summaryQuery = useQuery({
     queryKey: ["sales-summary", params],
-    queryFn: () => getSalesSummary(params),
     enabled: isAdmin || !!cliente_id,
+    queryFn: () => getSalesSummary(params),
     keepPreviousData: true,
   });
 
   const salesOverTimeQuery = useQuery({
     queryKey: ["sales-over-time", params],
-    queryFn: () => getSalesOverTime(params),
     enabled: isAdmin || !!cliente_id,
     keepPreviousData: true,
+    queryFn: async () => {
+      const res = await getSalesOverTime(params);
+      return {
+        currency: res?.currency || "",
+        data: Array.isArray(res?.data) ? res.data : [],
+      };
+    },
   });
 
   const topClientsQuery = useQuery({
     queryKey: ["top-clients", params],
-    queryFn: () => getTopClients(params),
     enabled: isAdmin || !!cliente_id,
+    initialData: [],
+    queryFn: async () => {
+      const res = await getTopClients(params);
+      return Array.isArray(res) ? res : [];
+    },
   });
 
   const topProductsQuery = useQuery({
     queryKey: ["top-products", params],
-    queryFn: () => getTopProducts(params),
     enabled: isAdmin || !!cliente_id,
+    initialData: [],
+    queryFn: async () => {
+      const res = await getTopProducts(params);
+      return Array.isArray(res) ? res : [];
+    },
   });
 
-  /* ========================
-     DEBUG (VERCEL / PROD)
-  ========================= */
   useEffect(() => {
     console.group("📊 DASHBOARD DEBUG");
-
-    console.log("👤 user:", user);
-    console.log("🛡️ isAdmin:", isAdmin);
-    console.log("🆔 cliente_id:", cliente_id);
-    console.log("🧾 params:", params);
-
-    console.log("👥 clientsQuery.data:", clientsQuery.data);
-    console.log("👥 clientsQuery.error:", clientsQuery.error);
-
-    console.log("📈 summaryQuery.data:", summaryQuery.data);
-    console.log("📈 summaryQuery.error:", summaryQuery.error);
-
-    console.log("⏱️ salesOverTimeQuery.data:", salesOverTimeQuery.data);
-    console.log("⏱️ salesOverTimeQuery.error:", salesOverTimeQuery.error);
-
-    console.log("🏆 topClientsQuery.data:", topClientsQuery.data);
-    console.log("🏆 topClientsQuery.error:", topClientsQuery.error);
-
-    console.log("📦 topProductsQuery.data:", topProductsQuery.data);
-    console.log("📦 topProductsQuery.error:", topProductsQuery.error);
-
+    console.log("clients:", clientsQuery.data);
+    console.log("summary:", summaryQuery.data);
+    console.log("salesOverTime:", salesOverTimeQuery.data);
+    console.log("topClients:", topClientsQuery.data);
+    console.log("topProducts:", topProductsQuery.data);
     console.groupEnd();
   }, [
-    user,
-    isAdmin,
-    cliente_id,
-    params,
     clientsQuery.data,
     summaryQuery.data,
     salesOverTimeQuery.data,
@@ -140,19 +126,15 @@ export default function Dashboard() {
     topProductsQuery.data,
   ]);
 
-  /* ========================
-     RENDER
-  ========================= */
   return (
     <AdminLayout nombreUsuario={nombreUsuario}>
-      {/* FILTRO */}
+      {/* FILTROS */}
       <div className="px-4 md:px-8 mx-auto w-full bg-twilight-indigo-400">
         <div className="flex flex-wrap gap-2 items-center p-4">
           <span className="text-sm text-white font-semibold">
             Filtrar por:
           </span>
 
-          {/* CLIENTE (solo admin) */}
           {isAdmin && (
             <select
               value={selectedClientId}
@@ -160,16 +142,14 @@ export default function Dashboard() {
               className="border rounded px-2 py-1 text-sm"
             >
               <option value="">Todos los clientes</option>
-              {Array.isArray(clientsQuery.data) &&
-                clientsQuery.data.map((client) => (
-                  <option key={client.id} value={client.id}>
-                    {client.nombre_empresa}
-                  </option>
-                ))}
+              {clientsQuery.data.map((client) => (
+                <option key={client.id} value={client.id}>
+                  {client.nombre_empresa}
+                </option>
+              ))}
             </select>
           )}
 
-          {/* FECHAS */}
           <input
             type="date"
             value={draftStartDate}
@@ -195,12 +175,12 @@ export default function Dashboard() {
             onClick={clearFilter}
             className="text-white text-sm underline"
           >
-            <i className="fa-solid fa-eraser" title="Limpiar" />
+            <i className="fa-solid fa-eraser" />
           </button>
         </div>
       </div>
 
-      {/* HEADER STATS */}
+      {/* HEADER */}
       <HeaderStats
         summary={summaryQuery.data}
         isLoading={summaryQuery.isFetching}
@@ -209,35 +189,20 @@ export default function Dashboard() {
       {/* CONTENIDO */}
       <div className="px-4 md:px-8 mx-auto w-full">
         <div className="flex flex-wrap">
-          {/* GRÁFICO */}
           <div className="w-full xl:w-5/12 px-4 pt-6">
             <CardBarChart
-              data={
-                Array.isArray(salesOverTimeQuery.data?.data)
-                  ? salesOverTimeQuery.data.data
-                  : []
-              }
-              currency={salesOverTimeQuery.data?.currency || ""}
+              data={salesOverTimeQuery.data.data}
+              currency={salesOverTimeQuery.data.currency}
               isLoading={salesOverTimeQuery.isFetching}
             />
           </div>
 
-          {/* RANKINGS */}
           <div className="w-full xl:w-7/12 px-4 pt-6 grid grid-cols-1 xl:grid-cols-2 gap-6">
             <CardTopClients
-              clients={
-                Array.isArray(topClientsQuery.data)
-                  ? topClientsQuery.data.slice(0, 10)
-                  : []
-              }
+              clients={topClientsQuery.data.slice(0, 10)}
             />
-
             <CardTopProducts
-              products={
-                Array.isArray(topProductsQuery.data)
-                  ? topProductsQuery.data.slice(0, 10)
-                  : []
-              }
+              products={topProductsQuery.data.slice(0, 10)}
             />
           </div>
         </div>
