@@ -68,7 +68,8 @@ function ListPreInvoices() {
       const id = $(this).data("id");
       const factura_afectada_id = $(this).data("factura_afectada_id");
       const correlativo_interno = $(this).data("correlativo_interno");
-      handleOpenModalInInvoices(id, factura_afectada_id, correlativo_interno);
+      const descripcion = $(this).data("descripcion");
+      handleOpenModalInInvoices(id, factura_afectada_id, correlativo_interno, descripcion);
     });
 
     $("#ListPreInvoicesDt tbody").on("click", "button.btn-delete", function () {
@@ -155,8 +156,8 @@ function ListPreInvoices() {
 
   const handleCloseModalPreinvoices = () => setModalOpenPreinvoices(false);
 
-  const handleOpenModalInInvoices = (id, factura_afectada_id, correlativo_interno) => {
-    setPreInvoicesIdInInvoices({ id, factura_afectada_id, correlativo_interno });
+  const handleOpenModalInInvoices = (id, factura_afectada_id, correlativo_interno, descripcion) => {
+    setPreInvoicesIdInInvoices({ id, factura_afectada_id, correlativo_interno, descripcion });
     setModalOpenInInvoices(true);
   };
 
@@ -500,6 +501,7 @@ function ListPreInvoices() {
                           html: `
                             <button
                               class="btn-invoice px-1 py-1 mx-0 text-green-600"
+                              data-descripcion="${((row.tipo_documento == 'FC' ? 'Factura' : (row.tipo_documento == 'ND' ? 'Nota de Débito' : 'Nota de Crédito') ))}"
                               data-id="${row.id}"
                               data-factura_afectada_id="${
                                 row.factura_afectada_rel ? row.factura_afectada_rel.id : 0
@@ -802,7 +804,7 @@ function ListPreInvoices() {
                 isOpen={modalOpenInInvoices}
                 onClose={handleCloseModalInInvoices}
                 onConfirm={handleConfirmInInvoices}
-                message={`¿Convertir en factura la Pre-Factura ${preInvoicesIdInInvoices?.correlativo_interno || ""}?`}
+                message={`¿Convertir la ${preInvoicesIdInInvoices?.descripcion || ""} (${preInvoicesIdInInvoices?.correlativo_interno || ""}) en documento legal?`}
               />
 
               {modalImportOpen && (

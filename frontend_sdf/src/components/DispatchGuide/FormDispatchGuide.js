@@ -118,6 +118,7 @@ function FormDispatchGuides() {
       const response = await getInvoices({
         tipo_documento: "FC",
         numero_control: value,
+        estatus: 'normal',
       });
       setFilterResults(Array.isArray(response.data) ? response.data : []);
     } catch {

@@ -500,7 +500,11 @@ function FormPreInvoices() {
           },
         });
       }else{
-        toast.error(data.error.toUpperCase());
+        //console.log('EditPreInvoice-Error:==>');
+        if (action == 'create'){
+          preInvoice.id = '#';
+        }
+        toast.error(data.resultados[0].motivo);
         setButtonDisabled(false);
       }
     } catch (err) {

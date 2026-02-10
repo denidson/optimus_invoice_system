@@ -18,6 +18,7 @@ export const getInvoices = async (params = {}) => {
     if (params.numero_control) query.append("numero_control", params.numero_control);
     if (params.desde) query.append("desde", params.desde);
     if (params.hasta) query.append("hasta", params.hasta);
+    if (params.estatus) query.append("estatus", params.estatus);
 
     const response = await api.get(`${endpoint}?${query.toString()}`);
     return response.data;
