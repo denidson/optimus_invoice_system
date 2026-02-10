@@ -63,7 +63,7 @@ export const editClient = async (id, body) => {
 // Crear un cliente
 export const createClient = async (body) => {
   try {
-    const response = await api.post(`/api/clients`, body);
+    const response = await api.post(`/api/clients/`, body);
     console.log('createClient-response: ', response);
     return response.data;
   } catch (error) {
