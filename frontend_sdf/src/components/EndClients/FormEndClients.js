@@ -20,6 +20,7 @@ function FormEndClients() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [buttonDisabled, setButtonDisabled] = useState(false);
+  const [errors, setErrors] = useState({}); // Estado para errores de validación
 
   // Simulando la carga de datos del client por el ID
   useEffect(() => {
@@ -56,10 +57,47 @@ function FormEndClients() {
   if (loading) return <div>Cargando...</div>;
   if (error) return <div>{error}</div>;
 
+  // Validación de campos requeridos
+  const validate = () => {
+    const newErrors = {};
+    var errorToast = [];
+    if (!client.rif){
+      newErrors.rif = "R.I.F. es obligatorio";
+      errorToast.push("- R.I.F. es obligatorio");
+    }
+    if (!client.nombre){
+      newErrors.nombre = "Nombre es obligatorio";
+      errorToast.push("- Nombre es obligatorio");
+    }
+    if (!client.telefono){
+      newErrors.telefono = "Teléfono es obligatorio";
+      errorToast.push("- Teléfono es obligatorio");
+    }
+    if (!client.email){
+      newErrors.email = "Correo electrónico es obligatorio";
+      errorToast.push("- Correo electrónico es obligatorio");
+    }
+    if (!client.direccion){
+      newErrors.direccion = "Dirección es obligatoria";
+      errorToast.push("- Dirección es obligatoria");
+    }
+    setErrors(newErrors);
+    if (errorToast.length > 0){
+      toast.error(<div>
+        {errorToast.map(item => (
+            <span className="text-start">{item}<br/></span>
+          ))}
+      </div>)
+      setButtonDisabled(false);
+    }
+    return Object.keys(newErrors).length === 0;
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-    // Aquí enviarías los datos de nuevo al backend para actualizar al client
     setButtonDisabled(true); // Iniciar carga (deshabilitar botón)
+    if (!validate()) return;
+    // Aquí enviarías los datos de nuevo al backend para actualizar al client
     console.log("Client:", client);
     try {
       var data;
@@ -189,6 +227,7 @@ function FormEndClients() {
                           }
                         }}
                       />
+                      {errors.rif && <p className="text-red-500 text-xs mt-1">{errors.rif}</p>}
                     </div>
                   </div>
                   <div className="w-full lg:w-10/12 px-4">
@@ -200,6 +239,7 @@ function FormEndClients() {
                         value={client.nombre}
                         onChange={(e) => setClient({ ...client, nombre: e.target.value.toUpperCase() })}
                       />
+                      {errors.nombre && <p className="text-red-500 text-xs mt-1">{errors.nombre}</p>}
                       </div>
                   </div>
                   <div className="w-full lg:w-2/12 px-4">
@@ -211,6 +251,7 @@ function FormEndClients() {
                         value={client.telefono}
                         onChange={(e) => setClient({ ...client, telefono: e.target.value })}
                       />
+                      {errors.telefono && <p className="text-red-500 text-xs mt-1">{errors.telefono}</p>}
                     </div>
                   </div>
                   <div className="w-full lg:w-5/12 px-4">
@@ -222,6 +263,7 @@ function FormEndClients() {
                         value={client.email}
                         onChange={(e) => setClient({ ...client, email: e.target.value.toUpperCase() })}
                       />
+                      {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email}</p>}
                     </div>
                   </div>
                   {/*<div className="w-full lg:w-2/12 px-4">
@@ -251,6 +293,7 @@ function FormEndClients() {
                         value={client.direccion}
                         onChange={(e) => setClient({ ...client, direccion: e.target.value.toUpperCase() })}
                       />
+                      {errors.direccion && <p className="text-red-500 text-xs mt-1">{errors.direccion}</p>}
                     </div>
                   </div>
                   {/*<div className="w-full lg:w-2/12 px-4">

@@ -633,7 +633,7 @@ function FormPreInvoices() {
     //console.log('newErrors: ', newErrors);
     setErrors(newErrors);
     //console.log('errorToast: ', errorToast);
-    if (errorToast != ''){
+    if (errorToast.length > 0){
       //toast.error(errorToast);
       toast.error(<div>
         {errorToast.map(item => (

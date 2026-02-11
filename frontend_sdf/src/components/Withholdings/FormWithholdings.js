@@ -63,7 +63,7 @@ function FormWithholdings() {
   const [loading, setLoading] = useState(true);
   const [buttonDisabled, setButtonDisabled] = useState(false);
   const [searchControl, setSearchControl] = useState("");
-
+  const [errors, setErrors] = useState({}); // Estado para errores de validación
   const authData = JSON.parse(localStorage.getItem("authData") || "{}");
   const authclientId = authData.cliente_id;
 
@@ -79,6 +79,7 @@ function FormWithholdings() {
   });
 
   const today = new Date().toISOString().split("T")[0];
+
 
   // **********************************************************
   // CARGAR DATOS CLIENTE
@@ -350,39 +351,61 @@ function FormWithholdings() {
     },
   ];
 
+  // Validación de campos requeridos
+  const validate = () => {
+    const newErrors = {};
+    var errorToast = [];
+    if (!withholding.numero_comprobante){
+      newErrors.numero_comprobante = "El número de comprobante es obligatorio";
+      errorToast.push("- El número de comprobante es obligatorio");
+    }
+    if (!withholding.fecha_emision){
+      newErrors.fecha_emision = "La fecha de emisión es obligatoria";
+      errorToast.push("- La fecha de emisión es obligatoria");
+    }
+    if (!withholding.fecha_entrega){
+      newErrors.fecha_entrega = "La fecha de entrega es obligatoria";
+      errorToast.push("- La fecha de entrega es obligatoria");
+    }
+    if (!withholding.periodo_fiscal){
+      newErrors.periodo_fiscal = "El período fiscal es obligatorio";
+      errorToast.push("- El período fiscal es obligatorio");
+    }
+    if (!withholding.items.length){
+      if (newErrors.items == undefined){
+        newErrors.items = [];
+      }
+      newErrors.items.push("Debe agregar al menos una factura");
+      errorToast.push("- Debe agregar al menos una factura");
+    }
+    for (let item of withholding.items) {
+      if (!item.retencion_id){
+        if (newErrors.items == undefined){
+          newErrors.items = [];
+        }
+        newErrors.items.push(`Debe seleccionar el tipo de retención para la factura ${item.factura_afectada_numero}`);
+        errorToast.push(`- Debe seleccionar el tipo de retención para la factura ${item.factura_afectada_numero}`);
+      }
+    }
+    setErrors(newErrors);
+    if (errorToast.length > 0){
+      toast.error(<div>
+        {errorToast.map(item => (
+            <span className="text-start">{item}<br/></span>
+          ))}
+      </div>)
+      setButtonDisabled(false);
+    }
+    return Object.keys(newErrors).length === 0;
+  };
+
   // **********************************************************
   // SUBMIT CON VALIDACIONES
   // **********************************************************
   const handleSubmit = async (e) => {
     e.preventDefault();
     setButtonDisabled(true);
-
-    // Validaciones mínimas antes de enviar
-    if (!withholding.fecha_emision) {
-      toast.error("La fecha de emisión es obligatoria");
-      setButtonDisabled(false);
-      return;
-    }
-
-    if (!withholding.numero_comprobante) {
-      toast.error("El número de comprobante es obligatorio");
-      setButtonDisabled(false);
-      return;
-    }
-
-    if (!withholding.items.length) {
-      toast.error("Debe agregar al menos una factura");
-      setButtonDisabled(false);
-      return;
-    }
-
-    for (let item of withholding.items) {
-      if (!item.retencion_id) {
-        toast.error(`Debe seleccionar el tipo de retención para la factura ${item.factura_afectada_numero}`);
-        setButtonDisabled(false);
-        return;
-      }
-    }
+    if (!validate()) return;
 
     // ---------------------------------------------------------
     // Construir JSON final a enviar (payload)
@@ -476,6 +499,7 @@ function FormWithholdings() {
                     setWithholding((prev) => ({ ...prev, numero_comprobante: e.target.value }))
                   }
                 />
+                {errors.numero_comprobante && <p className="text-red-500 text-xs mt-1">{errors.numero_comprobante}</p>}
               </div>
             </div>
 
@@ -489,6 +513,7 @@ function FormWithholdings() {
                   max={today}
                   onChange={(e) => handleFechaEmisionChange(e.target.value)}
                 />
+                {errors.fecha_emision && <p className="text-red-500 text-xs mt-1">{errors.fecha_emision}</p>}
               </div>
 
               <div className="w-full lg:w-3/12 px-4">
@@ -500,6 +525,7 @@ function FormWithholdings() {
                   max={today}
                   onChange={(e) => handleFechaEntregaChange(e.target.value)}
                 />
+                {errors.fecha_entrega && <p className="text-red-500 text-xs mt-1">{errors.fecha_entrega}</p>}
               </div>
 
               <div className="w-full lg:w-3/12 px-4">
@@ -509,6 +535,7 @@ function FormWithholdings() {
                   className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-gray-200 rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
                   value={withholding.periodo_fiscal || ""}
                 />
+                {errors.periodo_fiscal && <p className="text-red-500 text-xs mt-1">{errors.periodo_fiscal}</p>}
               </div>
             </div>
 
@@ -548,6 +575,14 @@ function FormWithholdings() {
                 pageSize={5}
                 localeText={esES.components.MuiDataGrid.defaultProps.localeText}
               />
+            </div>
+            <div className="w-full lg:w-12/12 px-5 my-1 text-center">
+              {errors.items &&
+                <p className="text-red-500 text-xs mt-1">
+                  {errors.items.map(item => (
+                    <span className="text-start">{item}<br/></span>
+                  ))}
+              </p>}
             </div>
 
             <hr className="my-6 border-b-1 border-blueGray-300" />

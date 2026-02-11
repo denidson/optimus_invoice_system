@@ -27,7 +27,7 @@ function FormDispatchGuides() {
   const [loading, setLoading] = useState(true);
   const [buttonDisabled, setButtonDisabled] = useState(false);
   const [searchControl, setSearchControl] = useState("");
-
+  const [errors, setErrors] = useState({}); // Estado para errores de validación
   const authData = JSON.parse(localStorage.getItem("authData") || "{}");
   const authclientId = authData.cliente_id;
   const today = new Date().toISOString().split("T")[0];
@@ -45,6 +45,7 @@ function FormDispatchGuides() {
     "motivo_traslado": "",
     "transportista": "",
     "chofer": "",
+    "placa": "",
   });
 
 
@@ -144,53 +145,61 @@ function FormDispatchGuides() {
     }
   };
 
+  // Validación de campos requeridos
+  const validate = () => {
+    const newErrors = {};
+    var errorToast = [];
+    if (!dispatchGuide.fecha_salida){
+      newErrors.fecha_salida = "La fecha de sálida es obligatoria";
+      errorToast.push("- La fecha de sálida es obligatoria");
+    }
+    if (!dispatchGuide.factura_cliente_final_rif){
+      newErrors.factura_cliente_final_rif = "R.I.F. del cliente es obligatorio";
+      errorToast.push("- R.I.F. del cliente es obligatorio");
+    }
+    if (!dispatchGuide.factura_cliente_final_nombre){
+      newErrors.factura_cliente_final_nombre = "Nombre del cliente es obligatorio";
+      errorToast.push("- Nombre del cliente es obligatorio");
+    }
+    if (!dispatchGuide.factura_numero_factura){
+      newErrors.factura_numero_factura = "Número de factura es obligatorio";
+      errorToast.push("- Número de factura es obligatorio");
+    }
+    if (!dispatchGuide.factura_numero_control){
+      newErrors.factura_numero_control = "Número de control es obligatorio";
+      errorToast.push("- Número de control es obligatorio");
+    }
+    if (!dispatchGuide.origen){
+      newErrors.origen = "Ubicación de origen es obligatoria";
+      errorToast.push("- Ubicación de origen es obligatoria");
+    }
+    if (!dispatchGuide.destino){
+      newErrors.destino = "Dirección de destino es obligatoria";
+      errorToast.push("- Dirección de destino es obligatoria");
+    }
+    if (!dispatchGuide.motivo_traslado){
+      newErrors.motivo_traslado = "Mótivo del traslado es obligatorio";
+      errorToast.push("- Mótivo del traslado es obligatorio");
+    }
+    setErrors(newErrors);
+    if (errorToast.length > 0){
+      toast.error(<div>
+        {errorToast.map(item => (
+            <span className="text-start">{item}<br/></span>
+          ))}
+      </div>)
+      setButtonDisabled(false);
+    }
+    return Object.keys(newErrors).length === 0;
+  };
+
   // **********************************************************
   // SUBMIT CON VALIDACIONES
   // **********************************************************
   const handleSubmit = async (e) => {
     e.preventDefault();
     setButtonDisabled(true);
-
-    // Validaciones mínimas antes de enviar
-    if (!dispatchGuide.factura_id) {
-      toast.error("Debe especificar la factura asociada");
-      setButtonDisabled(false);
-      return;
-    }
-
-    if (!dispatchGuide.origen) {
-      toast.error("Debe indicar el origen del despacho");
-      setButtonDisabled(false);
-      return;
-    }
-
-    if (!dispatchGuide.destino) {
-      toast.error("Debe indicar el destino del despacho");
-      setButtonDisabled(false);
-      return;
-    }
-
-    // ---------------------------------------------------------
-    // Construir JSON final a enviar (payload)
-    // ---------------------------------------------------------
-    /*const payload = {
-      sujeto_retenido_rif: withholding.sujeto_retenido_rif,
-      sujeto_retenido_nombre: withholding.sujeto_retenido_nombre,
-      numero_comprobante: withholding.numero_comprobante,
-      periodo_fiscal: withholding.periodo_fiscal,
-      fecha_emision: withholding.fecha_emision,
-      fecha_entrega: withholding.fecha_entrega,
-      items: withholding.items.map((item) => ({
-        factura_afectada_numero: item.factura_afectada_numero,
-        factura_afectada_control: item.factura_afectada_control,
-        factura_afectada_fecha: item.factura_afectada_fecha?.split("T")[0] || "",
-        tipo_documento_afectado: item.tipo_documento_afectado,
-        monto_documento: item.monto_documento.toFixed(2),
-        monto_base_imponible: item.monto_base_imponible.toFixed(2),
-        retencion_id: item.retencion_id,
-        monto_retenido: item.monto_retenido.toFixed(2),
-      })),
-    };*/
+    if (!validate()) return;
 
     console.log("DispatchGuide enviado al backend:");
     console.log(JSON.stringify(dispatchGuide, null, 2));
@@ -253,7 +262,7 @@ function FormDispatchGuides() {
                   value={dispatchGuide.sujeto_retenido_nombre || ""} />
               </div>
               <div className="w-full lg:w-4/12 px-4">
-                <label className="block text-blueGray-600 text-xs font-bold mb-2">Fecha Entrega</label>
+                <label className="block text-blueGray-600 text-xs font-bold mb-2">Fecha sálida</label>
                 <input
                   type="date"
                   className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
@@ -261,6 +270,7 @@ function FormDispatchGuides() {
                   max={today}
                   onChange={(e) => handleFechaEntregaChange(e.target.value.toUpperCase())}
                 />
+                {errors.fecha_salida && <p className="text-red-500 text-xs mt-1">{errors.fecha_salida}</p>}
               </div>
             </div>
 
@@ -299,6 +309,7 @@ function FormDispatchGuides() {
                     setDispatchGuide((prev) => ({ ...prev, factura_cliente_final_rif: e.target.value.toUpperCase() }))
                   }
                 />
+                {errors.factura_cliente_final_rif && <p className="text-red-500 text-xs mt-1">{errors.factura_cliente_final_rif}</p>}
               </div>
               <div className="w-full lg:w-3/12 px-4 mt-4">
                 <label className="block text-blueGray-600 text-xs font-bold mb-2">Razón social (Cliente)</label>
@@ -310,6 +321,7 @@ function FormDispatchGuides() {
                     setDispatchGuide((prev) => ({ ...prev, factura_cliente_final_nombre: e.target.value.toUpperCase() }))
                   }
                 />
+                {errors.factura_cliente_final_nombre && <p className="text-red-500 text-xs mt-1">{errors.factura_cliente_final_nombre}</p>}
               </div>
               <div className="w-full lg:w-3/12 px-4 mt-4">
                 <label className="block text-blueGray-600 text-xs font-bold mb-2">Número de factura</label>
@@ -321,6 +333,7 @@ function FormDispatchGuides() {
                     setDispatchGuide((prev) => ({ ...prev, factura_numero_factura: e.target.value.toUpperCase() }))
                   }
                 />
+                {errors.factura_numero_factura && <p className="text-red-500 text-xs mt-1">{errors.factura_numero_factura}</p>}
               </div>
               <div className="w-full lg:w-3/12 px-4 mt-4">
                 <label className="block text-blueGray-600 text-xs font-bold mb-2">Número de control</label>
@@ -332,6 +345,7 @@ function FormDispatchGuides() {
                     setDispatchGuide((prev) => ({ ...prev, factura_numero_control: e.target.value.toUpperCase() }))
                   }
                 />
+                {errors.factura_numero_control && <p className="text-red-500 text-xs mt-1">{errors.factura_numero_control}</p>}
               </div>
               <div className="w-full lg:w-6/12 px-4 mt-4">
                 <label className="block text-blueGray-600 text-xs font-bold mb-2">Origen</label>
@@ -343,6 +357,7 @@ function FormDispatchGuides() {
                     setDispatchGuide((prev) => ({ ...prev, origen: e.target.value.toUpperCase() }))
                   }
                 />
+                {errors.origen && <p className="text-red-500 text-xs mt-1">{errors.origen}</p>}
               </div>
               <div className="w-full lg:w-6/12 px-4 mt-4">
                 <label className="block text-blueGray-600 text-xs font-bold mb-2">Destino</label>
@@ -354,6 +369,7 @@ function FormDispatchGuides() {
                     setDispatchGuide((prev) => ({ ...prev, destino: e.target.value.toUpperCase() }))
                   }
                 />
+                {errors.destino && <p className="text-red-500 text-xs mt-1">{errors.destino}</p>}
               </div>
               <div className="w-full lg:w-4/12 px-4 mt-4">
                 <label className="block text-blueGray-600 text-xs font-bold mb-2">Motivo de traslado</label>
@@ -365,6 +381,7 @@ function FormDispatchGuides() {
                     setDispatchGuide((prev) => ({ ...prev, motivo_traslado: e.target.value.toUpperCase() }))
                   }
                 />
+                {errors.motivo_traslado && <p className="text-red-500 text-xs mt-1">{errors.motivo_traslado}</p>}
               </div>
               <div className="w-full lg:w-4/12 px-4 mt-4">
                 <label className="block text-blueGray-600 text-xs font-bold mb-2">Transportista (Opcional)</label>

@@ -29,7 +29,7 @@ function FormProducts({ cliente_id: clienteProp, rol }) {
 
         if (rol === "admin") {
           const clientsData = await getClients();
-          setClients(clientsData);
+          setClients(clientsData.data);
         }
 
         if (productId) {
@@ -67,20 +67,43 @@ function FormProducts({ cliente_id: clienteProp, rol }) {
   // Validación de campos requeridos
   const validate = () => {
     const newErrors = {};
-    if (!product.sku) newErrors.sku = "SKU es obligatorio";
-    if (!product.nombre) newErrors.nombre = "Nombre es obligatorio";
-    if (!product.precio_base) newErrors.precio_base = "Precio base es obligatorio";
-    if (!product.iva_categoria_id) newErrors.iva_categoria_id = "Debe seleccionar IVA";
-    if (rol === "admin" && !product.cliente_id) newErrors.cliente_id = "Debe seleccionar un cliente";
+    var errorToast = [];
+    if (!product.sku){
+      newErrors.sku = "SKU es obligatorio";
+      errorToast.push("- SKU es obligatorio");
+    }
+    if (!product.nombre){
+      newErrors.nombre = "Nombre es obligatorio";
+      errorToast.push("- Nombre es obligatorio");
+    }
+    if (!product.precio_base){
+      newErrors.precio_base = "Precio base es obligatorio";
+      errorToast.push("- Precio base es obligatorio");
+    }
+    if (!product.iva_categoria_id){
+      newErrors.iva_categoria_id = "Debe seleccionar IVA";
+      errorToast.push("- Debe seleccionar IVA");
+    }
+    if (rol === "admin" && !product.cliente_id){
+      newErrors.cliente_id = "Debe seleccionar un cliente";
+      errorToast.push("- Debe seleccionar un cliente");
+    }
     setErrors(newErrors);
+    if (errorToast.length > 0){
+      toast.error(<div>
+        {errorToast.map(item => (
+            <span className="text-start">{item}<br/></span>
+          ))}
+      </div>)
+      setButtonDisabled(false);
+    }
     return Object.keys(newErrors).length === 0;
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!validate()) return;
-
     setButtonDisabled(true);
+    if (!validate()) return;
     try {
       const body = {
         nombre: product.nombre,
