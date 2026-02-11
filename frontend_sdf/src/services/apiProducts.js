@@ -1,8 +1,13 @@
 import api from "./axiosConfig";
 
 // Get all products
-export const getProducts = async () => {
-  const response = await api.get("/api/products");
+export const getProducts = async ({ client_id=false } = {}) => {
+  var response;
+  if (client_id == false){
+    response = await api.get("/api/products");
+  }else{
+    response = await api.get(`/api/products?client_id=${client_id}`);
+  }
   return response.data.data;
 };
 

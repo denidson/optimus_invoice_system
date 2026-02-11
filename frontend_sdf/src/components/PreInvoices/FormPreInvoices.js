@@ -98,6 +98,7 @@ function FormPreInvoices() {
   //Autofocus
   const apiRef = useGridApiRef();
   const apiRefNd = useGridApiRef();
+  const [errors, setErrors] = useState({}); // Estado para errores de validación
   //Campos del DataGrid
   const columns = [
     { field: "id", headerName: "ID", editable: false },
@@ -393,9 +394,16 @@ function FormPreInvoices() {
       return acc + roundTo(taxLine, 2);
     }, 0);
 
+    const taxNd = (preInvoice.conceptos_nd ? (preInvoice.conceptos_nd.reduce((acc, item) => {
+      const monto = Number(item.monto) || 0;
+      const tasa_porcentaje = Number(item.tasa_porcentaje) || 0;
+      // redondear a 4 decimales por línea
+      return acc + roundTo((monto * (tasa_porcentaje / 100)), 2);
+    }, 0)) : 0.0);
+
     // resultado final redondeado a 2 decimales
-    return roundTo(taxTotal, 2);
-  }, [preInvoice?.items]);
+    return roundTo(taxTotal + taxNd, 2);
+  }, [preInvoice?.items, preInvoice?.conceptos_nd]);
 
   //Calcular total de la Pre-Factura
   const totalAmount = useMemo(() => {
@@ -416,9 +424,9 @@ function FormPreInvoices() {
 
     const totalNd = (preInvoice.conceptos_nd ? (preInvoice.conceptos_nd.reduce((acc, item) => {
       const monto = Number(item.monto) || 0;
-
+      const tasa_porcentaje = Number(item.tasa_porcentaje) || 0;
       // redondear a 4 decimales por línea
-      return acc + roundTo(monto, 2);
+      return acc + roundTo((monto * (1 + (tasa_porcentaje / 100))), 2);
     }, 0)) : 0.0);
 
     // resultado final redondeado a 2 decimales
@@ -438,11 +446,211 @@ function FormPreInvoices() {
   if (loading) return <div>Cargando...</div>;
   if (error) return <div>{error}</div>;
 
+  const validate = () => {
+    const newErrors = {};
+    var errorToast = [];
+    if (!preInvoice.fecha_factura) {
+      newErrors.fecha_factura = "Fecha es obligatorio";
+      errorToast.push("- Debe indicar la fecha del documento.");
+      //toast.error("Debe indicar la fecha del documento.");
+      setButtonDisabled(false);
+      //return;
+    }
+    if (!preInvoice.cliente_final_id && preInvoice.cliente_final_id != '#') {
+      newErrors.cliente_final_rif = "Cliente es obligatorio";
+      errorToast.push("- Debe indicar el cliente.");
+      //toast.error("Debe indicar el cliente del documento que desea registrar.");
+      setButtonDisabled(false);
+      //return;
+    }
+    if (!preInvoice.cliente_final_rif  && preInvoice.cliente_final_id == '#') {
+      newErrors.cliente_final_rif = "R.I.F. del cliente es obligatorio";
+      errorToast.push("- Debe indicar el R.I.F. del cliente.");
+      //toast.error("Debe indicar el R.I.F. del cliente.");
+      setButtonDisabled(false);
+      //return;
+    }
+    if (!preInvoice.cliente_final_nombre  && preInvoice.cliente_final_id == '#') {
+      newErrors.cliente_final_nombre = "Nombre del cliente es obligatorio";
+      errorToast.push("- Debe indicar el nombre cliente.");
+      //toast.error("Debe indicar el nombre cliente.");
+      setButtonDisabled(false);
+      //return;
+    }
+    if (!preInvoice.cliente_final_telefono) {
+      newErrors.cliente_final_telefono = "Teléfono del cliente es obligatorio";
+      errorToast.push("- Debe indicar el teléfono del cliente.");
+      //toast.error("Debe indicar el teléfono del cliente.");
+      setButtonDisabled(false);
+      //return;
+    }
+    if (!preInvoice.cliente_final_email) {
+      newErrors.cliente_final_email = "Correo electrónico del cliente es obligatorio";
+      errorToast.push("- Debe indicar el correo electrónico del cliente.");
+      //toast.error("Debe indicar el correo electrónico del cliente.");
+      setButtonDisabled(false);
+      //return;
+    }
+    if (!preInvoice.cliente_final_direccion) {
+      newErrors.cliente_final_direccion = "Dirección del cliente es obligatoria";
+      errorToast.push("- Debe indicar la dirección de cliente.");
+      //toast.error("Debe indicar la dirección de cliente.");
+      setButtonDisabled(false);
+      //return;
+    }
+    if (!preInvoice.correlativo_interno) {
+      newErrors.correlativo_interno = "Correlativo interno es obligatorio";
+      errorToast.push("- Debe indicar el correlativo interno del documento.");
+      //toast.error("Debe indicar el correlativo interno del documento.");
+      setButtonDisabled(false);
+      //return;
+    }
+    if (!preInvoice.serial) {
+      newErrors.serial = "Serial es obligatorio";
+      errorToast.push("- Debe indicar el serial del documento.");
+      //toast.error("Debe indicar el serial del documento.");
+      setButtonDisabled(false);
+      //return;
+    }
+    if (!preInvoice.zona) {
+      newErrors.zona = "Zona es obligatoria";
+      errorToast.push("- Debe indicar la zona del documento.");
+      //toast.error("Debe indicar la zona del documento.");
+      setButtonDisabled(false);
+      //return;
+    }
+    if (preInvoice.tipo_documento != 'ND' && preInvoice.items.length == 0) {
+      if (newErrors.items == undefined){
+        newErrors.items = [];
+      }
+      newErrors.items.push("Lineas son obligatorias");
+      errorToast.push("- Debe ingresar las lineas del documento.");
+      //toast.error("Debe ingresar las lineas del documento.");
+      setButtonDisabled(false);
+      //return;
+    }
+    for (var i = 0; i < preInvoice.items.length; i++){
+      if (!preInvoice.items[i].producto_id) {
+        if (newErrors.items == undefined){
+          newErrors.items = [];
+        }
+        newErrors.items.push("No se pueden procesar las lineas sin producto especificado.");
+        errorToast.push("- No se pueden procesar las lineas sin producto especificado.");
+        //toast.error("No se pueden procesar las lineas sin producto especificado.");
+        setButtonDisabled(false);
+        //return;
+      }
+      if (preInvoice.items[i].cantidad <= 0) {
+        if (newErrors.items == undefined){
+          newErrors.items = [];
+        }
+        newErrors.items.push("No se pueden procesar las lineas con cantidades menor o igual que 0.");
+        errorToast.push("- No se pueden procesar las lineas con cantidades menor o igual que 0.");
+        //toast.error("No se pueden procesar las lineas con cantidades menor o igual que 0.");
+        setButtonDisabled(false);
+        //return;
+      }
+      if (!preInvoice.items[i].iva_categoria_id) {
+        if (newErrors.items == undefined){
+          newErrors.items = [];
+        }
+        newErrors.items.push("No se pueden procesar las lineas sin impuesto especificado.");
+        errorToast.push("- No se pueden procesar las lineas sin impuesto especificado.");
+        //toast.error("No se pueden procesar las lineas sin impuesto especificado.");
+        setButtonDisabled(false);
+        //return;
+      }
+      if (preInvoice.items[i].precio_unitario <= 0) {
+        if (newErrors.items == undefined){
+          newErrors.items = [];
+        }
+        newErrors.items.push("No se pueden procesar las lineas con precio unitario menor o igual que 0.");
+        errorToast.push("- No se pueden procesar las lineas con precio unitario menor o igual que 0.");
+        //toast.error("No se pueden procesar las lineas con precio unitario menor o igual que 0.");
+        setButtonDisabled(false);
+        //return;
+      }
+      if (preInvoice.items[i].descuento_porcentaje < 0) {
+        if (newErrors.items == undefined){
+          newErrors.items = [];
+        }
+        newErrors.items.push("No se pueden procesar las lineas con descuentos menor que 0.");
+        errorToast.push("- No se pueden procesar las lineas con descuentos menor que 0.");
+        //toast.error("No se pueden procesar las lineas con descuentos menor que 0.");
+        setButtonDisabled(false);
+        //return;
+      }
+      if (preInvoice.items[i].descuento_porcentaje >= 100) {
+        if (newErrors.items == undefined){
+          newErrors.items = [];
+        }
+        newErrors.items.push("No se pueden procesar las lineas con descuentos mayores o iguales al 100%.");
+        errorToast.push("- No se pueden procesar las lineas con descuentos mayores o iguales al 100%.");
+        //toast.error("No se pueden procesar las lineas con descuentos mayores o iguales al 100%.");
+        setButtonDisabled(false);
+        //return;
+      }
+    }
+    if (preInvoice.tipo_documento == 'ND' && preInvoice.items.length == 0 && preInvoice.conceptos_nd.length == 0) {
+      if (newErrors.items == undefined){
+        newErrors.items = [];
+      }
+      newErrors.items.push("Debe ingresar las lineas o los conceptos del documento.");
+      errorToast.push("- Debe ingresar las lineas o los conceptos del documento.");
+      //toast.error("Debe ingresar las lineas o los conceptos del documento.");
+      setButtonDisabled(false);
+      //return;
+    }
+    for (var i = 0; i < preInvoice.conceptos_nd.length; i++){
+      if (!preInvoice.conceptos_nd[i].concepto) {
+        if (newErrors.items == undefined){
+          newErrors.items = [];
+        }
+        newErrors.items.push("No se pueden procesar conceptos sin descripción.");
+        errorToast.push("- No se pueden procesar conceptos sin descripción.");
+        //toast.error("No se pueden procesar conceptos sin descripción.");
+        setButtonDisabled(false);
+        //return;
+      }
+      if (preInvoice.conceptos_nd[i].monto <= 0) {
+        if (newErrors.items == undefined){
+          newErrors.items = [];
+        }
+        newErrors.items.push("No se pueden procesar los conceptos con monto menor o igual que 0.");
+        errorToast.push("- No se pueden procesar los conceptos con monto menor o igual que 0.");
+        //toast.error("No se pueden procesar los conceptos con monto menor o igual que 0.");
+        setButtonDisabled(false);
+        //return;
+      }
+    }
+    if (preInvoice.aplica_igtf && preInvoice.monto_pagado_divisas <= 0) {
+      newErrors.monto_pagado_divisas = "Monto pagado en divisas es obligatorias";
+      errorToast.push("- Debe indicar el monto pagado en divisas del documento.");
+      //toast.error("Debe indicar el monto pagado en divisas del documento.");
+      setButtonDisabled(false);
+      //return;
+    }
+    //console.log('newErrors: ', newErrors);
+    setErrors(newErrors);
+    //console.log('errorToast: ', errorToast);
+    if (errorToast != ''){
+      //toast.error(errorToast);
+      toast.error(<div>
+        {errorToast.map(item => (
+            <span className="text-start">{item}<br/></span>
+          ))}
+      </div>)
+    }
+    return Object.keys(newErrors).length === 0;
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     // Aquí enviarías los datos de nuevo al backend para actualizar al preInvoice
     setButtonDisabled(true); // Iniciar carga (deshabilitar botón)
-    console.log("preInvoiceId:", preInvoiceId);
+    //console.log("preInvoice(I):", preInvoice);
+    if (!validate()) return;
+    //console.log("preInvoiceId:", preInvoiceId);
     try {
       var data;
       var action;
@@ -459,7 +667,7 @@ function FormPreInvoices() {
         }
         action = 'create';
         //preInvoice.total = totalAmount;
-        console.log("preInvoice(F):", preInvoice);
+        //console.log("preInvoice(F):", preInvoice);
         var preInvoiceList = [preInvoice];
         if (rol == 'admin'){
           var cliente_id = preInvoice.cliente_id;
@@ -470,7 +678,7 @@ function FormPreInvoices() {
         }else{
           data = await createPreInvoice(preInvoiceList); // Llamamos a createClient con el ID
         }
-        console.log("preInvoice(F)-data:", data);
+        //console.log("preInvoice(F)-data:", data);
       }else{
         action = 'update';
         data = await editPreInvoice(decryptText(preInvoiceId), preInvoice); // Llamamos a editPreInvoice con el ID
@@ -478,9 +686,9 @@ function FormPreInvoices() {
       //console.log('editPreInvoice-data: ', data);
       //setPreInvoice(data.resultados[0]); // Guardamos los datos del preInvoice en el estado
       // Mostrar una notificación de éxito
-      console.log(action +'-status: ', data);
+      //console.log(action +'-status: ', data);
       if (data.resultados != undefined && action == 'create' && data.resultados[0].status == 'prefactura_creada'){
-        console.log('CreatePreInvoice-toast:==>');
+        //console.log('CreatePreInvoice-toast:==>');
         toast.success('Pre-Factura creada satisfactoriamente.', {
           onClose: () => {
             // Espera a que la notificación se cierre para redirigir
@@ -490,7 +698,7 @@ function FormPreInvoices() {
           },
         });
       } else if (action == 'update' && ((data.items != undefined && data.items.length) > 0 || data.mensaje == 'No se enviaron campos modificables o los valores son iguales.')){
-        console.log('EditPreInvoice-toast:==>');
+        //console.log('EditPreInvoice-toast:==>');
         toast.success('Pre-Factura actualizada satisfactoriamente.', {
           onClose: () => {
             // Espera a que la notificación se cierre para redirigir
@@ -503,6 +711,9 @@ function FormPreInvoices() {
         //console.log('EditPreInvoice-Error:==>');
         if (action == 'create'){
           preInvoice.id = '#';
+        }
+        for (var i = 0; i < preInvoice.items.length; i++){
+          preInvoice.items[i].id = i + 1;
         }
         toast.error(data.resultados[0].motivo);
         setButtonDisabled(false);
@@ -538,8 +749,12 @@ function FormPreInvoices() {
       };
 
       setTimeout(() => {
-        apiRef.current.setCellFocus(newId, "producto_id");
-        apiRef.current.startCellEditMode({ id: newId, field: "producto_id" });
+        try{
+          apiRef.current.setCellFocus(newId, "producto_id");
+          apiRef.current.startCellEditMode({ id: newId, field: "producto_id" });
+        }catch (err) {
+          console.log('Error: ', err);
+        }
       });
 
       return updated;
@@ -553,7 +768,7 @@ function FormPreInvoices() {
         ? Math.max(...preInvoice.conceptos_nd.map((r) => r.id)) + 1
         : 1;
     //console.log('newId: ', newId);
-    const newRow = { id: newId, nueva_linea: true, concepto: "", monto: 0.0 };
+    const newRow = { id: newId, nueva_linea: true, concepto: "", tasa_porcentaje: 16.0, monto: 0.0 };
 
     setPreInvoice((prev) => {
       const updated = {
@@ -907,6 +1122,7 @@ const handleRadioChange = (event) => {
                         value={preInvoice.fecha_factura} max={formattedDate}
                         onChange={(e) => setPreInvoice({ ...preInvoice, fecha_factura: e.target.value })}
                       />
+                      {errors.fecha_factura && <p className="text-red-500 text-xs mt-1">{errors.fecha_factura}</p>}
                     </div>
                   </div>
                   <div className="w-full lg:w-2/12 px-4">
@@ -1014,6 +1230,7 @@ const handleRadioChange = (event) => {
                           </div>
                         )}*/}
                       </div>
+                      {errors.cliente_final_rif && <p className="text-red-500 text-xs mt-1">{errors.cliente_final_rif}</p>}
                     </div>
                   </div>
                   <div className="w-full lg:w-8/12 px-4">
@@ -1026,6 +1243,7 @@ const handleRadioChange = (event) => {
                         onChange={(e) => setPreInvoice({ ...preInvoice, cliente_final_nombre: e.target.value.toString().toUpperCase() })}
                       />
                     </div>
+                    {errors.cliente_final_nombre && <p className="text-red-500 text-xs mt-1">{errors.cliente_final_nombre}</p>}
                   </div>
                   <div className="w-full lg:w-2/12 px-4 form-client-complement">
                     <div className="relative w-full mb-3">
@@ -1036,6 +1254,7 @@ const handleRadioChange = (event) => {
                         value={preInvoice.cliente_final_telefono}
                         onChange={(e) => setPreInvoice({ ...preInvoice, cliente_final_telefono: e.target.value.toString().toUpperCase() })}
                       />
+                      {errors.cliente_final_telefono && <p className="text-red-500 text-xs mt-1">{errors.cliente_final_telefono}</p>}
                     </div>
                   </div>
                   <div className="w-full lg:w-4/12 px-4 form-client-complement">
@@ -1047,6 +1266,7 @@ const handleRadioChange = (event) => {
                         value={preInvoice.cliente_final_email}
                         onChange={(e) => setPreInvoice({ ...preInvoice, cliente_final_email: e.target.value.toString().toUpperCase() })}
                       />
+                      {errors.cliente_final_email && <p className="text-red-500 text-xs mt-1">{errors.cliente_final_email}</p>}
                     </div>
                   </div>
                   <div className="w-full lg:w-6/12 px-4 form-client-complement">
@@ -1058,6 +1278,7 @@ const handleRadioChange = (event) => {
                         value={preInvoice.cliente_final_direccion}
                         onChange={(e) => setPreInvoice({ ...preInvoice, cliente_final_direccion: e.target.value.toString().toUpperCase() })}
                       />
+                      {errors.cliente_final_direccion && <p className="text-red-500 text-xs mt-1">{errors.cliente_final_direccion}</p>}
                     </div>
                   </div>
                   <div className="w-full lg:w-2/12 px-4">
@@ -1097,6 +1318,7 @@ const handleRadioChange = (event) => {
                         value={preInvoice.correlativo_interno}
                         onChange={(e) => setPreInvoice({ ...preInvoice, correlativo_interno: e.target.value.toString().toUpperCase() })}
                       />
+                      {errors.correlativo_interno && <p className="text-red-500 text-xs mt-1">{errors.correlativo_interno}</p>}
                     </div>
                   </div>
                   <div className="w-full lg:w-2/12 px-4">
@@ -1108,6 +1330,7 @@ const handleRadioChange = (event) => {
                         value={preInvoice.serial}
                         onChange={(e) => setPreInvoice({ ...preInvoice, serial: e.target.value.toString().toUpperCase() })}
                       />
+                      {errors.serial && <p className="text-red-500 text-xs mt-1">{errors.serial}</p>}
                     </div>
                   </div>
                   <div className="w-full lg:w-6/12 px-4">
@@ -1119,6 +1342,7 @@ const handleRadioChange = (event) => {
                         value={preInvoice.zona}
                         onChange={(e) => setPreInvoice({ ...preInvoice, zona: e.target.value.toString().toUpperCase() })}
                       />
+                      {errors.zona && <p className="text-red-500 text-xs mt-1">{errors.zona}</p>}
                     </div>
                   </div>
                 </div>
@@ -1202,7 +1426,14 @@ const handleRadioChange = (event) => {
                         />
                       </div>
                     )}
-
+                  <div className="w-full lg:w-12/12 px-5 my-1 text-center">
+                    {errors.items &&
+                      <p className="text-red-500 text-xs mt-1">
+                        {errors.items.map(item => (
+                          <span className="text-start">{item}<br/></span>
+                        ))}
+                    </p>}
+                  </div>
                   <div className="w-full lg:w-4/12 px-4 mt-3">
                     <div className="relative w-full mb-3">
                       <label class="inline-flex items-center cursor-pointer">
@@ -1239,6 +1470,7 @@ const handleRadioChange = (event) => {
                               monto_pagado_divisas: parseFloat(value) // guardamos como float
                             });
                           }}/>
+                          {errors.monto_pagado_divisas && <p className="text-red-500 text-xs mt-1">{errors.monto_pagado_divisas}</p>}
                       </div>
                     </div>
                   </div>
