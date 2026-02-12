@@ -89,7 +89,6 @@ function ListWithholdings() {
   }else{
     targets = [1];
   }
-  console.log('targets: ', targets);
   columns.push({ title: "Periodo Fiscal", data: "periodo_fiscal", className: "dt-center", render: (data, type, row) => {
       return formatFiscalPeriod(data);
     }

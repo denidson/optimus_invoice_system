@@ -5,7 +5,7 @@ function ModalPreinvoices({ isOpen, onClose, message }) {
   if (!isOpen) return null;
   const hasNotaDebitoItems =
     message?.tipo_documento === "ND" &&
-    message?.nota_debito_detalle?.items?.length > 0;
+    message?.nota_debito_detalle?.items?.length > 0 && !message?.nota_debito_detalle?.items[0].producto;
   //console.log('hasNotaDebitoItems: ', hasNotaDebitoItems);
   var itemsList;
   if (message.tipo_documento == 'ND' && message.nota_debito_detalle?.items?.length > 0){
