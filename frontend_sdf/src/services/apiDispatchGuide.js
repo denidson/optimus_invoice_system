@@ -7,9 +7,7 @@ export const getAllDispatchGuides = async (params = {}) => {
     const {
       page = 1,
       per_page = 20,
-      numero_comprobante,
-      sujeto_retenido_rif,
-      periodo_fiscal,
+      numero_control,
     } = params;
 
     if (!authData) return;
@@ -21,9 +19,7 @@ export const getAllDispatchGuides = async (params = {}) => {
     const query = new URLSearchParams({
       page,
       per_page,
-      ...(numero_comprobante && { numero_comprobante }),
-      ...(sujeto_retenido_rif && { sujeto_retenido_rif }),
-      ...(periodo_fiscal && { periodo_fiscal }),
+      ...(numero_control && { numero_control }),
     });
 
     const response = await api.get(`${endpoint}?${query.toString()}`);

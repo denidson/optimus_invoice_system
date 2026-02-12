@@ -149,19 +149,24 @@ function ListDispatchGuide() {
                 {/* Filtros */}
                 {rol != 'admin' && (
                 <div className="flex space-x-2 mb-3">
-                  {/*<h3 class="text-blueGray-700 font-bold me-3 my-3">Buscar por:</h3><br/>
-                  <select
+                  <h3 class="text-blueGray-700 font-bold me-3 my-3">Buscar por:</h3><br/>
+                  {/*<select
                     className="border p-2 rounded"
                     value={filterType}
                     onChange={(e) => setFilterType(e.target.value)}
                   >
                     <option value="">-</option>
-                    <option value="numero_comprobante">Nro. Comprobante</option>
+                    <option value="numero_control">Nro. de control</option>
                     <option value="sujeto_retenido_rif">RIF del sujeto retenido</option>
                     <option value="periodo_fiscal">Periodo Fiscal</option>
                   </select>
-
-                  {filterType === "numero_comprobante" && (
+                  */}
+                  <input
+                    id="filtro_numero_control"
+                    className="border p-2 rounded"
+                    placeholder="Ej: 0000000N"
+                  />
+                  {/*{filterType === "numero_control" && (
                     <input
                       id="filtro_numero_comprobante"
                       className="border p-2 rounded"
@@ -181,13 +186,13 @@ function ListDispatchGuide() {
                       type="month"
                       className="border p-2 rounded"
                     />
-                  )}
+                  )}*/}
                   <button
                     className="bg-twilight-indigo-600 hover:bg-twilight-indigo-500 text-white font-bold py-2 px-4 rounded"
                     onClick={actionSearch}
                   >
                     Buscar
-                  </button>*/}
+                  </button>
                   {/* Botón Crear Guias de despacho */}
                   <button
                     className="bg-twilight-indigo-600 hover:bg-twilight-indigo-500 text-white font-bold py-2 px-4 rounded"
@@ -233,12 +238,15 @@ function ListDispatchGuide() {
 
                       if (searchValue == ''){
                         //console.log('if');
-                        if (filterType === "numero_comprobante" && $("#filtro_numero_comprobante").val())
+
+                        if ($("#filtro_numero_control").val() && $("#filtro_numero_control").val().toString().length > 0)
+                          query.numero_control = $("#filtro_numero_control").val();
+                        /*if (filterType === "numero_comprobante" && $("#filtro_numero_comprobante").val())
                           query.numero_comprobante = $("#filtro_numero_comprobante").val();
                         if (filterType === "sujeto_retenido_rif" && $("#filtro_rif").val())
                           query.sujeto_retenido_rif = $("#filtro_rif").val();
                         if (filterType === "periodo_fiscal" && $("#filtro_periodo").val())
-                          query.periodo_fiscal = $("#filtro_periodo").val();
+                          query.periodo_fiscal = $("#filtro_periodo").val();*/
 
                         const response = await getAllDispatchGuides(query);
 
