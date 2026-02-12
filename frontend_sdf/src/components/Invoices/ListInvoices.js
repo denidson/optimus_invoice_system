@@ -64,7 +64,26 @@ function ListInvoices({ title, type }) {
     };
   }, []);
 
-  const redirectToCreateNote = (id, tipo_documento) => {
+  const redirectToCreateNote = async (id, tipo_documento) => {
+    if (tipo_documento.toString() == 'NC'){
+      const data = await showInvoice(id);
+      var validateGenerate = false;
+      if (data){
+        for (var i = 0; i < data.items.length; i++){
+          if (data.items[i].cantidad_disponible > 0){
+            validateGenerate = true;
+          }
+        }
+        if (validateGenerate == false){
+          toast.info(`La factura con el número de control (${data.numero_control}) no dispone de productos disponibles para procesar la nota de crédito.`);
+          return;
+        }
+      }
+      if (validateGenerate == false){
+        toast.error(`No se pudo acceder a la información de la factura.`);
+        return;
+      }
+    }
     const hash = encryptText(id.toString());
     const hashType = encryptText(tipo_documento.toString());
     navigate(`/preinvoices/create?id=${encodeURIComponent(hash)}&type=${encodeURIComponent(hashType)}`);

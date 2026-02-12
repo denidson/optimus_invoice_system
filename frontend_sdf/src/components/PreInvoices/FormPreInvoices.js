@@ -157,7 +157,7 @@ function FormPreInvoices() {
       headerName: "Precio Unitario",
       flex: 1,
       type: "number",
-      editable: true,
+      editable: (type == 'NC' ? false : true),
       headerAlign: "center",
       renderCell: (params) => {
         // safe check: params puede ser undefined muy tempranamente, evitamos crash
@@ -285,7 +285,7 @@ function FormPreInvoices() {
         }
         var data;
         if (preInvoiceId != null){
-          console.log('type: ', type);
+          //console.log('type: ', type);
           if (type == 'FC'){
             data = await showPreInvoice(decryptText(preInvoiceId)); // Llamamos a showPreInvoice con el ID
             if (data.igtf_monto > 0){
@@ -306,6 +306,17 @@ function FormPreInvoices() {
               data['items'] = [];
               data['conceptos_nd'] = [];
             }
+          }
+          //console.log('data: ', data);
+          if (type == 'NC'){
+            var itemsNc = [];
+            for (var i = 0; i < data.items.length; i++){
+              if (data.items[i].cantidad_disponible != 0){
+                data.items[i].cantidad = data.items[i].cantidad_disponible;
+                itemsNc.push(data.items[i]);
+              }
+            }
+            data.items = itemsNc;
           }
           setPreInvoice(data); // Guardamos los datos del Pre-Factura en el estado
         }else{
@@ -335,7 +346,7 @@ function FormPreInvoices() {
           })
         }
       } catch (err) {
-        setError('Error al cargar la Pre-Factura');
+        //setError('Error al cargar la Pre-Factura');
       } finally {
         setLoading(false); // Indicamos que la carga ha finalizado
       }
@@ -550,6 +561,18 @@ function FormPreInvoices() {
         setButtonDisabled(false);
         //return;
       }
+      if (preInvoice.tipo_documento == 'NC'){
+        if (preInvoice.items[i].cantidad > preInvoice.items[i].cantidad_disponible) {
+          if (newErrors.items == undefined){
+            newErrors.items = [];
+          }
+          newErrors.items.push(`No se puede procesar la linea del producto (${preInvoice.items[i].producto.nombre}) debido a que la cantidad asignada supera la cantidad disponible (${preInvoice.items[i].cantidad_disponible}).`);
+          errorToast.push(`- No se puede procesar la linea del producto (${preInvoice.items[i].producto.nombre}) debido a que la cantidad asignada supera la cantidad disponible (${preInvoice.items[i].cantidad_disponible}).`);
+          //toast.error("No se pueden procesar las lineas con cantidades menor o igual que 0.");
+          setButtonDisabled(false);
+          //return;
+        }
+      }
       if (!preInvoice.items[i].iva_categoria_id) {
         if (newErrors.items == undefined){
           newErrors.items = [];
@@ -601,26 +624,28 @@ function FormPreInvoices() {
       setButtonDisabled(false);
       //return;
     }
-    for (var i = 0; i < preInvoice.conceptos_nd.length; i++){
-      if (!preInvoice.conceptos_nd[i].concepto) {
-        if (newErrors.items == undefined){
-          newErrors.items = [];
+    if (preInvoice.conceptos_nd){
+      for (var i = 0; i < preInvoice.conceptos_nd.length; i++){
+        if (!preInvoice.conceptos_nd[i].concepto) {
+          if (newErrors.items == undefined){
+            newErrors.items = [];
+          }
+          newErrors.items.push("No se pueden procesar conceptos sin descripción.");
+          errorToast.push("- No se pueden procesar conceptos sin descripción.");
+          //toast.error("No se pueden procesar conceptos sin descripción.");
+          setButtonDisabled(false);
+          //return;
         }
-        newErrors.items.push("No se pueden procesar conceptos sin descripción.");
-        errorToast.push("- No se pueden procesar conceptos sin descripción.");
-        //toast.error("No se pueden procesar conceptos sin descripción.");
-        setButtonDisabled(false);
-        //return;
-      }
-      if (preInvoice.conceptos_nd[i].monto <= 0) {
-        if (newErrors.items == undefined){
-          newErrors.items = [];
+        if (preInvoice.conceptos_nd[i].monto <= 0) {
+          if (newErrors.items == undefined){
+            newErrors.items = [];
+          }
+          newErrors.items.push("No se pueden procesar los conceptos con monto menor o igual que 0.");
+          errorToast.push("- No se pueden procesar los conceptos con monto menor o igual que 0.");
+          //toast.error("No se pueden procesar los conceptos con monto menor o igual que 0.");
+          setButtonDisabled(false);
+          //return;
         }
-        newErrors.items.push("No se pueden procesar los conceptos con monto menor o igual que 0.");
-        errorToast.push("- No se pueden procesar los conceptos con monto menor o igual que 0.");
-        //toast.error("No se pueden procesar los conceptos con monto menor o igual que 0.");
-        setButtonDisabled(false);
-        //return;
       }
     }
     if (preInvoice.aplica_igtf && preInvoice.monto_pagado_divisas <= 0) {
