@@ -26,6 +26,8 @@ function ListWithholdings() {
   const [selectedWithholding, setSelectedWithholding] = useState(null);
   const [filterType, setFilterType] = useState("");
   var responseCache = useState(false);
+  const authData = localStorage.getItem("authData");
+  const rol = authData ? JSON.parse(authData)["rol"] : "";
 
   const redirectToCreate = () => {
     window.location.href = "/withholdings/create";
@@ -62,6 +64,110 @@ function ListWithholdings() {
   };
 
   const handleCloseModal = () => setModalOpen(false);
+
+  var columns= [];
+  var targets;
+
+  columns.push({
+    title: "Fecha Emision",
+    data: "fecha_emision",
+    className: "dt-center",
+    render: (data, type, row) => {
+      return formatDate(data);
+    }
+  });
+  if (rol == 'admin'){
+    targets = [3, 7];
+    columns.push({ title: "RIF (Empresa)", data: "cliente.rif", className: "dt-center", render: (data, type, row) => {
+        return formatText(data);
+      }
+    });
+    columns.push({ title: "Nombre (Empresa)", data: "cliente.nombre_empresa", render: (data, type, row) => {
+        return formatText(data);
+      }
+    });
+  }else{
+    targets = [1];
+  }
+  console.log('targets: ', targets);
+  columns.push({ title: "Periodo Fiscal", data: "periodo_fiscal", className: "dt-center", render: (data, type, row) => {
+      return formatFiscalPeriod(data);
+    }
+  });
+  columns.push({ title: "Nro. Comprobante", data: "numero_comprobante", className: "dt-center", render: (data, type, row) => {
+      return formatText(data);
+    }
+  });
+  columns.push({ title: "RIF", data: "sujeto_retenido.rif", className: "dt-center", render: (data, type, row) => {
+      return formatText(data);
+    }
+  });
+  columns.push({ title: "Sujeto Retenido", data: "sujeto_retenido.nombre", render: (data, type, row) => {
+      return formatText(data);
+    }
+  });
+  columns.push({
+    title: "Base Imponible (Bs.)",
+    data: "monto_base_total",
+    /*render: (data, type, row) => {
+      return formatMoney(data);
+    }*/
+    render: (data, type) =>
+      type === "display"
+        ? `${new Intl.NumberFormat("es-VE", { minimumFractionDigits: 2 }).format(data)}`
+        : data,
+  });
+  columns.push({
+    title: "Monto Retenido (Bs.)",
+    data: "monto_retenido_total",
+    /*render: (data, type, row) => {
+      return formatMoney(data);
+    }*/
+    render: (data, type) =>
+      type === "display"
+        ? `${new Intl.NumberFormat("es-VE", { minimumFractionDigits: 2 }).format(data)}`
+        : data,
+  });
+  columns.push({ title: "Estatus", data: "estatus", className: "dt-center", render: (data, type, row) => {
+      if (data == 'emitido'){
+        return '<i class="fas fa-circle text-emerald-500 mr-2"></i> ' + formatText(data);
+      }else if (data == 'normal'){
+        return '<i class="fas fa-circle text-orange-500 mr-2"></i> ' + formatText(data);
+      } else {
+        return '<i class="fas fa-circle text-red-500 mr-2"></i> ' + formatText(data);
+      }
+    }
+  });
+  columns.push({ title: "Estatus SENIAT", data: "estatus_seniat", className: "dt-center", render: (data, type, row) => {
+      if (data == 'emitido'){
+        return '<i class="fas fa-circle text-emerald-500 mr-2"></i> ' + formatText(data);
+      }else if (data == 'pendiente'){
+        return '<i class="fas fa-circle text-orange-500 mr-2"></i> ' + formatText(data);
+      } else {
+        return '<i class="fas fa-circle text-red-500 mr-2"></i> ' + formatText(data);
+      }
+    }
+  });
+  columns.push({
+    title: "Acciones",
+    orderable: false,
+    searchable: false,
+    className: 'no-export',
+    render: (data, type, row) => {
+      let tooltipText = 'Ver retenciones';
+      const viewBtn = tooltipBtn({
+        html: `
+          <button class="btn-view px-2 py-1 text-gray-700"
+            data-id="${row.id}">
+            <i class="fa-solid fa-lg fa-expand"></i>
+          </button>
+        `,
+        text: tooltipText
+      });
+      // const viewBtn = `<button class="btn-view px-2 py-1 text-gray-700" data-id="${row.id}"><i class="fa-solid fa-lg fa-expand"></i></button>`;
+      return `<div style="display:flex;justify-content:center;align-items:center;gap:0.25rem;white-space:nowrap;">${viewBtn}</div>`;
+    }
+  });
 
   // ----------------------
   // Render
@@ -138,97 +244,10 @@ function ListWithholdings() {
               <DataTable
                 id="ListWithholdingsDt"
                 className="table-auto w-full text-left"
-                columns={[
-                  {
-                    title: "Fecha Emision",
-                    data: "fecha_emision",
-                    className: "dt-center",
-                    render: (data, type, row) => {
-                      return formatDate(data);
-                    }
-                  },
-                  { title: "Periodo Fiscal", data: "periodo_fiscal", className: "dt-center", render: (data, type, row) => {
-                      return formatFiscalPeriod(data);
-                    }
-                  },
-                  { title: "Nro. Comprobante", data: "numero_comprobante", className: "dt-center", render: (data, type, row) => {
-                      return formatText(data);
-                    }
-                  },
-                  { title: "RIF", data: "sujeto_retenido.rif", className: "dt-center", render: (data, type, row) => {
-                      return formatText(data);
-                    }
-                  },
-                  { title: "Sujeto Retenido", data: "sujeto_retenido.nombre", render: (data, type, row) => {
-                      return formatText(data);
-                    }
-                  },
-                  {
-                    title: "Base Imponible (Bs.)",
-                    data: "monto_base_total",
-                    /*render: (data, type, row) => {
-                      return formatMoney(data);
-                    }*/
-                    render: (data, type) =>
-                      type === "display"
-                        ? `${new Intl.NumberFormat("es-VE", { minimumFractionDigits: 2 }).format(data)}`
-                        : data,
-                  },
-                  {
-                    title: "Monto Retenido (Bs.)",
-                    data: "monto_retenido_total",
-                    /*render: (data, type, row) => {
-                      return formatMoney(data);
-                    }*/
-                    render: (data, type) =>
-                      type === "display"
-                        ? `${new Intl.NumberFormat("es-VE", { minimumFractionDigits: 2 }).format(data)}`
-                        : data,
-                  },
-                  { title: "Estatus", data: "estatus", className: "dt-center", render: (data, type, row) => {
-                      if (data == 'emitido'){
-                        return '<i class="fas fa-circle text-emerald-500 mr-2"></i> ' + formatText(data);
-                      }else if (data == 'normal'){
-                        return '<i class="fas fa-circle text-orange-500 mr-2"></i> ' + formatText(data);
-                      } else {
-                        return '<i class="fas fa-circle text-red-500 mr-2"></i> ' + formatText(data);
-                      }
-                    }
-                  },
-                  { title: "Estatus SENIAT", data: "estatus_seniat", className: "dt-center", render: (data, type, row) => {
-                      if (data == 'emitido'){
-                        return '<i class="fas fa-circle text-emerald-500 mr-2"></i> ' + formatText(data);
-                      }else if (data == 'pendiente'){
-                        return '<i class="fas fa-circle text-orange-500 mr-2"></i> ' + formatText(data);
-                      } else {
-                        return '<i class="fas fa-circle text-red-500 mr-2"></i> ' + formatText(data);
-                      }
-                    }
-                  },
-                  {
-                    title: "Acciones",
-                    orderable: false,
-                    searchable: false,
-                    className: 'no-export',
-                    render: (data, type, row) => {
-                      let tooltipText = 'Ver retenciones';
-                      const viewBtn = tooltipBtn({
-                        html: `
-                          <button class="btn-view px-2 py-1 text-gray-700"
-                            data-id="${row.id}">
-                            <i class="fa-solid fa-lg fa-expand"></i>
-                          </button>
-                        `,
-                        text: tooltipText
-                      });
-                      // const viewBtn = `<button class="btn-view px-2 py-1 text-gray-700" data-id="${row.id}"><i class="fa-solid fa-lg fa-expand"></i></button>`;
-                      return `<div style="display:flex;justify-content:center;align-items:center;gap:0.25rem;white-space:nowrap;">${viewBtn}</div>`;
-                    }
-                  },
-                ]}
+                columns={columns}
                 options={{
                   columnDefs:[{
-                    targets: [1], // índices de columnas a ocultar (ej: RIF, Zona)
+                    targets: targets, // índices de columnas a ocultar (ej: RIF, Zona)
                     visible: false,
                     searchable: true // siguen siendo buscables
                   }],
@@ -376,19 +395,38 @@ function ListWithholdings() {
                               } while (page <= totalPages);
 
                               const wb = utils.book_new();
-                              const ws = utils.json_to_sheet(
-                                allData.map((r) => ({
-                                  "Fecha": formatDate(r.fecha_emision),
-                                  "Periodo Fiscal": formatFiscalPeriod(r.periodo_fiscal),
-                                  "Nro. Comprobante": formatText(r.numero_comprobante),
-                                  "RIF": formatText(r.sujeto_retenido.rif),
-                                  "Sujeto Retenido": formatText(r.sujeto_retenido.nombre),
-                                  "Base Imponible": formatMoney(r.monto_base_total),
-                                  "Monto Retenido": formatMoney(r.monto_retenido_total),
-                                  "Estatus": formatText(r.estatus),
-                                  "Estatus SENIAT": formatText(r.estatus_seniat),
-                                }))
-                              );
+                              var ws;
+                              if (rol == 'admin'){
+                                ws = utils.json_to_sheet(
+                                  allData.map((r) => ({
+                                    "Fecha": formatDate(r.fecha_emision),
+                                    "RIF (Empresa)": formatText(r.cliente.rif),
+                                    "Nombre (Empresa)": formatText(r.cliente.nombre_empresa),
+                                    "Periodo Fiscal": formatFiscalPeriod(r.periodo_fiscal),
+                                    "Nro. Comprobante": formatText(r.numero_comprobante),
+                                    "RIF": formatText(r.sujeto_retenido.rif),
+                                    "Sujeto Retenido": formatText(r.sujeto_retenido.nombre),
+                                    "Base Imponible": formatMoney(r.monto_base_total),
+                                    "Monto Retenido": formatMoney(r.monto_retenido_total),
+                                    "Estatus": formatText(r.estatus),
+                                    "Estatus SENIAT": formatText(r.estatus_seniat),
+                                  }))
+                                );
+                              }else{
+                                ws = utils.json_to_sheet(
+                                  allData.map((r) => ({
+                                    "Fecha": formatDate(r.fecha_emision),
+                                    "Periodo Fiscal": formatFiscalPeriod(r.periodo_fiscal),
+                                    "Nro. Comprobante": formatText(r.numero_comprobante),
+                                    "RIF": formatText(r.sujeto_retenido.rif),
+                                    "Sujeto Retenido": formatText(r.sujeto_retenido.nombre),
+                                    "Base Imponible": formatMoney(r.monto_base_total),
+                                    "Monto Retenido": formatMoney(r.monto_retenido_total),
+                                    "Estatus": formatText(r.estatus),
+                                    "Estatus SENIAT": formatText(r.estatus_seniat),
+                                  }))
+                                );
+                              }
                               utils.book_append_sheet(wb, ws, "Retenciones");
                               const blob = new Blob([write(wb, { bookType: "xlsx", type: "array" })]);
                               const link = document.createElement("a");

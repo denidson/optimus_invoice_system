@@ -3,6 +3,8 @@ import { formatMoney, formatFiscalPeriod, formatDate, formatText } from "../../u
 
 const ModalWithholding = ({ data, onClose }) => {
   if (!data) return null;
+  const authData = localStorage.getItem("authData");
+  const rol = authData ? JSON.parse(authData)["rol"] : "";
 
   return (
     <div className="fixed inset-0 bg-black/50 z-50 flex justify-center items-center">
@@ -17,7 +19,19 @@ const ModalWithholding = ({ data, onClose }) => {
 
         {/* contenido scroll */}
         <div className="p-6 overflow-y-auto h-[calc(100%-120px)]">
-
+          {rol == 'admin' && (
+            <div className="grid grid-cols-2 gap-6">
+              <div>
+                <h4 className="font-bold mb-2">Información de empresa afiliada</h4>
+                <p><b>R.I.F:</b> {formatText(data.cliente.rif)}</p>
+                <p><b>Razón social:</b> {formatText(data.cliente.nombre_empresa)}</p>
+              </div>
+              <div></div>
+            </div>
+          )}
+          {rol == 'admin' && (
+            <hr className="my-6" />
+          )}
           {/* secciones */}
           <div className="grid grid-cols-2 gap-6">
             <div>

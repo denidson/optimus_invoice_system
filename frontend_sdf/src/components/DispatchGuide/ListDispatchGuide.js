@@ -64,7 +64,75 @@ function ListDispatchGuide() {
   };
 
   const handleCloseModal = () => setModalOpen(false);
-
+  var columns= [];
+  columns.push({
+      title: "Fecha salida",
+      data: "fecha_salida",
+      className: "dt-center",
+      render: (data, type, row) => {
+        return formatDate(data);
+      }
+    });
+    if (rol == 'admin'){
+      columns.push({ title: "RIF (Empresa)", data: "cliente.rif", className: "dt-center", render: (data, type, row) => {
+          return formatText(data);
+        }
+      });
+      columns.push({ title: "Nombre (Empresa)", data: "cliente.nombre_empresa", render: (data, type, row) => {
+          return formatText(data);
+        }
+      });
+    }
+    columns.push({ title: "Número de control", data: "factura.numero_control", className: "dt-center", render: (data, type, row) => {
+        return formatText(data);
+      }
+    });
+    columns.push({ title: "Ubic. de origen", data: "origen", className: "dt-center", render: (data, type, row) => {
+        return formatText(data);
+      }
+    });
+    columns.push({ title: "Dir. de destino", data: "destino", className: "dt-center", render: (data, type, row) => {
+        return formatText(data);
+      }
+    });
+    columns.push({ title: "Transportista", data: "transportista", className: "dt-center", render: (data, type, row) => {
+        return formatText(data);
+      }
+    });
+    columns.push({ title: "Placa", data: "placa", className: "dt-center", render: (data, type, row) => {
+        return formatText(data);
+      }
+    });
+    columns.push({ title: "Estatus", data: "estatus", className: "dt-center", render: (data, type, row) => {
+        if (data == 'emitido'){
+          return '<i class="fas fa-circle text-emerald-500 mr-2"></i> ' + formatText(data);
+        }else if (data == 'normal'){
+          return '<i class="fas fa-circle text-orange-500 mr-2"></i> ' + formatText(data);
+        } else {
+          return '<i class="fas fa-circle text-red-500 mr-2"></i> ' + formatText(data);
+        }
+      }
+    });
+    columns.push({
+      title: "Acciones",
+      orderable: false,
+      searchable: false,
+      className: 'no-export',
+      render: (data, type, row) => {
+        let tooltipText = 'Ver retenciones';
+        const viewBtn = tooltipBtn({
+          html: `
+            <button class="btn-view px-2 py-1 text-gray-700"
+              data-id="${row.id}">
+              <i class="fa-solid fa-lg fa-expand"></i>
+            </button>
+          `,
+          text: tooltipText
+        });
+        // const viewBtn = `<button class="btn-view px-2 py-1 text-gray-700" data-id="${row.id}"><i class="fa-solid fa-lg fa-expand"></i></button>`;
+        return `<div style="display:flex;justify-content:center;align-items:center;gap:0.25rem;white-space:nowrap;">${viewBtn}</div>`;
+      }
+    });
   // ----------------------
   // Render
   // ----------------------
@@ -141,66 +209,7 @@ function ListDispatchGuide() {
               <DataTable
                 id="ListDispatchGuideDt"
                 className="table-auto w-full text-left"
-                columns={[
-                  {
-                    title: "Fecha salida",
-                    data: "fecha_salida",
-                    className: "dt-center",
-                    render: (data, type, row) => {
-                      return formatDate(data);
-                    }
-                  },
-                  { title: "Número de control", data: "factura.numero_control", className: "dt-center", render: (data, type, row) => {
-                      return formatText(data);
-                    }
-                  },
-                  { title: "Ubic. de origen", data: "origen", className: "dt-center", render: (data, type, row) => {
-                      return formatText(data);
-                    }
-                  },
-                  { title: "Dir. de destino", data: "destino", className: "dt-center", render: (data, type, row) => {
-                      return formatText(data);
-                    }
-                  },
-                  { title: "Transportista", data: "transportista", className: "dt-center", render: (data, type, row) => {
-                      return formatText(data);
-                    }
-                  },
-                  { title: "Placa", data: "placa", className: "dt-center", render: (data, type, row) => {
-                      return formatText(data);
-                    }
-                  },
-                  { title: "Estatus", data: "estatus", className: "dt-center", render: (data, type, row) => {
-                      if (data == 'emitido'){
-                        return '<i class="fas fa-circle text-emerald-500 mr-2"></i> ' + formatText(data);
-                      }else if (data == 'normal'){
-                        return '<i class="fas fa-circle text-orange-500 mr-2"></i> ' + formatText(data);
-                      } else {
-                        return '<i class="fas fa-circle text-red-500 mr-2"></i> ' + formatText(data);
-                      }
-                    }
-                  },
-                  {
-                    title: "Acciones",
-                    orderable: false,
-                    searchable: false,
-                    className: 'no-export',
-                    render: (data, type, row) => {
-                      let tooltipText = 'Ver retenciones';
-                      const viewBtn = tooltipBtn({
-                        html: `
-                          <button class="btn-view px-2 py-1 text-gray-700"
-                            data-id="${row.id}">
-                            <i class="fa-solid fa-lg fa-expand"></i>
-                          </button>
-                        `,
-                        text: tooltipText
-                      });
-                      // const viewBtn = `<button class="btn-view px-2 py-1 text-gray-700" data-id="${row.id}"><i class="fa-solid fa-lg fa-expand"></i></button>`;
-                      return `<div style="display:flex;justify-content:center;align-items:center;gap:0.25rem;white-space:nowrap;">${viewBtn}</div>`;
-                    }
-                  },
-                ]}
+                columns={columns}
                 options={{
                   columnDefs:[{
                     targets: [], // índices de columnas a ocultar (ej: RIF, Zona)
@@ -350,19 +359,38 @@ function ListDispatchGuide() {
                               } while (page <= totalPages);
 
                               const wb = utils.book_new();
-                              const ws = utils.json_to_sheet(
-                                allData.map((r) => ({
-                                  "Fecha de salida": formatDate(r.fecha_salida),
-                                  "Fecha de la factura": formatDate(r.factura.fecha_emision),
-                                  "Factura - Nro. control": formatText(r.factura.numero_control),
-                                  "Ubic. de origen": formatText(r.origen),
-                                  "Dir. de destino": formatText(r.destino),
-                                  "Transportista": formatText(r.transportista),
-                                  "Chofer": formatText(r.chofer),
-                                  "Placa": formatText(r.placa),
-                                  "Estatus": formatText(r.estatus),
-                                }))
-                              );
+                              var ws;
+                              if (rol == 'admin'){
+                                ws = utils.json_to_sheet(
+                                  allData.map((r) => ({
+                                    "Fecha de salida": formatDate(r.fecha_salida),
+                                    "RIF (Empresa)": formatText(r.cliente.rif),
+                                    "Nombre (Empresa)": formatText(r.cliente.nombre_empresa),
+                                    "Fecha de la factura": formatDate(r.factura.fecha_emision),
+                                    "Factura - Nro. control": formatText(r.factura.numero_control),
+                                    "Ubic. de origen": formatText(r.origen),
+                                    "Dir. de destino": formatText(r.destino),
+                                    "Transportista": formatText(r.transportista),
+                                    "Chofer": formatText(r.chofer),
+                                    "Placa": formatText(r.placa),
+                                    "Estatus": formatText(r.estatus),
+                                  }))
+                                )
+                              }else{
+                              ws = utils.json_to_sheet(
+                                  allData.map((r) => ({
+                                    "Fecha de salida": formatDate(r.fecha_salida),
+                                    "Fecha de la factura": formatDate(r.factura.fecha_emision),
+                                    "Factura - Nro. control": formatText(r.factura.numero_control),
+                                    "Ubic. de origen": formatText(r.origen),
+                                    "Dir. de destino": formatText(r.destino),
+                                    "Transportista": formatText(r.transportista),
+                                    "Chofer": formatText(r.chofer),
+                                    "Placa": formatText(r.placa),
+                                    "Estatus": formatText(r.estatus),
+                                  }))
+                                );
+                              }
                               utils.book_append_sheet(wb, ws, "Guias de despacho");
                               const blob = new Blob([write(wb, { bookType: "xlsx", type: "array" })]);
                               const link = document.createElement("a");
