@@ -95,4 +95,3 @@ export const activateClient = async (id) => {
     throw error;
   }
 };
-
