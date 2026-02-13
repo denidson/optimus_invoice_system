@@ -8,6 +8,7 @@ import { useLocation } from "react-router-dom"; // Para la obtener el parametro 
 import { toast, ToastContainer } from "react-toastify"; // Importamos las funciones necesarias
 import "react-toastify/dist/ReactToastify.css"; // Importar el CSS de las notificaciones
 import $ from "jquery";
+import { validateFormatEmail } from "../../utils/formatters";
 
 function FormEndClients() {
   const navigate = useNavigate(); // Hook para redirección
@@ -76,6 +77,12 @@ function FormEndClients() {
     if (!client.email){
       newErrors.email = "Correo electrónico es obligatorio";
       errorToast.push("- Correo electrónico es obligatorio");
+    }
+    if (client.email){
+      if (!validateFormatEmail(client.email)){
+        newErrors.email = "Correo electrónico no presenta un formato válido";
+        errorToast.push("- Correo electrónico no presenta un formato válido");
+      }
     }
     if (!client.direccion){
       newErrors.direccion = "Dirección es obligatoria";

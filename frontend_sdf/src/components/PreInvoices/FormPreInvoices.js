@@ -16,6 +16,7 @@ import { Autocomplete, TextField } from "@mui/material";
 import { Tabs, Tab, Box } from "@mui/material";
 import { esES } from '@mui/x-data-grid/locales';
 import $ from "jquery";
+import { validateFormatEmail } from "../../utils/formatters";
 
 // Componente editor para el Autocomplete
 function ProductoEditCell({ params, products }) {
@@ -501,6 +502,12 @@ function FormPreInvoices() {
       //toast.error("Debe indicar el correo electrónico del cliente.");
       setButtonDisabled(false);
       //return;
+    }
+    if (preInvoice.cliente_final_email){
+      if (!validateFormatEmail(preInvoice.cliente_final_email)){
+        newErrors.cliente_final_email = "Correo electrónico no presenta un formato válido";
+        errorToast.push("- Correo electrónico no presenta un formato válido");
+      }
     }
     if (!preInvoice.cliente_final_direccion) {
       newErrors.cliente_final_direccion = "Dirección del cliente es obligatoria";

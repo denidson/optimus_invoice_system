@@ -6,6 +6,7 @@ import { decryptText } from '../../services/api'; // Importa el servicio para en
 import { toast, ToastContainer } from "react-toastify"; // Importamos las funciones necesarias
 import "react-toastify/dist/ReactToastify.css"; // Importar el CSS de las notificaciones
 import $ from "jquery";
+import { validateFormatEmail } from "../../utils/formatters";
 
 function FormCompanyUsers() {
   const navigate = useNavigate(); // Hook para redirección
@@ -17,6 +18,7 @@ function FormCompanyUsers() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [buttonDisabled, setButtonDisabled] = useState(false);
+  const [errors, setErrors] = useState({}); // Estado para errores de validación
 
   // Simulando la carga de datos del companyUser por el ID
   useEffect(() => {
@@ -45,10 +47,44 @@ function FormCompanyUsers() {
   if (loading) return <div>Cargando...</div>;
   if (error) return <div>{error}</div>;
 
+  const validate = () => {
+    const newErrors = {};
+    var errorToast = [];
+    if (!companyUser.nombre){
+      newErrors.nombre = "Nombre es obligatoria";
+      errorToast.push("- Nombre es obligatoria");
+    }
+    if (!companyUser.email){
+      newErrors.email = "Correo electrónico es obligatorio";
+      errorToast.push("- Correo electrónico es obligatorio");
+    }
+    if (companyUser.email){
+      if (!validateFormatEmail(companyUser.email)){
+        newErrors.email = "Correo electrónico no presenta un formato válido";
+        errorToast.push("- Correo electrónico no presenta un formato válido");
+      }
+    }
+    if (!companyUser.rol || companyUser.rol == '#'){
+      newErrors.rol = "Rol es obligatorio";
+      errorToast.push("- Rol es obligatorio");
+    }
+    setErrors(newErrors);
+    if (errorToast.length > 0){
+      toast.error(<div>
+        {errorToast.map(item => (
+            <span className="text-start">{item}<br/></span>
+          ))}
+      </div>)
+      setButtonDisabled(false);
+    }
+    return Object.keys(newErrors).length === 0;
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-    // Aquí enviarías los datos de nuevo al backend para actualizar al client
+    // Aquí enviarías los datos de nuevo al backend para actualizar al companyUser
     setButtonDisabled(true); // Iniciar carga (deshabilitar botón)
+    if (!validate()) return;
     console.log("Company User:", companyUser);
     try {
       var data;
@@ -121,6 +157,7 @@ function FormCompanyUsers() {
                         value={companyUser.nombre}
                         onChange={(e) => setCompanyUser({ ...companyUser, nombre: e.target.value.toUpperCase() })}
                       />
+                      {errors.nombre && <p className="text-red-500 text-xs mt-1">{errors.nombre}</p>}
                       </div>
                   </div>
                   <div className="w-full lg:w-5/12 px-4">
@@ -132,6 +169,7 @@ function FormCompanyUsers() {
                         value={companyUser.email}
                         onChange={(e) => setCompanyUser({ ...companyUser, email: e.target.value.toUpperCase() })}
                       />
+                      {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email}</p>}
                     </div>
                   </div>
                   <div className="w-full lg:w-2/12 px-4">
@@ -145,6 +183,7 @@ function FormCompanyUsers() {
                         <option value="operador_admin">Operador Admin</option>
                         <option value="visor">Visor</option>
                       </select>
+                      {errors.rol && <p className="text-red-500 text-xs mt-1">{errors.rol}</p>}
                     </div>
                   </div>
                   
