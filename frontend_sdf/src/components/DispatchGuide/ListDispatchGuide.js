@@ -65,6 +65,7 @@ function ListDispatchGuide() {
 
   const handleCloseModal = () => setModalOpen(false);
   var columns= [];
+  var targets;
   columns.push({
       title: "Fecha salida",
       data: "fecha_salida",
@@ -74,16 +75,27 @@ function ListDispatchGuide() {
       }
     });
     if (rol == 'admin'){
-      columns.push({ title: "RIF (Empresa)", data: "cliente.rif", className: "dt-center", render: (data, type, row) => {
+      targets = [8, 9, 10];
+      columns.push({ title: "RIF (Afiliada)", data: "cliente.rif", className: "dt-center", render: (data, type, row) => {
           return formatText(data);
         }
       });
-      columns.push({ title: "Nombre (Empresa)", data: "cliente.nombre_empresa", render: (data, type, row) => {
+      columns.push({ title: "Nombre (Afiliada)", data: "cliente.nombre_empresa", render: (data, type, row) => {
           return formatText(data);
         }
       });
+    }else{
+      targets = [7, 8];
     }
     columns.push({ title: "Número de control", data: "factura.numero_control", className: "dt-center", render: (data, type, row) => {
+        return formatText(data);
+      }
+    });
+    columns.push({ title: "RIF", data: "cliente_final.rif", className: "dt-center", render: (data, type, row) => {
+        return formatText(data);
+      }
+    });
+    columns.push({ title: "Nombre", data: "cliente_final.nombre", render: (data, type, row) => {
         return formatText(data);
       }
     });
@@ -96,6 +108,10 @@ function ListDispatchGuide() {
       }
     });
     columns.push({ title: "Transportista", data: "transportista", className: "dt-center", render: (data, type, row) => {
+        return formatText(data);
+      }
+    });
+    columns.push({ title: "Chofer", data: "chofer", className: "dt-center", render: (data, type, row) => {
         return formatText(data);
       }
     });
@@ -217,7 +233,7 @@ function ListDispatchGuide() {
                 columns={columns}
                 options={{
                   columnDefs:[{
-                    targets: [], // índices de columnas a ocultar (ej: RIF, Zona)
+                    targets: targets, // índices de columnas a ocultar (ej: RIF, Zona)
                     visible: false,
                     searchable: true // siguen siendo buscables
                   }],
@@ -372,10 +388,12 @@ function ListDispatchGuide() {
                                 ws = utils.json_to_sheet(
                                   allData.map((r) => ({
                                     "Fecha de salida": formatDate(r.fecha_salida),
-                                    "RIF (Empresa)": formatText(r.cliente.rif),
-                                    "Nombre (Empresa)": formatText(r.cliente.nombre_empresa),
+                                    "RIF (Afiliada)": formatText(r.cliente.rif),
+                                    "Nombre (Afiliada)": formatText(r.cliente.nombre_empresa),
                                     "Fecha de la factura": formatDate(r.factura.fecha_emision),
                                     "Factura - Nro. control": formatText(r.factura.numero_control),
+                                    "R.I.F.": formatText(r.cliente_final.rif),
+                                    "Razon social": formatText(r.cliente_final.nombre),
                                     "Ubic. de origen": formatText(r.origen),
                                     "Dir. de destino": formatText(r.destino),
                                     "Transportista": formatText(r.transportista),
@@ -390,6 +408,8 @@ function ListDispatchGuide() {
                                     "Fecha de salida": formatDate(r.fecha_salida),
                                     "Fecha de la factura": formatDate(r.factura.fecha_emision),
                                     "Factura - Nro. control": formatText(r.factura.numero_control),
+                                    "R.I.F.": formatText(r.cliente_final.rif),
+                                    "Razon social": formatText(r.cliente_final.nombre),
                                     "Ubic. de origen": formatText(r.origen),
                                     "Dir. de destino": formatText(r.destino),
                                     "Transportista": formatText(r.transportista),

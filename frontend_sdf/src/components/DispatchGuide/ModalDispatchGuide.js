@@ -41,9 +41,21 @@ const ModalWithholding = ({ data, onClose }) => {
             </div>
 
             <div >
+            </div>
+          </div>
+          <hr className="my-6" />
+          <div className="grid grid-cols-2 gap-6">
+            <div>
               <h4 className="font-bold mb-2">Información de la factura</h4>
               <p><b>Fecha Emisión:</b> {formatDate(data.factura.fecha_emision)}</p>
               <p><b>Número de control:</b> {formatText(data.factura.numero_control)}</p>
+            </div>
+
+            <div >
+              <p><b>R.I.F:</b> {formatText(data.cliente_final.rif)}</p>
+              <p><b>Razón social:</b> {formatText(data.cliente_final.nombre)}</p>
+              <p><b>Teléfono:</b> {formatText(data.cliente_final.telefono)}</p>
+              <p><b>Correo electrónico:</b> {formatText(data.cliente_final.email)}</p>
             </div>
           </div>
           <hr className="my-6" />

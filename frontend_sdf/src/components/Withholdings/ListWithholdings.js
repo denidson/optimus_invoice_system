@@ -78,11 +78,11 @@ function ListWithholdings() {
   });
   if (rol == 'admin'){
     targets = [3, 7];
-    columns.push({ title: "RIF (Empresa)", data: "cliente.rif", className: "dt-center", render: (data, type, row) => {
+    columns.push({ title: "RIF (Afiliada)", data: "cliente.rif", className: "dt-center", render: (data, type, row) => {
         return formatText(data);
       }
     });
-    columns.push({ title: "Nombre (Empresa)", data: "cliente.nombre_empresa", render: (data, type, row) => {
+    columns.push({ title: "Nombre (Afiliada)", data: "cliente.nombre_empresa", render: (data, type, row) => {
         return formatText(data);
       }
     });
