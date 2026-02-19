@@ -155,6 +155,7 @@ function FormCompanyUsers() {
                         type="text"
                         className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
                         value={companyUser.nombre}
+                        placeholder="Nombre del usuario"
                         onChange={(e) => setCompanyUser({ ...companyUser, nombre: e.target.value.toUpperCase() })}
                       />
                       {errors.nombre && <p className="text-red-500 text-xs mt-1">{errors.nombre}</p>}
@@ -167,6 +168,7 @@ function FormCompanyUsers() {
                         type="text"
                         className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
                         value={companyUser.email}
+                        placeholder="correo@correo.com"
                         onChange={(e) => setCompanyUser({ ...companyUser, email: e.target.value.toUpperCase() })}
                       />
                       {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email}</p>}

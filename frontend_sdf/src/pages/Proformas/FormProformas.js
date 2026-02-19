@@ -1,9 +1,9 @@
 import React, { useContext } from "react";
 import { AuthContext } from "../../context/AuthContext";
+import FormProformas from '../../components/Proformas/FormProformas';
 import AdminLayout from "../../layouts/AdminLayout";
-import ListPreInvoices from "../../components/PreInvoices/ListPreInvoices";
 
-export default function ListPreInvoicesPage() {
+export default function FormPreInvoicesPage() {
   const { user } = useContext(AuthContext);
   const nombreUsuario = user?.nombre || "Usuario";
 
@@ -11,8 +11,9 @@ export default function ListPreInvoicesPage() {
     <AdminLayout nombreUsuario={nombreUsuario}>
       {/* Contenedor principal con separación y fondo blanco */}
       <div className="mt-8 px-4 md:px-8">
-        <ListPreInvoices />
+        <FormProformas />
       </div>
     </AdminLayout>
   );
 }
+

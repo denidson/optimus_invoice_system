@@ -1,7 +1,7 @@
 import React from "react";
-import { formatMoney, formatDate, formatDateTime, formatText } from "../../utils/formatters";
+import { formatDecimal, formatMoney, formatDate, formatDateTime, formatText } from "../../utils/formatters";
 
-function ModalPreinvoices({ isOpen, onClose, message }) {
+function ModalProformas({ isOpen, onClose, message }) {
   if (!isOpen) return null;
 
   return (
@@ -13,7 +13,7 @@ function ModalPreinvoices({ isOpen, onClose, message }) {
         {/* HEADER */}
         <div className="px-6 py-6 border-b bg-white">
           <h6 className="text-twilight-indigo-600 font-bold text-center">
-            Detalles de la Pre-Factura
+            Detalles de la Proformas
           </h6>
         </div>
 
@@ -27,7 +27,7 @@ function ModalPreinvoices({ isOpen, onClose, message }) {
                 <hr className="my-6 border-b border-blueGray-300"/>
                 <div className="px-5 flex justify-between">
                   <div className="lg:w-4/12 text-start">
-                    <label className="text-blueGray-700 font-bold me-3">Fecha de Pre-Factura:</label>
+                    <label className="text-blueGray-700 font-bold me-3">Fecha de Proformas:</label>
                     <span className="text-blueGray-700">{message.fecha_factura ? formatDate(message.fecha_factura) : ''}</span>
                   </div>
                   <div className="lg:w-4/12 text-start">
@@ -89,7 +89,7 @@ function ModalPreinvoices({ isOpen, onClose, message }) {
                       </div>
                       <div className="w-1/5 text-end">
                         <label className="font-bold text-blueGray-700">Total:</label>
-                        <div>{'Bs. ' + formatMoney(message.factura_afectada_rel.total_neto)}</div>
+                        <div>{formatMoney(message.factura_afectada_rel.total_neto)}</div>
                       </div>
                     </div>
                     <hr className="my-4 border-b border-blueGray-300"/>
@@ -111,11 +111,11 @@ function ModalPreinvoices({ isOpen, onClose, message }) {
                   message.items.map(item => (
                     <div key={item.id} className="px-5 flex justify-between border-b py-1">
                       <span className="lg:w-4/12 text-start">{item.producto ? `${item.producto.sku}-${item.producto.nombre}` : item.tipo_documento !== 'ND' ? `${item.descripcion}`: 'N/A'}</span>
-                      <span className="lg:w-4/12 text-center">{item.cantidad.toLocaleString("es-VE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-                      <span className="lg:w-2/12 text-center">{item.iva_categoria_id ? item.iva_categoria.tasa_porcentaje.toLocaleString("es-VE", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : 0}</span>
-                      <span className="lg:w-4/12 text-right">{item.precio_unitario.toLocaleString("es-VE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-                      <span className="lg:w-2/12 text-center">{item.descuento_porcentaje?.toLocaleString("es-VE", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || 0}</span>
-                      <span className="lg:w-4/12 text-right">{(item.cantidad * (item.precio_unitario - (item.precio_unitario * (item.descuento_porcentaje || 0)/100))).toLocaleString("es-VE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                      <span className="lg:w-4/12 text-center">{formatDecimal(item.cantidad)}</span>
+                      <span className="lg:w-2/12 text-center">{item.iva_categoria_id ? formatDecimal(item.iva_categoria.tasa_porcentaje) : '0,00'}</span>
+                      <span className="lg:w-4/12 text-right">{formatDecimal(item.precio_unitario)}</span>
+                      <span className="lg:w-2/12 text-center">{formatDecimal(item.descuento_porcentaje) || '0,00'}</span>
+                      <span className="lg:w-4/12 text-right">{formatDecimal(item.cantidad * (item.precio_unitario - (item.precio_unitario * (item.descuento_porcentaje || 0)/100)))}</span>
                     </div>
                   ))
                 ) : (
@@ -130,7 +130,7 @@ function ModalPreinvoices({ isOpen, onClose, message }) {
                     {message.monto_pagado_divisas > 0 && (
                       <div className="flex justify-between">
                         <span className="font-bold">Monto pagado en divisas:</span>
-                        <span>{`Bs. ${message.monto_pagado_divisas.toLocaleString("es-VE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}</span>
+                        <span>{formatMoney(message.monto_pagado_divisas)}</span>
                       </div>
                     )}
                     {message.monto_pagado_divisas == 0 && (
@@ -142,7 +142,7 @@ function ModalPreinvoices({ isOpen, onClose, message }) {
                   <div className="lg:w-6/12 text-right">
                     <div className="flex justify-between">
                       <span className="font-bold">Base imponible:</span>
-                      <span>{`Bs. ${message.total_base.toLocaleString("es-VE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}</span>
+                      <span>{formatMoney(message.total_base)}</span>
                     </div>
                   </div>
                 </div>
@@ -151,8 +151,8 @@ function ModalPreinvoices({ isOpen, onClose, message }) {
                   <div className="lg:w-6/12 text-start pr-10">
                     {message.igtf_monto > 0 && (
                       <div className="flex justify-between">
-                        <span className="font-bold">{`IGTF (${message.igtf_porcentaje.toLocaleString("es-VE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}%):`}</span>
-                        <span>{`Bs. ${message.igtf_monto.toLocaleString("es-VE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}</span>
+                        <span className="font-bold">{`IGTF (${formatDecimal(message.igtf_porcentaje)}%):`}</span>
+                        <span>{formatMoney(message.igtf_monto)}</span>
                       </div>
                     )}
                     {message.igtf_monto == 0 && (
@@ -164,7 +164,7 @@ function ModalPreinvoices({ isOpen, onClose, message }) {
                   <div className="lg:w-6/12 text-right">
                     <div className="flex justify-between">
                       <span className="font-bold">I.V.A:</span>
-                      <span>{`Bs. ${message.total_impuestos.toLocaleString("es-VE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}</span>
+                      <span>{formatMoney(message.total_impuestos)}</span>
                     </div>
                   </div>
                 </div>
@@ -173,9 +173,18 @@ function ModalPreinvoices({ isOpen, onClose, message }) {
                   <div className="lg:w-6/12 text-start"></div>
                   <div className="lg:w-6/12 text-right flex justify-between">
                     <span className="font-bold">Total:</span>
-                    <span>{`Bs. ${(message.total_neto ? message.total_neto - message.igtf_monto : message.total - message.igtf_monto).toLocaleString("es-VE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}</span>
+                    <span>{formatMoney(message.igtf_monto > 0 ? message.total - message.igtf_monto : message.total)}</span>
                   </div>
                 </div>
+                {message.igtf_monto > 0 && (
+                  <div className="px-5 flex justify-between mt-0">
+                    <div className="lg:w-6/12 text-start"></div>
+                    <div className="lg:w-6/12 text-right flex justify-between">
+                      <span className="font-bold">Total + IGTF:</span>
+                      <span>{formatMoney(message.total)}</span>
+                    </div>
+                  </div>
+                )}
 
               </div>
             </div>
@@ -197,4 +206,4 @@ function ModalPreinvoices({ isOpen, onClose, message }) {
   );
 }
 
-export default ModalPreinvoices;
+export default ModalProformas;

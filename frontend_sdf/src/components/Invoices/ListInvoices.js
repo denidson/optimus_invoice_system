@@ -21,7 +21,7 @@ import pdfFonts from "pdfmake/build/vfs_fonts";
 //import { read, utils } from 'xlsx';
 import * as XLSX from "xlsx";
 const { read, utils } = XLSX;
-import { formatMoney, formatDate, formatDateTime, formatText } from "../../utils/formatters";
+import { formatDecimal, formatDate, formatDateTime, formatText } from "../../utils/formatters";
 import Papa from 'papaparse';
 import { tooltipBtn } from "../../utils/datatableTooltip";
 
@@ -86,7 +86,7 @@ function ListInvoices({ title, type }) {
     }
     const hash = encryptText(id.toString());
     const hashType = encryptText(tipo_documento.toString());
-    navigate(`/preinvoices/create?id=${encodeURIComponent(hash)}&type=${encodeURIComponent(hashType)}`);
+    navigate(`/proformas/create?id=${encodeURIComponent(hash)}&type=${encodeURIComponent(hashType)}`);
   };
 
   const handleOpenModalInvoices = async (id) => {
@@ -307,35 +307,35 @@ function ListInvoices({ title, type }) {
                     title: "Base imponible (Bs.)",
                     data: "total_base",
                     render: (data, type, row) => {
-                      return formatMoney(data);
+                      return formatDecimal(data);
                     }
                   },
                   {
                     title: "I.V.A. (Bs.)",
                     data: "total_impuestos",
                     render: (data, type, row) => {
-                      return formatMoney(data);
+                      return formatDecimal(data);
                     }
                   },
                   {
                     title: "Total (Bs.)",
                     data: "total_neto",
                     render: (data, type, row) => {
-                      return formatMoney(data);
+                      return formatDecimal(data);
                     }
                   },
                   {
                     title: "Pagado en divisas (Bs.)",
                     data: "monto_pagado_divisas",
                     render: (data, type, row) => {
-                      return formatMoney(data);
+                      return formatDecimal(data);
                     }
                   },
                   {
                     title: "IGTF (Bs.)",
                     data: "igtf_monto",
                     render: (data, type, row) => {
-                      return formatMoney(data);
+                      return formatDecimal(data);
                     }
                   },
                   {
@@ -544,11 +544,11 @@ function ListInvoices({ title, type }) {
                                     : item.tipo_documento === "ND" ? "NOTA DE DÉBITO" : "NOTA DE CRÉDITO",
                                 "Correlativo interno": formatText(item.correlativo_interno),
                                 "Factura afectada NC": formatText(item.factura_afectada_rel ? item.factura_afectada_rel.numero_control : ''),
-                                "Base imponible (Bs.)": formatMoney(item.total_base),
-                                "IVA (Bs.)": formatMoney(item.total_impuestos),
-                                "Total (Bs.)": formatMoney(item.total_neto),
-                                "Pago en divisas (Bs.)": formatMoney(item.monto_pagado_divisas),
-                                "IGTF (Bs.)": formatMoney(item.igtf_monto),
+                                "Base imponible (Bs.)": formatDecimal(item.total_base),
+                                "IVA (Bs.)": formatDecimal(item.total_impuestos),
+                                "Total (Bs.)": formatDecimal(item.total_neto),
+                                "Pago en divisas (Bs.)": formatDecimal(item.monto_pagado_divisas),
+                                "IGTF (Bs.)": formatDecimal(item.igtf_monto),
                                 "Zona":formatText(item.zona),
                                 "Estatus": formatText(item.estatus),
                               })));

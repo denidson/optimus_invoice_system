@@ -15,7 +15,7 @@ import JSZip from "jszip";
 //import { utils, write } from "xlsx";
 import * as XLSX from "xlsx";
 const { utils, write } = XLSX;
-import { formatMoney, formatDate, formatDateTime, formatText, formatFiscalPeriod } from "../../utils/formatters";
+import { formatDecimal, formatDate, formatDateTime, formatText, formatFiscalPeriod } from "../../utils/formatters";
 import { tooltipBtn } from "../../utils/datatableTooltip";
 
 window.JSZip = JSZip;
@@ -108,24 +108,24 @@ function ListWithholdings() {
   columns.push({
     title: "Base Imponible (Bs.)",
     data: "monto_base_total",
-    /*render: (data, type, row) => {
-      return formatMoney(data);
-    }*/
-    render: (data, type) =>
+    render: (data, type, row) => {
+      return formatDecimal(data);
+    }
+    /*render: (data, type) =>
       type === "display"
         ? `${new Intl.NumberFormat("es-VE", { minimumFractionDigits: 2 }).format(data)}`
-        : data,
+        : data,*/
   });
   columns.push({
     title: "Monto Retenido (Bs.)",
     data: "monto_retenido_total",
-    /*render: (data, type, row) => {
-      return formatMoney(data);
-    }*/
-    render: (data, type) =>
+    render: (data, type, row) => {
+      return formatDecimal(data);
+    }
+    /*render: (data, type) =>
       type === "display"
         ? `${new Intl.NumberFormat("es-VE", { minimumFractionDigits: 2 }).format(data)}`
-        : data,
+        : data,*/
   });
   columns.push({ title: "Estatus", data: "estatus", className: "dt-center", render: (data, type, row) => {
       if (data == 'emitido'){
@@ -405,8 +405,8 @@ function ListWithholdings() {
                                     "Nro. Comprobante": formatText(r.numero_comprobante),
                                     "RIF": formatText(r.sujeto_retenido.rif),
                                     "Sujeto Retenido": formatText(r.sujeto_retenido.nombre),
-                                    "Base Imponible": formatMoney(r.monto_base_total),
-                                    "Monto Retenido": formatMoney(r.monto_retenido_total),
+                                    "Base Imponible": formatDecimal(r.monto_base_total),
+                                    "Monto Retenido": formatDecimal(r.monto_retenido_total),
                                     "Estatus": formatText(r.estatus),
                                     "Estatus SENIAT": formatText(r.estatus_seniat),
                                   }))
@@ -419,8 +419,8 @@ function ListWithholdings() {
                                     "Nro. Comprobante": formatText(r.numero_comprobante),
                                     "RIF": formatText(r.sujeto_retenido.rif),
                                     "Sujeto Retenido": formatText(r.sujeto_retenido.nombre),
-                                    "Base Imponible": formatMoney(r.monto_base_total),
-                                    "Monto Retenido": formatMoney(r.monto_retenido_total),
+                                    "Base Imponible": formatDecimal(r.monto_base_total),
+                                    "Monto Retenido": formatDecimal(r.monto_retenido_total),
                                     "Estatus": formatText(r.estatus),
                                     "Estatus SENIAT": formatText(r.estatus_seniat),
                                   }))

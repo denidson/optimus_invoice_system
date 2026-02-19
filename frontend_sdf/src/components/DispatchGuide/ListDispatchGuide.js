@@ -15,7 +15,7 @@ import JSZip from "jszip";
 //import { utils, write } from "xlsx";
 import * as XLSX from "xlsx";
 const { utils, write } = XLSX;
-import { formatMoney, formatDate, formatDateTime, formatText, formatFiscalPeriod } from "../../utils/formatters";
+import { formatDecimal, formatMoney, formatDate, formatDateTime, formatText, formatFiscalPeriod } from "../../utils/formatters";
 import { tooltipBtn } from "../../utils/datatableTooltip";
 
 window.JSZip = JSZip;

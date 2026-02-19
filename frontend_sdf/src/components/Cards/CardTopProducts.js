@@ -1,4 +1,4 @@
-import { formatMoney } from "../../utils/formatters";
+import { formatDecimal } from "../../utils/formatters";
 
 export default function CardTopProducts({ products = [] }) {
   return (
@@ -19,8 +19,8 @@ export default function CardTopProducts({ products = [] }) {
               <th className="px-2 py-2 text-left text-xs font-semibold text-twilight-indigo-600 uppercase border-b">
                 Producto
               </th>
-              <th className="px-2 py-2 text-left text-xs font-semibold text-twilight-indigo-600 uppercase border-b">
-                Ventas
+              <th className="px-2 py-2 text-left text-xs font-semibold text-twilight-indigo-600 border-b">
+                VENTAS (Bs.)
               </th>
             </tr>
           </thead>
@@ -43,7 +43,7 @@ export default function CardTopProducts({ products = [] }) {
                   <td className="px-2 py-1 align-middle whitespace-nowrap">
                     <div className="flex flex-col">
                       <span className="font-semibold text-twilight-indigo-700">
-                        {p.currency} {formatMoney(p.total_ventas)}
+                        {formatDecimal(p.total_ventas)}
                       </span>
                       <span className="text-xs text-twilight-indigo-400">
                         {p.total_unidades} unidades

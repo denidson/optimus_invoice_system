@@ -25,7 +25,7 @@ import pdfFonts from "pdfmake/build/vfs_fonts";
 import * as XLSX from "xlsx";
 const { read, utils } = XLSX;3
 import Papa from 'papaparse';
-import { formatMoney, formatDate, formatDateTime, formatText } from "../../utils/formatters";
+import { formatDecimal, formatDate, formatDateTime, formatText } from "../../utils/formatters";
 
 window.JSZip = JSZip;
 DataTable.use(DT);
@@ -246,11 +246,11 @@ function ListProducts() {
                   { title: "Nombre", data: "nombre" },
                   { title: "Descripción", data: "descripcion" },
                   { title: "IVA (%)", data: "iva_categoria", className: "dt-center", render: (data, type, row) => {
-                      return data ? formatMoney(data.tasa_porcentaje) : '';
+                      return data ? formatDecimal(data.tasa_porcentaje) : '';
                     }
                   },
                   { title: "Precio Base (Bs.)", data: "precio_base", render: (data, type, row) => {
-                      return formatMoney(data);
+                      return formatDecimal(data);
                     }
                   },
                   { title: "Condición", data: "activo", className: "dt-center", render: (data, type, row) => {

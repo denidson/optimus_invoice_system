@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { getCompanyUsers, editCompanyUsers, createCompanyUsers } from "../../services/apiCompanyUsers";
-import { formatMoney, formatDate, formatDateTime, formatText } from "../../utils/formatters";
+import { formatDecimal, formatMoney, formatDate, formatDateTime, formatText } from "../../utils/formatters";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 

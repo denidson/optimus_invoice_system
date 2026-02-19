@@ -1,5 +1,5 @@
 import React from "react";
-import { formatMoney, formatFiscalPeriod, formatDate, formatText } from "../../utils/formatters";
+import { formatDecimal, formatMoney, formatFiscalPeriod, formatDate, formatText } from "../../utils/formatters";
 
 const ModalWithholding = ({ data, onClose }) => {
   if (!data) return null;

@@ -1,4 +1,4 @@
-import { formatMoney } from "../../utils/formatters";
+import { formatDecimal } from "../../utils/formatters";
 
 export default function CardTopClients({ clients = [] }) {
   return (
@@ -19,8 +19,8 @@ export default function CardTopClients({ clients = [] }) {
               <th className="px-2 py-2 text-left text-xs font-semibold text-twilight-indigo-600 uppercase border-b">
                 Cliente
               </th>
-              <th className="px-2 py-2 text-left text-xs font-semibold text-twilight-indigo-600 uppercase border-b">
-                Neto
+              <th className="px-2 py-2 text-left text-xs font-semibold text-twilight-indigo-600 border-b">
+                NETO (Bs.)
               </th>
             </tr>
           </thead>
@@ -42,7 +42,7 @@ export default function CardTopClients({ clients = [] }) {
 
                   <td className="px-2 py-1 align-middle whitespace-nowrap">
                     <span className="font-semibold text-twilight-indigo-700">
-                      {c.currency} {formatMoney(c.total_neto)}
+                      {formatDecimal(c.total_neto)}
                     </span>
                   </td>
                 </tr>

@@ -1,11 +1,18 @@
 export const formatMoney = (value) => {
-  return new Intl.NumberFormat("es-ES", {
+  return 'Bs. ' + new Intl.NumberFormat("es-ES", {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
     useGrouping: true,
   }).format(Number(value || 0));
 };
 
+export const formatDecimal = (value) => {
+  return new Intl.NumberFormat("es-ES", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+    useGrouping: true,
+  }).format(Number(value || 0));
+};
 
 export const formatDate = (value) => {
   if (!value) return "";

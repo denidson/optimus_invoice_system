@@ -22,7 +22,7 @@ import pdfMake from "pdfmake/build/pdfmake";
 import pdfFonts from "pdfmake/build/vfs_fonts";
 import { read, utils } from 'xlsx';
 import Papa from 'papaparse';
-import { formatMoney, formatDate, formatDateTime, formatText } from "../../utils/formatters";
+import { formatDecimal, formatDate, formatDateTime, formatText } from "../../utils/formatters";
 
 window.JSZip = JSZip;
 DataTable.use(DT);
@@ -57,7 +57,7 @@ function ListTaxes() {
                     }
                   },
                   { title: "Tasa porcentaje (%)", data: "tasa_porcentaje", render: (data, type, row) => {
-                      return formatMoney(data);
+                      return formatDecimal(data);
                     }
                   }
                 ]}

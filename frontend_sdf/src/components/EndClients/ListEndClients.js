@@ -20,7 +20,7 @@ import "datatables.net-buttons/js/buttons.print";
 import JSZip from "jszip";
 import * as XLSX from "xlsx";
 const { read, utils } = XLSX;
-import { formatMoney, formatDate, formatDateTime, formatText } from "../../utils/formatters";
+import { formatDecimal, formatMoney, formatDate, formatDateTime, formatText } from "../../utils/formatters";
 import Papa from 'papaparse';
 window.JSZip = JSZip;
 DataTable.use(DT);

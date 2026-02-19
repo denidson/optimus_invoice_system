@@ -1,5 +1,5 @@
 import React from "react";
-import { formatMoney, formatDateTime, formatText } from "../../utils/formatters";
+import { formatDecimal, formatMoney, formatDateTime, formatText } from "../../utils/formatters";
 
 function ModalPreinvoices({ isOpen, onClose, message }) {
   if (!isOpen) return null;
@@ -112,7 +112,7 @@ function ModalPreinvoices({ isOpen, onClose, message }) {
               </div>
               <div className="w-1/5 text-end">
                 <label className="font-bold text-blueGray-700">Total:</label>
-                <div>{'Bs. ' + formatMoney(message.factura_afectada_rel.total_neto)}</div>
+                <div>{formatMoney(message.factura_afectada_rel.total_neto)}</div>
               </div>
             </div>
             <hr className="my-4 border-b border-blueGray-300"/>
@@ -137,12 +137,12 @@ function ModalPreinvoices({ isOpen, onClose, message }) {
             itemsList.map((item) => (
               <div key={item.id} className="flex border-b border-gray-300 text-center">
                 <div className="w-1/4 px-2 py-1 text-left">{item.producto ? item.producto.sku + '-' + item.producto.nombre : 'N/A'}</div>
-                <div className="w-1/6 px-2 py-1">{item.cantidad.toLocaleString("es-VE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
-                <div className="w-1/12 px-2 py-1">{item.iva_categoria_id ? item.iva_categoria.tasa_porcentaje.toLocaleString("es-VE", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : 0}</div>
-                <div className="w-1/6 px-2 py-1 text-right">{(message.tipo_documento == 'FC' ? item.precio_unitario : item.monto_unitario).toLocaleString("es-VE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
-                <div className="w-1/12 px-2 py-1">{item.descuento_porcentaje ? item.descuento_porcentaje.toLocaleString("es-VE", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : 0}</div>
+                <div className="w-1/6 px-2 py-1">{formatDecimal(item.cantidad)}</div>
+                <div className="w-1/12 px-2 py-1">{item.iva_categoria_id ? formatDecimal(item.iva_categoria.tasa_porcentaje) : '0,00'}</div>
+                <div className="w-1/6 px-2 py-1 text-right">{formatDecimal(message.tipo_documento == 'FC' ? item.precio_unitario : item.monto_unitario)}</div>
+                <div className="w-1/12 px-2 py-1">{item.descuento_porcentaje ? formatDecimal(item.descuento_porcentaje) : '0,00'}</div>
                 <div className="w-1/4 px-2 py-1 text-right">
-                  {(item.cantidad * ((message.tipo_documento == 'FC' ? item.precio_unitario : item.monto_unitario) - ((message.tipo_documento == 'FC' ? item.precio_unitario : item.monto_unitario) * (item.descuento_porcentaje || 0)/100))).toLocaleString("es-VE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  {formatDecimal(item.cantidad * ((message.tipo_documento == 'FC' ? item.precio_unitario : item.monto_unitario) - ((message.tipo_documento == 'FC' ? item.precio_unitario : item.monto_unitario) * (item.descuento_porcentaje || 0)/100)))}
                 </div>
               </div>
             ))
@@ -166,7 +166,7 @@ function ModalPreinvoices({ isOpen, onClose, message }) {
                 {formatText(item.concepto)}
               </span>
               <span className="lg:w-4/12 text-right">
-                {formatMoney(item.monto)}
+                {formatDecimal(item.monto)}
               </span>
             </div>
           ))
@@ -176,7 +176,7 @@ function ModalPreinvoices({ isOpen, onClose, message }) {
         <div className="flex flex-wrap justify-between px-2 text-right font-bold mb-4">
           {message.monto_pagado_divisas > 0 && (
             <div className="w-1/2 text-left">
-              Monto pagado en divisas: Bs. {message.monto_pagado_divisas.toLocaleString("es-VE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              Monto pagado en divisas: {formatMoney(message.monto_pagado_divisas)}
             </div>
           )}
           {message.monto_pagado_divisas == 0 && (
@@ -185,13 +185,13 @@ function ModalPreinvoices({ isOpen, onClose, message }) {
             </div>
           )}
           <div className="w-1/2">
-            Base imponible: Bs. {message.total_base.toLocaleString("es-VE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            Base imponible: {formatMoney(message.total_base)}
           </div>
         </div>
         <div className="flex flex-wrap justify-between px-2 text-right font-bold mb-4">
           {message.igtf_monto > 0 && (
             <div className="w-1/2 text-left">
-              IGTF ({message.igtf_porcentaje.toLocaleString("es-VE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}%): Bs. {message.igtf_monto.toLocaleString("es-VE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              IGTF ({formatDecimal(message.igtf_porcentaje)}%):{formatMoney(message.igtf_monto)}
             </div>
           )}
           {message.igtf_monto == 0 && (
@@ -200,16 +200,23 @@ function ModalPreinvoices({ isOpen, onClose, message }) {
             </div>
           )}
           <div className="w-1/2">
-            I.V.A: Bs. {message.total_impuestos.toLocaleString("es-VE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            I.V.A: {formatMoney(message.total_impuestos)}
           </div>
         </div>
         <div className="flex flex-wrap justify-between px-2 text-right font-bold mb-4">
           <div className="w-1/2"></div>
           <div className="w-1/2">
-            Total: Bs. {(message.total_neto ? message.total_neto - message.igtf_monto : message.total - message.igtf_monto).toLocaleString("es-VE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            Total: {formatMoney(message.total_neto ? message.total_neto - message.igtf_monto : message.total - message.igtf_monto)}
           </div>
         </div>
-
+        {message.igtf_monto > 0 && (
+          <div className="flex flex-wrap justify-between px-2 text-right font-bold mb-4">
+            <div className="w-1/2"></div>
+            <div className="w-1/2">
+              Total + IGTF: {formatMoney(message.total_neto ? message.total_neto : message.total)}
+            </div>
+          </div>
+        )}
         {/* Botón Cancelar */}
         <div className="flex justify-center mt-6">
           <button

@@ -9,7 +9,7 @@ import {
 } from "../../services/api_pre_invoices";
 import { encryptText } from "../../services/api";
 import ModalConfirmation from "../Modals/ModalConfirmation";
-import ModalPreinvoices from "./ModalPreInvoices";
+import ModalProformas from "./ModalProformas";
 import ModalImportPreviewPreInvoices from "../Modals/ModalImportPreviewPreInvoice";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -26,19 +26,19 @@ import JSZip from "jszip";
 import * as XLSX from "xlsx";
 const { utils } = XLSX;
 import Papa from "papaparse";
-import { formatMoney, formatDate, formatDateTime, formatText } from "../../utils/formatters";
+import { formatDecimal, formatDate, formatDateTime, formatText } from "../../utils/formatters";
 import { tooltipBtn } from "../../utils/datatableTooltip";
 
 window.JSZip = JSZip;
 DataTable.use(DT);
 
-function ListPreInvoices() {
+function ListProformas() {
   const navigate = useNavigate(); // Hook para redirección
   const [modalOpen, setModalOpen] = useState(false); // Estado para manejar la visibilidad de la modal
   const [modalOpenPreinvoices, setModalOpenPreinvoices] = useState(false); // Estado para manejar la visibilidad de la modal
   const [modalOpenInInvoices, setModalOpenInInvoices] = useState(false); // Estado para manejar la visibilidad de la modal
-  const [preInvoicesIdToDeactivate, setPreInvoicesIdToDeactivate] = useState(null); // Estado para almacenar el ID de la pre-factura a eliminar
-  const [preInvoicesIdInInvoices, setPreInvoicesIdInInvoices] = useState(null); // Estado para almacenar el ID de la pre-factura a Facturar
+  const [preInvoicesIdToDeactivate, setPreInvoicesIdToDeactivate] = useState(null); // Estado para almacenar el ID de la proformas a eliminar
+  const [preInvoicesIdInInvoices, setPreInvoicesIdInInvoices] = useState(null); // Estado para almacenar el ID de la proformas a Facturar
   const [filterType, setFilterType] = useState("");
   const [modalImportOpen, setModalImportOpen] = useState(false);
   const [preInvoicesToImport, setPreInvoicesToImport] = useState([]);
@@ -94,10 +94,10 @@ function ListPreInvoices() {
   // ----------------------
   const redirectToEdit = (id) => {
     const hash = encryptText(id.toString());
-    navigate(`/preinvoices/edit?id=${encodeURIComponent(hash)}`);
+    navigate(`/proformas/edit?id=${encodeURIComponent(hash)}`);
   };
 
-  const redirectToCreate = () => navigate(`/preinvoices/create`);
+  const redirectToCreate = () => navigate(`/proformas/create`);
 
   const actionSearch = () => {
     const table = $("#ListPreInvoicesDt").DataTable();
@@ -112,19 +112,19 @@ function ListPreInvoices() {
     try {
       location.reload(true);
     } catch (error) {
-      console.error("Error al recargar las Pre-Facturas:", error);
+      console.error("Error al recargar las Proformas:", error);
     }
   };
 
   // ----------------------
-  // Acciones de pre-facturas
+  // Acciones de proformass
   // ----------------------
   const handleAction = async (id) => {
     try {
       const data = await deletePreInvoice(id);
       toast.success(data.mensaje, { onClose: () => setTimeout(() => refreshPreInvoices(), 2000) });
     } catch {
-      toast.error("Error al eliminar la Pre-Factura");
+      toast.error("Error al eliminar la Proformas");
     }
   };
 
@@ -149,7 +149,7 @@ function ListPreInvoices() {
       setPreInvoicesIdToDeactivate(data);
       setModalOpenPreinvoices(true);
     } catch {
-      toast.error("Error al consultar la Pre-Factura.");
+      toast.error("Error al consultar la Proformas.");
     }
   };
 
@@ -274,19 +274,19 @@ function ListPreInvoices() {
         try {
           await createPreInvoice(payload);
         } catch (error) {
-          console.error("❌ Error en pre-factura:", pre.correlativo_interno, error);
+          console.error("❌ Error en proformas:", pre.correlativo_interno, error);
           errores++;
         }
       }
 
       if (errores === 0) {
-        toast.success("✅ Pre-facturas importadas correctamente", { autoClose: 2000 });
+        toast.success("✅ Proformas importadas correctamente", { autoClose: 2000 });
       } else {
-        toast.warn(`⚠️ ${errores} pre-factura(s) no se pudieron guardar. Revisa la consola.`, { autoClose: 4000 });
+        toast.warn(`⚠️ ${errores} proformas(s) no se pudieron guardar. Revisa la consola.`, { autoClose: 4000 });
       }
     } catch (err) {
       console.error("Error al importar:", err);
-      toast.error("❌ Error inesperado al importar pre-facturas");
+      toast.error("❌ Error inesperado al importar proformass");
     }
   };
 
@@ -301,7 +301,7 @@ function ListPreInvoices() {
           <div className="relative bg-white flex flex-col min-w-0 break-words w-full mb-6 shadow-lg rounded-lg bg-blueGray-100 border-0">
             {/* Header */}
             <div className="rounded-t bg-white mb-0 px-6 py-6 flex justify-between items-center border-b">
-              <h6 className="text-blueGray-700 text-xl font-bold">Lista de Pre-Facturas</h6>
+              <h6 className="text-blueGray-700 text-xl font-bold">Lista de Proformas</h6>
 
                 <div className="flex items-center space-x-3">
                   <div className="flex space-x-2 mb-3">
@@ -309,7 +309,7 @@ function ListPreInvoices() {
                     {/* SELECT PRINCIPAL */}
                     <select id="filter_type" className="border p-2 rounded" value={filterType} onChange={(e) => setFilterType(e.target.value)}>
                       <option value=""> - </option>
-                      <option value="estatus">Estado</option>
+                      <option value="estatus">Estatus</option>
                       <option value="zona">Zona</option>
                       <option value="correlativo_interno">Correlativo Interno</option>
                       <option value="cliente_final_rif">RIF del cliente</option>
@@ -339,7 +339,7 @@ function ListPreInvoices() {
                     <button
                       className="bg-twilight-indigo-600 hover:bg-twilight-indigo-500 text-white font-bold py-2 px-4 rounded"
                       onClick={redirectToCreate}>
-                      Crear Pre-Facturas
+                      Crear Proformas
                     </button>
                     {rol != "admin" && (
                       <label className="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded cursor-pointer">
@@ -404,35 +404,35 @@ function ListPreInvoices() {
                     title: "Base imponible (Bs.)",
                     data: "total_base",
                     render: (data, type, row) => {
-                      return formatMoney(data);
+                      return formatDecimal(data);
                     }
                   },
                   {
                     title: "I.V.A. (Bs.)",
                     data: "total_impuestos",
                     render: (data, type, row) => {
-                      return formatMoney(data);
+                      return formatDecimal(data);
                     }
                   },
                   {
                     title: "Total (Bs.)",
                     data: "total_neto",
                     render: (data, type, row) => {
-                      return formatMoney(data);
+                      return formatDecimal(data);
                     }
                   },
                   {
                     title: "Pagado en divisas (Bs.)",
                     data: "monto_pagado_divisas",
                     render: (data, type, row) => {
-                      return formatMoney(data);
+                      return formatDecimal(data);
                     }
                   },
                   {
                     title: "IGTF (Bs.)",
                     data: "igtf_monto",
                     render: (data, type, row) => {
-                      return formatMoney(data);
+                      return formatDecimal(data);
                     }
                   },
                   {
@@ -477,7 +477,7 @@ function ListPreInvoices() {
                             <i class="fa-solid fa-lg fa-expand"></i>
                           </button>
                         `,
-                        text: "Ver prefactura"
+                        text: "Ver proformas"
                       });
 
                       if (rol === "admin") {
@@ -494,7 +494,7 @@ function ListPreInvoices() {
                               <i class="fa-solid fa-lg fa-pen-to-square"></i>
                             </button>
                           `,
-                          text: "Editar prefactura"
+                          text: "Editar proformas"
                         });
                         const invoiceBtn = tooltipBtn({
                           html: `
@@ -611,7 +611,7 @@ function ListPreInvoices() {
                         data: data,
                       });
                     } catch (err) {
-                      console.error("Error cargando Pre-Factura:", err);
+                      console.error("Error cargando Proformas:", err);
                       callback({
                         draw: dataTablesParams.draw,
                         recordsTotal: 0,
@@ -637,13 +637,13 @@ function ListPreInvoices() {
                         {
                           extend: "copyHtml5",
                           text: "Copiar",
-                          title: "Lista de Pre-Facturas"   // nombre del documento en el portapapeles
+                          title: "Lista de Proformas"   // nombre del documento en el portapapeles
                         },
                         {
                           extend: "excelHtml5",
                           text: "Excel",
-                          title: "Lista de Pre-Facturas",  // título dentro del archivo
-                          filename: "Lista_pre_facturas",   // nombre del archivo generado (sin extensión)
+                          title: "Lista de Proformas",  // título dentro del archivo
+                          filename: "Lista_proformas",   // nombre del archivo generado (sin extensión)
                           exportOptions: {
                             columns: ':not(.no-export)'
                           }
@@ -651,8 +651,8 @@ function ListPreInvoices() {
                         {
                           extend: "csvHtml5",
                           text: "CSV",
-                          title: "Lista de Pre-Facturas",
-                          filename: "Lista_pre_facturas",
+                          title: "Lista de Proformas",
+                          filename: "Lista_proformas",
                           exportOptions: {
                             columns: ':not(.no-export)'
                           }
@@ -660,8 +660,8 @@ function ListPreInvoices() {
                         {
                           extend: "pdfHtml5",
                           text: "PDF",
-                          title: "Lista de Pre-Facturas",
-                          filename: "Lista_pre_facturas",
+                          title: "Lista de Proformas",
+                          filename: "Lista_proformas",
                           exportOptions: {
                             columns: ':not(.no-export)'
                           },
@@ -672,7 +672,7 @@ function ListPreInvoices() {
                         {
                           extend: "print",
                           text: "Imprimir",
-                          title: "Lista de Pre-Facturas",
+                          title: "Lista de Proformas",
                           exportOptions: {
                             columns: ':not(.no-export)'
                           }
@@ -736,11 +736,11 @@ function ListPreInvoices() {
                                     : item.tipo_documento === "ND" ? "NOTA DE DÉBITO" : "NOTA DE CRÉDITO",
                                 "Correlativo interno": formatText(item.correlativo_interno),
                                 "Factura afectada NC": formatText(item.factura_afectada_rel ? item.factura_afectada_rel.numero_control : ''),
-                                "Base imponible (Bs.)": formatMoney(item.total_base),
-                                "IVA (Bs.)": formatMoney(item.total_impuestos),
-                                "Total (Bs.)": formatMoney(item.total_neto),
-                                "Pago en divisas (Bs.)": formatMoney(item.monto_pagado_divisas),
-                                "IGTF (Bs.)": formatMoney(item.igtf_monto),
+                                "Base imponible (Bs.)": formatDecimal(item.total_base),
+                                "IVA (Bs.)": formatDecimal(item.total_impuestos),
+                                "Total (Bs.)": formatDecimal(item.total_neto),
+                                "Pago en divisas (Bs.)": formatDecimal(item.monto_pagado_divisas),
+                                "IGTF (Bs.)": formatDecimal(item.igtf_monto),
                                 "Zona":formatText(item.zona),
                                 "Estatus": formatText(item.estatus),
                               })));
@@ -751,7 +751,7 @@ function ListPreInvoices() {
                               const blob = new Blob([wbout], { type: "application/octet-stream" });
                               const link = document.createElement("a");
                               link.href = URL.createObjectURL(blob);
-                              link.download = "Pre-Facturas.xlsx";
+                              link.download = "Proformas.xlsx";
                               link.click();
 
                               $(exportButton).text("Exportar todo (Excel)").prop("disabled", false).attr("style", "pointer-events: auto;");;
@@ -790,10 +790,10 @@ function ListPreInvoices() {
                 isOpen={modalOpen}
                 onClose={handleCloseModal}
                 onConfirm={handleConfirm}
-                message={`¿Estás seguro de que deseas eliminar la Pre-Factura de ${preInvoicesIdToDeactivate?.nombre_empresa || ""}?`}
+                message={`¿Estás seguro de que deseas eliminar la Proformas de ${preInvoicesIdToDeactivate?.nombre_empresa || ""}?`}
               />
 
-              <ModalPreinvoices
+              <ModalProformas
                 isOpen={modalOpenPreinvoices}
                 onClose={handleCloseModalPreinvoices}
                 message={preInvoicesIdToDeactivate}
@@ -825,4 +825,4 @@ function ListPreInvoices() {
   );
 }
 
-export default ListPreInvoices;
+export default ListProformas;

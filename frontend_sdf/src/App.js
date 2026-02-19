@@ -17,8 +17,8 @@ import ListClients from "./pages/Clients/ListClients";
 import FormClients from "./pages/Clients/FormClients";
 import ListEndClients from "./pages/EndClients/ListEndClients";
 import FormEndClients from "./pages/EndClients/FormEndClients";
-import ListPreInvoices from "./pages/PreInvoices/ListPreInvoices";
-import FormPreInvoices from "./pages/PreInvoices/FormPreInvoices";
+import ListProformas from "./pages/Proformas/ListProformas";
+import FormProformas from "./pages/Proformas/FormProformas";
 import ListProducts from "./pages/Products/ListProducts";
 import FormProducts from "./pages/Products/FormProducts";
 import ListTaxes from "./pages/Config/ListTaxes";
@@ -83,26 +83,26 @@ function App() {
 
           {/* Pre-facturación */}
           <Route
-            path="/preinvoices"
+            path="/proformas"
             element={
               <PrivateRoute>
-                <ListPreInvoices />
+                <ListProformas />
               </PrivateRoute>
             }
           />
           <Route
-            path="/preinvoices/create"
+            path="/proformas/create"
             element={
               <PrivateRoute>
-                <FormPreInvoices />
+                <FormProformas />
               </PrivateRoute>
             }
           />
           <Route
-            path="/preinvoices/edit"
+            path="/proformas/edit"
             element={
               <PrivateRoute>
-                <FormPreInvoices />
+                <FormProformas />
               </PrivateRoute>
             }
           />

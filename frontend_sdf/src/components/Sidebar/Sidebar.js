@@ -54,7 +54,7 @@ export default function Sidebar({ collapsed, setCollapsed }) {
     {
       heading: "Documentos Legales",
       links: [
-        { to: "/preinvoices", icon: "fas fa-file-import", label: "Prefacturas" },
+        { to: "/proformas", icon: "fas fa-file-import", label: "Proformas" },
         { to: "/invoices", icon: "fas fa-file-invoice", label: "Facturas" },
         { to: "/credit-note", icon: "fas fa-file-invoice", label: "Notas de Crédito" },
         { to: "/debit-note", icon: "fas fa-file-invoice", label: "Notas de Débito" },

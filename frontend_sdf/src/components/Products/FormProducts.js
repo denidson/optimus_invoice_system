@@ -167,7 +167,8 @@ function FormProducts({ cliente_id: clienteProp, rol }) {
                       type="text"
                       className={inputClass("sku")}
                       value={product.sku}
-                      onChange={(e) => setProduct({ ...product, sku: e.target.value })}
+                      placeholder="Código del producto"
+                      onChange={(e) => setProduct({ ...product, sku: e.target.value.toString().toUpperCase() })}
                     />
                     {errors.sku && <p className="text-red-500 text-xs mt-1">{errors.sku}</p>}
                   </div>
@@ -178,7 +179,8 @@ function FormProducts({ cliente_id: clienteProp, rol }) {
                       type="text"
                       className={inputClass("nombre")}
                       value={product.nombre}
-                      onChange={(e) => setProduct({ ...product, nombre: e.target.value })}
+                      placeholder="Nombre del producto"
+                      onChange={(e) => setProduct({ ...product, nombre: e.target.value.toString().toUpperCase() })}
                     />
                     {errors.nombre && <p className="text-red-500 text-xs mt-1">{errors.nombre}</p>}
                   </div>
@@ -193,6 +195,7 @@ function FormProducts({ cliente_id: clienteProp, rol }) {
                       step="0.01"
                       className={inputClass("precio_base")}
                       value={product.precio_base}
+                      placeholder="0,00"
                       onChange={(e) => setProduct({ ...product, precio_base: e.target.value })}
                     />
                     {errors.precio_base && <p className="text-red-500 text-xs mt-1">{errors.precio_base}</p>}
@@ -226,7 +229,8 @@ function FormProducts({ cliente_id: clienteProp, rol }) {
                   <textarea
                     className="border-0 px-3 py-3 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full"
                     value={product.descripcion}
-                    onChange={(e) => setProduct({ ...product, descripcion: e.target.value })}
+                    placeholder="Descripción del producto"
+                    onChange={(e) => setProduct({ ...product, descripcion: e.target.value.toString().toUpperCase() })}
                   />
                 </div>
 

@@ -198,6 +198,7 @@ function FormClients() {
                       <input
                         type="text"
                         className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
+                        placeholder="V-12345678-0"
                         value={client.rif} placeholder="V-12345678-9" onChange={(e) => {
                           let value = e.target.value.toUpperCase();
 
@@ -236,6 +237,7 @@ function FormClients() {
                         type="text"
                         className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
                         value={client.nombre_empresa}
+                        placeholder="Nombre de la empresa"
                         onChange={(e) => setClient({ ...client, nombre_empresa: e.target.value.toUpperCase() })}
                       />
                       {errors.nombre_empresa && <p className="text-red-500 text-xs mt-1">{errors.nombre_empresa}</p>}
@@ -248,6 +250,7 @@ function FormClients() {
                         type="text"
                         className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
                         value={client.telefono}
+                        placeholder="0000-0000000"
                         onChange={(e) => setClient({ ...client, telefono: e.target.value })}
                       />
                       {errors.telefono && <p className="text-red-500 text-xs mt-1">{errors.telefono}</p>}
@@ -260,6 +263,7 @@ function FormClients() {
                         type="text"
                         className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
                         value={client.email}
+                        placeholder="correo@correo.com"
                         onChange={(e) => setClient({ ...client, email: e.target.value.toUpperCase() })}
                       />
                       {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email}</p>}
@@ -291,6 +295,7 @@ function FormClients() {
                         type="text"
                         className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
                         value={client.direccion}
+                        placeholder="Calle, Avenida, Torre y/o Edificio"
                         onChange={(e) => setClient({ ...client, direccion: e.target.value.toUpperCase() })}
                       />
                       {errors.direccion && <p className="text-red-500 text-xs mt-1">{errors.direccion}</p>}

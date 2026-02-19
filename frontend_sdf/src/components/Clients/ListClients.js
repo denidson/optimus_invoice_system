@@ -23,7 +23,7 @@ import { read, utils} from "xlsx";
 import { writeFile, utils as XLSXUtils } from "xlsx";
 import Papa from 'papaparse';
 window.JSZip = JSZip;
-import { formatMoney, formatDate, formatDateTime, formatText } from "../../utils/formatters";
+import { formatDecimal, formatMoney, formatDate, formatDateTime, formatText } from "../../utils/formatters";
 DataTable.use(DT);
 
 function ListClients() {

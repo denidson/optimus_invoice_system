@@ -1,5 +1,5 @@
 import React from "react";
-import { formatMoney, formatFiscalPeriod, formatDate, formatText } from "../../utils/formatters";
+import { formatDecimal, formatMoney, formatFiscalPeriod, formatDate, formatText } from "../../utils/formatters";
 
 const ModalWithholding = ({ data, onClose }) => {
   if (!data) return null;
@@ -51,8 +51,8 @@ const ModalWithholding = ({ data, onClose }) => {
 
             <div>
               <h4 className="font-bold mb-2">Montos</h4>
-              <p><b>Base Imponible Total:</b> Bs. {formatMoney(data.monto_base_total)}</p>
-              <p><b>Monto Retenido Total:</b> Bs. {formatMoney(data.monto_retenido_total)}</p>
+              <p><b>Base Imponible Total:</b> {formatMoney(data.monto_base_total)}</p>
+              <p><b>Monto Retenido Total:</b> {formatMoney(data.monto_retenido_total)}</p>
             </div>
 
             <div>
@@ -103,9 +103,9 @@ const ModalWithholding = ({ data, onClose }) => {
                       <td className="p-2 text-center">{i.factura_afectada_numero}</td>
                       <td className="p-2 text-center">{i.factura_afectada_control}</td>
                       <td className="p-2 text-center">{formatDate(i.factura_afectada_fecha)}</td>
-                      <td className="p-2 text-end">{formatMoney(i.monto_base_imponible)}</td>
+                      <td className="p-2 text-end">{formatDecimal(i.monto_base_imponible)}</td>
                       <td className="p-2 text-center">{i.tipo_retencion.porcentaje} %</td>
-                      <td className="p-2 text-end">{formatMoney(i.monto_retenido)}</td>
+                      <td className="p-2 text-end">{formatDecimal(i.monto_retenido)}</td>
                     </tr>
                   );
                 })

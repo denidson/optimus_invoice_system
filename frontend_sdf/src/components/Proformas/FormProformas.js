@@ -16,7 +16,7 @@ import { Autocomplete, TextField } from "@mui/material";
 import { Tabs, Tab, Box } from "@mui/material";
 import { esES } from '@mui/x-data-grid/locales';
 import $ from "jquery";
-import { validateFormatEmail } from "../../utils/formatters";
+import { formatDecimal, formatMoney, formatDate, formatDateTime, formatText, validateFormatEmail } from "../../utils/formatters";
 
 // Componente editor para el Autocomplete
 function ProductoEditCell({ params, products }) {
@@ -69,7 +69,7 @@ function ProductoEditCell({ params, products }) {
   );
 }
 
-function FormPreInvoices() {
+function FormProformas() {
   const navigate = useNavigate(); // Hook para redirección
   const [products, setProducts] = useState(null);
   const [clients, setClients] = useState(null);
@@ -130,10 +130,7 @@ function FormPreInvoices() {
       renderCell: (params) => {
         // safe check: params puede ser undefined muy tempranamente, evitamos crash
         const raw = params?.value ?? 0;
-        return new Intl.NumberFormat("es-VE", {
-          minimumFractionDigits: 2,
-          maximumFractionDigits: 2,
-        }).format(Number(raw));
+        return formatDecimal(raw);
       },
     },
     { field: "iva_categoria_id", headerName: "iva_categoria_id", editable: false },
@@ -147,10 +144,7 @@ function FormPreInvoices() {
       renderCell: (params) => {
         // safe check: params puede ser undefined muy tempranamente, evitamos crash
         const raw = params?.value ?? 0;
-        return new Intl.NumberFormat("es-VE", {
-          minimumFractionDigits: 2,
-          maximumFractionDigits: 2,
-        }).format(Number(raw));
+        return formatDecimal(raw);
       },
     },
     {
@@ -163,10 +157,7 @@ function FormPreInvoices() {
       renderCell: (params) => {
         // safe check: params puede ser undefined muy tempranamente, evitamos crash
         const raw = params?.value ?? 0;
-        return new Intl.NumberFormat("es-VE", {
-          minimumFractionDigits: 2,
-          maximumFractionDigits: 2,
-        }).format(Number(raw));
+        return formatDecimal(raw);
       },
     },
     {
@@ -179,10 +170,7 @@ function FormPreInvoices() {
       renderCell: (params) => {
         // safe check: params puede ser undefined muy tempranamente, evitamos crash
         const raw = params?.value ?? 0;
-        return new Intl.NumberFormat("es-VE", {
-          minimumFractionDigits: 2,
-          maximumFractionDigits: 2,
-        }).format(Number(raw));
+        return formatDecimal(raw);
       },
     },
     {
@@ -201,11 +189,7 @@ function FormPreInvoices() {
         const descuento_porcentaje = Number(params.row.descuento_porcentaje) || 0;
         const total = cantidad * (precio - (precio * descuento_porcentaje/100));
         //handleCellEditCommit(params);
-        return new Intl.NumberFormat("es-VE", {
-          style: "currency",
-          currency: "VES",
-          minimumFractionDigits: 2,
-        }).format(total);
+        return formatMoney(total);
       }
     },
     {
@@ -238,10 +222,7 @@ function FormPreInvoices() {
       renderCell: (params) => {
         // safe check: params puede ser undefined muy tempranamente, evitamos crash
         const raw = params?.value ?? 0;
-        return new Intl.NumberFormat("es-VE", {
-          minimumFractionDigits: 2,
-          maximumFractionDigits: 2,
-        }).format(Number(raw));
+        return formatDecimal(raw);
       },
     },
     {
@@ -267,7 +248,7 @@ function FormPreInvoices() {
 
   const today = new Date();
   const formattedDate = today.toISOString().split('T')[0];
-  // Simulando la carga de datos del Pre-Factura por el ID
+  // Simulando la carga de datos del Proformas por el ID
   useEffect(() => {
     const fetchPreInvoice = async () => {
       try {
@@ -319,7 +300,7 @@ function FormPreInvoices() {
             }
             data.items = itemsNc;
           }
-          setPreInvoice(data); // Guardamos los datos del Pre-Factura en el estado
+          setPreInvoice(data); // Guardamos los datos del Proformas en el estado
         }else{
           setPreInvoice({
             id: "#",
@@ -347,7 +328,7 @@ function FormPreInvoices() {
           })
         }
       } catch (err) {
-        //setError('Error al cargar la Pre-Factura');
+        //setError('Error al cargar la Proformas');
       } finally {
         setLoading(false); // Indicamos que la carga ha finalizado
       }
@@ -362,7 +343,7 @@ function FormPreInvoices() {
     return Math.round(num * factor) / factor;
   };
 
-  //Calcular base imponible de la Pre-Factura
+  //Calcular base imponible de la Proformas
   const taxBase = useMemo(() => {
     if (!preInvoice?.items && !preInvoice?.conceptos_nd) return 0;
 
@@ -389,7 +370,7 @@ function FormPreInvoices() {
     return roundTo(baseTotal + baseTotalNd, 2);
   }, [preInvoice?.items, preInvoice?.conceptos_nd]);
 
-  //Calcular iva de la Pre-Factura
+  //Calcular iva de la Proformas
   const taxApplied = useMemo(() => {
     if (!preInvoice?.items) return 0;
 
@@ -417,7 +398,7 @@ function FormPreInvoices() {
     return roundTo(taxTotal + taxNd, 2);
   }, [preInvoice?.items, preInvoice?.conceptos_nd]);
 
-  //Calcular total de la Pre-Factura
+  //Calcular total de la Proformas
   const totalAmount = useMemo(() => {
     if (!preInvoice?.items && !preInvoice?.conceptos_nd) return 0;
 
@@ -445,7 +426,7 @@ function FormPreInvoices() {
     return roundTo(total + totalNd, 2);
   }, [preInvoice?.items, preInvoice?.conceptos_nd]);
 
-  //Calcular monto del igtf en la Pre-Factura
+  //Calcular monto del igtf en la Proformas
   const igtfAmount = useMemo(() => {
     if (!preInvoice?.items) return 0;
     if (!preInvoice?.monto_pagado_divisas) return 0;
@@ -662,6 +643,13 @@ function FormPreInvoices() {
       setButtonDisabled(false);
       //return;
     }
+    if (preInvoice.aplica_igtf && (preInvoice.monto_pagado_divisas > totalAmount)) {
+      newErrors.monto_pagado_divisas = "Monto pagado en divisas no puede exceder el monto de la proforma";
+      errorToast.push("- Monto pagado en divisas no puede exceder el monto de la proforma.");
+      //toast.error("Debe indicar el monto pagado en divisas del documento.");
+      setButtonDisabled(false);
+      //return;
+    }
     //console.log('newErrors: ', newErrors);
     setErrors(newErrors);
     //console.log('errorToast: ', errorToast);
@@ -721,21 +709,21 @@ function FormPreInvoices() {
       //console.log(action +'-status: ', data);
       if (data.resultados != undefined && action == 'create' && data.resultados[0].status == 'prefactura_creada'){
         //console.log('CreatePreInvoice-toast:==>');
-        toast.success('Pre-Factura creada satisfactoriamente.', {
+        toast.success('Proformas creada satisfactoriamente.', {
           onClose: () => {
             // Espera a que la notificación se cierre para redirigir
             setTimeout(() => {
-              navigate("/preinvoices");  // Redirige a la lista de pre-facturas
+              navigate("/proformas");  // Redirige a la lista de pre-facturas
             }, 2000); // El tiempo debe ser el mismo o ligeramente mayor que la duración de la notificación
           },
         });
       } else if (action == 'update' && ((data.items != undefined && data.items.length) > 0 || data.mensaje == 'No se enviaron campos modificables o los valores son iguales.')){
         //console.log('EditPreInvoice-toast:==>');
-        toast.success('Pre-Factura actualizada satisfactoriamente.', {
+        toast.success('Proformas actualizada satisfactoriamente.', {
           onClose: () => {
             // Espera a que la notificación se cierre para redirigir
             setTimeout(() => {
-              navigate("/preinvoices");  // Redirige a la lista de pre-facturas
+              navigate("/proformas");  // Redirige a la lista de pre-facturas
             }, 2000); // El tiempo debe ser el mismo o ligeramente mayor que la duración de la notificación
           },
         });
@@ -752,9 +740,9 @@ function FormPreInvoices() {
       }
     } catch (err) {
       console.log('Error: ', err);
-      setError('Error al cargar la Pre-Factura');
+      setError('Error al cargar la Proformas');
       // Mostrar una notificación de error
-      toast.error("Error al actualizar la Pre-Factura");  // Notificación de error
+      toast.error("Error al actualizar la Proformas");  // Notificación de error
       setButtonDisabled(false);
     } finally {
       setLoading(false); // Indicamos que la carga ha finalizado
@@ -762,7 +750,7 @@ function FormPreInvoices() {
   };
 
   const redirectToList = () => {
-    navigate(`/preinvoices`);
+    navigate(`/proformas`);
   };
 
   // Agregar nueva línea con foco
@@ -1055,13 +1043,13 @@ const handleRadioChange = (event) => {
             <ToastContainer />
             <div class="rounded-t bg-white mb-0 px-6 py-6">
               <div class="text-center flex justify-between">
-                <h6 class="text-blueGray-700 text-xl font-bold">{preInvoice.id == '#'? "Crear" : "Actualizar"} Pre-Factura</h6>
+                <h6 class="text-blueGray-700 text-xl font-bold">{preInvoice.id == '#'? "Crear" : "Actualizar"} Proformas</h6>
               </div>
             </div>
             <div className="flex-auto px-4 lg:px-10 py-10 pt-0">
               <div className="w-full flex flex-wrap px-4 pt-4">
                 <div className="w-full lg:w-3/12 px-0">
-                  <h6 class="text-blueGray-400 text-sm mt-3 my-6 font-bold uppercase">Informacion de la Pre-Factura</h6>
+                  <h6 class="text-blueGray-400 text-sm mt-3 my-6 font-bold uppercase">Informacion de la Proformas</h6>
                 </div>
                 {rol == 'admin' && (
                   <div className="relative lg:w-3/12 mb-3">
@@ -1070,6 +1058,7 @@ const handleRadioChange = (event) => {
                         type="text"
                         className="hidden border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
                         value={preInvoice.cliente_id}
+                        placeholder="J-12345678-0"
                         onChange={(e) => setPreInvoice({ ...preInvoice, cliente_id: e.target.value })}
                       />
                       <div className="relative">
@@ -1092,8 +1081,8 @@ const handleRadioChange = (event) => {
                             renderInput={(params) => (
                               <TextField
                                 {...params}
-                                label="RIF"
-                                placeholder="V-12345678-9"
+                                label="V-12345678-0"
+                                placeholder="V-12345678-0"
                                 variant="outlined"
                                 size="small"
                                 onKeyDown={(e) => {
@@ -1125,6 +1114,7 @@ const handleRadioChange = (event) => {
                         type="text"
                         className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
                         value={preInvoice.cliente_nombre} readonly="readonly"
+                        placeholder="Nombre de la empresa afiliada"
                         onChange={(e) => setPreInvoice({ ...preInvoice, cliente_nombre: e.target.value.toString().toUpperCase() })}
                       />
                     </div>
@@ -1152,6 +1142,7 @@ const handleRadioChange = (event) => {
                         type="date"
                         className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
                         value={preInvoice.fecha_factura} max={formattedDate}
+                        placeholder="dd/mm/yyyy"
                         onChange={(e) => setPreInvoice({ ...preInvoice, fecha_factura: e.target.value })}
                       />
                       {errors.fecha_factura && <p className="text-red-500 text-xs mt-1">{errors.fecha_factura}</p>}
@@ -1164,6 +1155,7 @@ const handleRadioChange = (event) => {
                         type="text"
                         className="hidden border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
                         value={preInvoice.cliente_final_id}
+                        placeholder="J-12345678-0"
                         onChange={(e) => setPreInvoice({ ...preInvoice, cliente_final_id: e.target.value })}
                       />
                       <div className="relative">
@@ -1218,8 +1210,8 @@ const handleRadioChange = (event) => {
                             renderInput={(params) => (
                               <TextField
                                 {...params}
-                                label="RIF"
-                                placeholder="V-12345678-9"
+                                label="V-12345678-0"
+                                placeholder="V-12345678-0"
                                 variant="outlined"
                                 size="small"
                                 onKeyDown={(e) => {
@@ -1272,6 +1264,7 @@ const handleRadioChange = (event) => {
                         type="text"
                         className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
                         value={preInvoice.cliente_final_nombre}
+                        placeholder="Nombre de la empresa"
                         onChange={(e) => setPreInvoice({ ...preInvoice, cliente_final_nombre: e.target.value.toString().toUpperCase() })}
                       />
                     </div>
@@ -1284,6 +1277,7 @@ const handleRadioChange = (event) => {
                         type="text"
                         className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
                         value={preInvoice.cliente_final_telefono}
+                        placeholder="0000-0000000"
                         onChange={(e) => setPreInvoice({ ...preInvoice, cliente_final_telefono: e.target.value.toString().toUpperCase() })}
                       />
                       {errors.cliente_final_telefono && <p className="text-red-500 text-xs mt-1">{errors.cliente_final_telefono}</p>}
@@ -1296,6 +1290,7 @@ const handleRadioChange = (event) => {
                         type="text"
                         className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
                         value={preInvoice.cliente_final_email}
+                        placeholder="correo@correo.com"
                         onChange={(e) => setPreInvoice({ ...preInvoice, cliente_final_email: e.target.value.toString().toUpperCase() })}
                       />
                       {errors.cliente_final_email && <p className="text-red-500 text-xs mt-1">{errors.cliente_final_email}</p>}
@@ -1308,6 +1303,7 @@ const handleRadioChange = (event) => {
                         type="text"
                         className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
                         value={preInvoice.cliente_final_direccion}
+                        placeholder="Calle, Avenida, Torre y/o Edificio"
                         onChange={(e) => setPreInvoice({ ...preInvoice, cliente_final_direccion: e.target.value.toString().toUpperCase() })}
                       />
                       {errors.cliente_final_direccion && <p className="text-red-500 text-xs mt-1">{errors.cliente_final_direccion}</p>}
@@ -1348,6 +1344,7 @@ const handleRadioChange = (event) => {
                         type="text"
                         className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
                         value={preInvoice.correlativo_interno}
+                        placeholder="0000..."
                         onChange={(e) => setPreInvoice({ ...preInvoice, correlativo_interno: e.target.value.toString().toUpperCase() })}
                       />
                       {errors.correlativo_interno && <p className="text-red-500 text-xs mt-1">{errors.correlativo_interno}</p>}
@@ -1360,6 +1357,7 @@ const handleRadioChange = (event) => {
                         type="text"
                         className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
                         value={preInvoice.serial}
+                        placeholder="0000..."
                         onChange={(e) => setPreInvoice({ ...preInvoice, serial: e.target.value.toString().toUpperCase() })}
                       />
                       {errors.serial && <p className="text-red-500 text-xs mt-1">{errors.serial}</p>}
@@ -1372,6 +1370,7 @@ const handleRadioChange = (event) => {
                         type="text"
                         className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
                         value={preInvoice.zona}
+                        placeholder="Ciudad"
                         onChange={(e) => setPreInvoice({ ...preInvoice, zona: e.target.value.toString().toUpperCase() })}
                       />
                       {errors.zona && <p className="text-red-500 text-xs mt-1">{errors.zona}</p>}
@@ -1488,6 +1487,7 @@ const handleRadioChange = (event) => {
                           type="number" step="0.01"
                           className="border-0 px-3 py-3 placeholder-blueGray-300 text-right text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
                           value={preInvoice.monto_pagado_divisas}
+                          placeholder="0,00"
                           onChange={(e) => {
                             // convertir a float, pero permitir "" si el input está vacío
                             const value = e.target.value;
@@ -1508,15 +1508,11 @@ const handleRadioChange = (event) => {
                   </div>
                   <div className="w-full lg:w-3/12 px-4 mt-10">
                     <div className="apply_igtf mt-3 p-4 pb-2 border border-b-0 rounded rounded-t-none bg-gray-50 hidden">
-                        <label className="block text-blueGray-600 text-xs font-bold mb-2">{'IGTF ' + parseFloat(preInvoice.igtf_porcentaje).toFixed(2).toString() + '%' }</label>
+                        <label className="block text-blueGray-600 text-xs font-bold mb-2">{'IGTF ' + formatDecimal(preInvoice.igtf_porcentaje) + '%' }</label>
                     </div>
                     <div className="apply_igtf p-4 pt-0 border border-t-0 rounded rounded-b-none bg-gray-50 text-right hidden">
                         <label className="border-0 px-3 text-blueGray-600 rounded text-lg font-bold">
-                        {new Intl.NumberFormat("es-VE", {
-                          style: "currency",
-                          currency: "VES",
-                          minimumFractionDigits: 2,
-                        }).format(igtfAmount)}
+                        {formatMoney(igtfAmount)}
                         </label>
                       </div>
                   </div>
@@ -1527,11 +1523,7 @@ const handleRadioChange = (event) => {
                       </div>
                       <div className="w-full lg:w-9/12 px-4 mt-3 text-right">
                         <label className="text-right border-0 px-3 text-blueGray-600 bg-white rounded text-lg font-bold">
-                        {new Intl.NumberFormat("es-VE", {
-                          style: "currency",
-                          currency: "VES",
-                          minimumFractionDigits: 2,
-                        }).format(taxBase)}
+                        {formatMoney(taxBase)}
                         </label>
                       </div>
                     </div>
@@ -1541,11 +1533,7 @@ const handleRadioChange = (event) => {
                       </div>
                       <div className="w-full lg:w-9/12 px-4 text-right">
                         <label className="text-right border-0 px-3 text-blueGray-600 bg-white rounded text-lg font-bold">
-                        {new Intl.NumberFormat("es-VE", {
-                          style: "currency",
-                          currency: "VES",
-                          minimumFractionDigits: 2,
-                        }).format(taxApplied)}
+                        {formatMoney(taxApplied)}
                         </label>
                       </div>
                     </div>
@@ -1555,11 +1543,7 @@ const handleRadioChange = (event) => {
                       </div>
                       <div className="w-full lg:w-9/12 px-4 text-right">
                         <label className="text-right border-0 px-3 text-blueGray-600 bg-white rounded text-lg font-bold">
-                        {new Intl.NumberFormat("es-VE", {
-                          style: "currency",
-                          currency: "VES",
-                          minimumFractionDigits: 2,
-                        }).format(totalAmount)}
+                        {formatMoney(totalAmount)}
                         </label>
                       </div>
                     </div>
@@ -1570,11 +1554,7 @@ const handleRadioChange = (event) => {
                         </div>
                         <div className="w-full lg:w-9/12 px-4 text-right">
                           <label className="text-right border-0 px-3 text-blueGray-600 bg-white rounded text-lg font-bold">
-                          {new Intl.NumberFormat("es-VE", {
-                            style: "currency",
-                            currency: "VES",
-                            minimumFractionDigits: 2,
-                          }).format(totalAmount + igtfAmount)}
+                          {formatMoney(totalAmount + igtfAmount)}
                           </label>
                         </div>
                       </div>)
@@ -1611,4 +1591,4 @@ const handleRadioChange = (event) => {
   );
 }
 
-export default FormPreInvoices;
+export default FormProformas;
