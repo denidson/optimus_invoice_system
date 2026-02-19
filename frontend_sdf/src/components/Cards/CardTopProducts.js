@@ -1,66 +1,76 @@
 import { formatDecimal } from "../../utils/formatters";
 
-export default function CardTopProducts({ products = [] }) {
+export default function CardTopProducts({
+  products = [],
+  limit = 5,
+  onChangeLimit,
+}) {
   return (
-    <div className="relative flex flex-col bg-white w-full shadow-lg rounded-lg h-[380px]">
-      <div className="rounded-t-lg px-4 py-3 border-b border-slate-100">
-        <h6 className="uppercase text-twilight-indigo-500 text-xs font-semibold">
-          Ranking
-        </h6>
-        <h2 className="text-twilight-indigo-700 text-lg font-semibold">
-          Top Productos/Servicios
-        </h2>
+    <div className="flex flex-col bg-white w-full shadow-lg rounded-lg h-[380px]">
+      
+      {/* HEADER */}
+      <div className="px-4 py-3 border-b border-slate-100 flex justify-between items-start">
+        <div>
+          <h6 className="uppercase text-twilight-indigo-500 text-xs font-semibold">
+            Ranking
+          </h6>
+          <h2 className="text-twilight-indigo-700 text-lg font-semibold">
+            Top Productos/Servicios
+          </h2>
+        </div>
+
+        <select
+          value={limit}
+          onChange={(e) => onChangeLimit(Number(e.target.value))}
+          className="border border-slate-200 rounded px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-twilight-indigo-400"
+        >
+          <option value={5}>5</option>
+          <option value={10}>10</option>
+          <option value={20}>20</option>
+          <option value={50}>50</option>
+        </select>
       </div>
 
-      <div className="overflow-y-auto flex-1 px-2 py-1">
-        <table className="min-w-full bg-transparent border-collapse text-sm">
-          <thead className="sticky top-0 z-10 bg-twilight-indigo-100">
-            <tr>
-              <th className="px-2 py-2 text-left text-xs font-semibold text-twilight-indigo-600 uppercase border-b">
-                Producto
-              </th>
-              <th className="px-2 py-2 text-left text-xs font-semibold text-twilight-indigo-600 border-b">
-                VENTAS (Bs.)
-              </th>
-            </tr>
-          </thead>
+      {/* COLUMN HEADER */}
+      <div className="bg-twilight-indigo-100 px-4 py-2 text-xs font-semibold text-twilight-indigo-600 flex justify-between">
+        <span>PRODUCTO</span>
+        <span>VENTAS (Bs.)</span>
+      </div>
 
-          <tbody>
-            {products.length > 0 ? (
-              products.map((p, i) => (
-                <tr key={i} className="hover:bg-twilight-indigo-50">
-                  <td className="px-2 py-1 align-middle">
-                    <div className="flex flex-col leading-tight">
-                      <span className="font-semibold text-twilight-indigo-700 truncate max-w-[180px]">
-                        {p.producto_nombre}
-                      </span>
-                      <span className="text-twilight-indigo-400 text-xs">
-                        {p.producto_sku}
-                      </span>
-                    </div>
-                  </td>
+      {/* LIST */}
+      <div className="overflow-y-auto flex-1 text-sm sidebar-scroll">
+        {products.length > 0 ? (
+          products.map((p, i) => (
+            <div
+              key={i}
+              className="px-4 py-1.5 flex justify-between items-center border-b border-slate-100 hover:bg-twilight-indigo-50 transition-colors"
+            >
+              {/* PRODUCT INFO */}
+              <div className="flex flex-col min-w-0 leading-tight">
+                <span className="font-semibold text-twilight-indigo-700 truncate">
+                  {p.producto_nombre}
+                </span>
+                <span className="text-[11px] text-twilight-indigo-400">
+                  {p.producto_sku}
+                </span>
+              </div>
 
-                  <td className="px-2 py-1 align-middle whitespace-nowrap">
-                    <div className="flex flex-col">
-                      <span className="font-semibold text-twilight-indigo-700">
-                        {formatDecimal(p.total_ventas)}
-                      </span>
-                      <span className="text-xs text-twilight-indigo-400">
-                        {p.total_unidades} unidades
-                      </span>
-                    </div>
-                  </td>
-                </tr>
-              ))
-            ) : (
-              <tr>
-                <td colSpan="2" className="p-4 text-center text-twilight-indigo-400">
-                  No hay productos registrados
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
+              {/* SALES INFO */}
+              <div className="flex flex-col items-end whitespace-nowrap">
+                <span className="font-semibold text-twilight-indigo-700">
+                  {formatDecimal(p.total_ventas)}
+                </span>
+                <span className="text-[11px] text-twilight-indigo-400">
+                  {p.total_unidades} unidades
+                </span>
+              </div>
+            </div>
+          ))
+        ) : (
+          <div className="p-4 text-center text-twilight-indigo-400">
+            No hay productos registrados
+          </div>
+        )}
       </div>
     </div>
   );

@@ -1,4 +1,4 @@
-import React, { useContext, useState, useEffect } from "react";
+import React, { useContext, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { AuthContext } from "../context/AuthContext";
 
@@ -36,6 +36,12 @@ export default function Dashboard() {
   const [selectedClientId, setSelectedClientId] = useState(
     isAdmin ? "" : cliente_id
   );
+
+  /* ========================
+     NUEVO: LIMITE TOP 
+  ========================= */
+  const [topClientsLimit, setTopClientsLimit] = useState(5);
+  const [topProductsLimit, setTopProductsLimit] = useState(5);
 
   const applyFilter = () => {
     setAppliedStartDate(draftStartDate);
@@ -114,22 +120,6 @@ export default function Dashboard() {
     },
   });
 
-  // useEffect(() => {
-  //   console.group("📊 DASHBOARD DEBUG");
-  //   console.log("clients:", clientsQuery.data);
-  //   console.log("summary:", summaryQuery.data);
-  //   console.log("salesOverTime:", salesOverTimeQuery.data);
-  //   console.log("topClients:", topClientsQuery.data);
-  //   console.log("topProducts:", topProductsQuery.data);
-  //   console.groupEnd();
-  // }, [
-  //   clientsQuery.data,
-  //   summaryQuery.data,
-  //   salesOverTimeQuery.data,
-  //   topClientsQuery.data,
-  //   topProductsQuery.data,
-  // ]);
-
   return (
     <AdminLayout nombreUsuario={nombreUsuario}>
       {/* FILTROS */}
@@ -184,13 +174,11 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* HEADER */}
       <HeaderStats
         summary={summaryQuery.data}
         isLoading={summaryQuery.isFetching}
       />
 
-      {/* CONTENIDO */}
       <div className="px-4 md:px-8 mx-auto w-full">
         <div className="flex flex-wrap">
           <div className="w-full xl:w-5/12 px-4 pt-6">
@@ -203,11 +191,17 @@ export default function Dashboard() {
 
           <div className="w-full xl:w-7/12 px-4 pt-6 grid grid-cols-1 xl:grid-cols-2 gap-6">
             <CardTopClients
-              clients={topClientsQuery.data.slice(0, 10)}
+              clients={topClientsQuery.data.slice(0, topClientsLimit)}
+              limit={topClientsLimit}
+              onChangeLimit={setTopClientsLimit}
             />
+
             <CardTopProducts
-              products={topProductsQuery.data.slice(0, 10)}
+              products={topProductsQuery.data.slice(0, topProductsLimit)}
+              limit={topProductsLimit}
+              onChangeLimit={setTopProductsLimit}
             />
+
           </div>
         </div>
       </div>
