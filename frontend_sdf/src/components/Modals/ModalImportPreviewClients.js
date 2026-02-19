@@ -16,7 +16,7 @@ const ModalImportPreviewClients = ({
   const rowsPerPage = 10;
 
   /* =========================
-     🔹 CONFIG VISUAL
+    CONFIG VISUAL
   ========================== */
   const headers = [
     "rif",
