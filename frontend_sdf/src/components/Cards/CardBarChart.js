@@ -1,13 +1,18 @@
-import React, { useRef, useEffect, useMemo, useState } from "react";
+import React, { useRef, useEffect, useMemo, useState } from "react"; 
 import { Chart, registerables } from "chart.js";
+import ChartDataLabels from "chartjs-plugin-datalabels";
 
-Chart.register(...registerables);
+Chart.register(...registerables, ChartDataLabels);
 
 export default function CardBarChart({ data = [], currency = "USD", isLoading }) {
   const canvasRef = useRef(null);
   const chartRef = useRef(null);
   const [filter, setFilter] = useState("");
   const [dropdownOpen, setDropdownOpen] = useState(false);
+
+  // Etiquetas consistentes
+  const yAxisLabel = currency ? `Monto (${currency})` : "Monto";
+  const label = currency ? `Monto Neto (${currency})` : "Monto Neto";
 
   // Labels y valores
   const labels = useMemo(() => {
@@ -35,6 +40,13 @@ export default function CardBarChart({ data = [], currency = "USD", isLoading })
     return { filteredLabels: fL, filteredValues: fV };
   }, [labels, values, filter]);
 
+  // Formatter para datalabels
+  const dataLabelFormatter = (value) =>
+    `${currency ? currency + " " : ""}${value.toLocaleString("es-ES", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    })}`;
+
   // Crear y actualizar chart
   useEffect(() => {
     if (!canvasRef.current) return;
@@ -46,9 +58,9 @@ export default function CardBarChart({ data = [], currency = "USD", isLoading })
           labels: filteredLabels,
           datasets: [
             {
-              label: currency ? `Monto Neto (${currency})` : "Monto Neto",
+              label: label,
               data: filteredValues,
-              backgroundColor: "#2a6ed5",
+              backgroundColor: "#2258aa",
               borderRadius: 6,
               maxBarThickness: 20,
             },
@@ -70,22 +82,38 @@ export default function CardBarChart({ data = [], currency = "USD", isLoading })
                 },
               },
             },
+            datalabels: {
+              anchor: "end",
+              align: "end",
+              formatter: dataLabelFormatter,
+              font: { weight: "bold" },
+              color: "#194280", // text-twilight-indigo-700
+            },
           },
           scales: {
-            x: { grid: { display: false } },
-            y: { beginAtZero: true },
+            x: { 
+              grid: { display: false },
+              title: { display: true, text: "Mes / Periodo", font: { size: 14, weight: "bold" }, color: "#194280" }
+            },
+            y: { 
+              beginAtZero: true,
+              title: { display: true, text: yAxisLabel, font: { size: 14, weight: "bold" }, color: "#194280" }
+            },
           },
         },
       });
     } else {
       chartRef.current.data.labels = filteredLabels;
       chartRef.current.data.datasets[0].data = filteredValues;
-      chartRef.current.data.datasets[0].label = currency
-        ? `Monto Neto (${currency})`
-        : "Monto Neto";
+      chartRef.current.data.datasets[0].label = label;
+
+      // Actualiza título eje Y y formatter datalabels
+      chartRef.current.options.scales.y.title.text = yAxisLabel;
+      chartRef.current.options.plugins.datalabels.formatter = dataLabelFormatter;
+
       chartRef.current.update();
     }
-  }, [filteredLabels, filteredValues, currency]);
+  }, [filteredLabels, filteredValues, yAxisLabel, label, currency]);
 
   // Descargar chart
   const downloadChart = (format = "png") => {
@@ -108,7 +136,7 @@ export default function CardBarChart({ data = [], currency = "USD", isLoading })
       <div className="rounded-t-lg px-4 py-3 border-b flex justify-between items-center">
         <div>
           <h6 className="uppercase text-twilight-indigo-500 text-xs font-semibold">Análisis</h6>
-          <h2 className="text-slate-700 text-xl font-semibold">Ventas por Periodo</h2>
+          <h2 className="text-twilight-indigo-700 text-xl font-semibold">Ventas por Periodo</h2>
         </div>
 
         {/* Dropdown de descarga */}
@@ -120,12 +148,10 @@ export default function CardBarChart({ data = [], currency = "USD", isLoading })
             <i className="fas fa-download"></i>
           </button>
 
-          {/* Tooltip estilizado */}
           <span className="absolute bottom-full w-60 mb-2 left-1/2 transform -translate-x-1/2 px-2 py-1 text-xs text-white bg-gray-800 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-30">
             Descargar gráfico en formato PNG o JPG
           </span>
 
-          {/* Dropdown */}
           {dropdownOpen && (
             <div className="absolute right-0 mt-2 w-24 bg-white border rounded shadow-lg z-20">
               <button
@@ -143,7 +169,6 @@ export default function CardBarChart({ data = [], currency = "USD", isLoading })
             </div>
           )}
         </div>
-
       </div>
 
       {/* Filtro */}
