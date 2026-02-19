@@ -1296,7 +1296,7 @@ const handleRadioChange = (event) => {
                           if (value.length > 4) {
                             value = value.slice(0, 4) + "-" + value.slice(4);
                           }
-                          setClient({ ...preInvoice, cliente_final_telefono: value });
+                          setPreInvoice({ ...preInvoice, cliente_final_telefono: value });
                         }}
                       />
                       {errors.cliente_final_telefono && <p className="text-red-500 text-xs mt-1">{errors.cliente_final_telefono}</p>}
