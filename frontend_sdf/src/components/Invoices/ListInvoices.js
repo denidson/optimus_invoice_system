@@ -220,7 +220,7 @@ function ListInvoices({ title, type }) {
                   {/* SELECT PRINCIPAL */}
                   <select id="filter_type" className="border p-2 rounded" value={filterType} onChange={(e) => setFilterType(e.target.value)}>
                     <option value=""> - </option>
-                    <option value="estatus">Estado</option>
+                    <option value="estatus">Estatus</option>
                     <option value="zona">Zona</option>
                     <option value="correlativo_interno">Correlativo Interno</option>
                     <option value="cliente_final_rif">RIF del cliente</option>

@@ -8,7 +8,7 @@ export default function CardTopProducts({ products = [] }) {
           Ranking
         </h6>
         <h2 className="text-twilight-indigo-700 text-lg font-semibold">
-          Top Productos
+          Top Productos/Servicios
         </h2>
       </div>
 
