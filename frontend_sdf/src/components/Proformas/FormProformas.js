@@ -16,7 +16,7 @@ import { Autocomplete, TextField } from "@mui/material";
 import { Tabs, Tab, Box } from "@mui/material";
 import { esES } from '@mui/x-data-grid/locales';
 import $ from "jquery";
-import { formatDecimal, formatMoney, formatDate, formatDateTime, formatText, validateFormatEmail } from "../../utils/formatters";
+import { formatDecimal, formatMoney, formatDate, formatDateTime, formatText, validateFormatEmail, validateFormatPhone } from "../../utils/formatters";
 
 // Componente editor para el Autocomplete
 function ProductoEditCell({ params, products }) {
@@ -476,6 +476,12 @@ function FormProformas() {
       //toast.error("Debe indicar el teléfono del cliente.");
       setButtonDisabled(false);
       //return;
+    }
+    if (preInvoice.cliente_final_telefono){
+      if (!validateFormatPhone(preInvoice.cliente_final_telefono)){
+        newErrors.cliente_final_telefono = "Teléfono del cliente no presenta un formato válido";
+        errorToast.push("- Teléfono del cliente no presenta un formato válido");
+      }
     }
     if (!preInvoice.cliente_final_email) {
       newErrors.cliente_final_email = "Correo electrónico del cliente es obligatorio";
@@ -1278,7 +1284,20 @@ const handleRadioChange = (event) => {
                         className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
                         value={preInvoice.cliente_final_telefono}
                         placeholder="0000-0000000"
-                        onChange={(e) => setPreInvoice({ ...preInvoice, cliente_final_telefono: e.target.value.toString().toUpperCase() })}
+                        onChange={(e) => {
+                          let value = e.target.value;
+                          // Eliminar todo lo que no sea número
+                          value = value.replace(/\D/g, "");
+
+                          // Limitar a máximo 11 dígitos (4 + 7)
+                          value = value.slice(0, 11);
+
+                          // Insertar guion después de los primeros 4 dígitos
+                          if (value.length > 4) {
+                            value = value.slice(0, 4) + "-" + value.slice(4);
+                          }
+                          setClient({ ...preInvoice, cliente_final_telefono: value });
+                        }}
                       />
                       {errors.cliente_final_telefono && <p className="text-red-500 text-xs mt-1">{errors.cliente_final_telefono}</p>}
                     </div>

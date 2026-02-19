@@ -70,3 +70,10 @@ export const validateFormatEmail = (email) => {
   const isValidEmail = emailRegex.test(email);
   return isValidEmail;
 };
+
+export const validateFormatPhone = (phone) => {
+  if (!phone) return false;
+  const phoneRegex = /^\d{4}-\d{7}$/;
+  const isValidPhone = phoneRegex.test(phone);
+  return isValidPhone;
+};

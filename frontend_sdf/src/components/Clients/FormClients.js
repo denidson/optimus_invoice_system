@@ -8,7 +8,7 @@ import { useLocation } from "react-router-dom"; // Para la obtener el parametro 
 import { toast, ToastContainer } from "react-toastify"; // Importamos las funciones necesarias
 import "react-toastify/dist/ReactToastify.css"; // Importar el CSS de las notificaciones
 import $ from "jquery";
-import { validateFormatEmail } from "../../utils/formatters";
+import { validateFormatEmail, validateFormatPhone } from "../../utils/formatters";
 
 function FormClients() {
   const navigate = useNavigate(); // Hook para redirección
@@ -74,6 +74,12 @@ function FormClients() {
     if (!client.telefono){
       newErrors.telefono = "Teléfono es obligatorio";
       errorToast.push("- Teléfono es obligatorio");
+    }
+    if (client.telefono){
+      if (!validateFormatPhone(client.telefono)){
+        newErrors.telefono = "Teléfono no presenta un formato válido";
+        errorToast.push("- Teléfono no presenta un formato válido");
+      }
     }
     if (!client.email){
       newErrors.email = "Correo electrónico es obligatorio";
@@ -251,7 +257,20 @@ function FormClients() {
                         className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
                         value={client.telefono}
                         placeholder="0000-0000000"
-                        onChange={(e) => setClient({ ...client, telefono: e.target.value })}
+                        onChange={(e) => {
+                          let value = e.target.value;
+                          // Eliminar todo lo que no sea número
+                          value = value.replace(/\D/g, "");
+
+                          // Limitar a máximo 11 dígitos (4 + 7)
+                          value = value.slice(0, 11);
+
+                          // Insertar guion después de los primeros 4 dígitos
+                          if (value.length > 4) {
+                            value = value.slice(0, 4) + "-" + value.slice(4);
+                          }
+                          setClient({ ...client, telefono: value });
+                        }}
                       />
                       {errors.telefono && <p className="text-red-500 text-xs mt-1">{errors.telefono}</p>}
                     </div>
