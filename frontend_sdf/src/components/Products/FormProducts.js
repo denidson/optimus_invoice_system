@@ -153,7 +153,7 @@ function FormProducts({ cliente_id: clienteProp, rol }) {
           <div className="relative bg-white flex flex-col min-w-0 break-words w-full mb-6 shadow-lg rounded-lg bg-blueGray-100 border-0">
             <div className="rounded-t bg-white mb-0 px-6 py-6 flex justify-between">
               <h6 className="text-blueGray-700 text-xl font-bold">
-                {productId ? "Actualizar" : "Crear"} Producto
+                {productId ? "Actualizar" : "Crear"} Producto/Servicio
               </h6>
             </div>
 
@@ -193,7 +193,7 @@ function FormProducts({ cliente_id: clienteProp, rol }) {
                     <input
                       type="number"
                       step="0.01"
-                      className={inputClass("precio_base")}
+                      className={inputClass("precio_base") + ' text-end'}
                       value={product.precio_base}
                       placeholder="0,00"
                       onChange={(e) => setProduct({ ...product, precio_base: e.target.value })}

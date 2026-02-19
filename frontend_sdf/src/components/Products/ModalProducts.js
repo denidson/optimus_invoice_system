@@ -10,7 +10,7 @@ function ModalProducts({ isOpen, onClose, product }) {
         {/* header */}
         <div className="bg-white p-6 border-b">
           <h3 className=" font-bold text-center">
-            Detalles del Producto
+            Detalles del Producto/Servicio
           </h3>
         </div>
 

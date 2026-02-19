@@ -221,13 +221,13 @@ function ListProducts() {
 
             {/* Header Card */}
             <div className="rounded-t bg-white mb-0 px-6 py-6 flex justify-between items-center border-b">
-              <h6 className="text-blueGray-700 text-xl font-bold">Lista de Productos</h6>
+              <h6 className="text-blueGray-700 text-xl font-bold">Lista de Producto/Servicio</h6>
               <div className="flex items-center space-x-3">
                 <button className="bg-twilight-indigo-600 hover:bg-twilight-indigo-500 text-white font-bold py-2 px-4 rounded" onClick={redirectToCreate}>
-                  Crear Producto
+                  Crear Producto/Servicio
                 </button>
                 <label className="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded cursor-pointer">
-                  Importar Productos Excel/CSV
+                  Importar Producto/Servicio Excel/CSV
                   <input type="file" accept=".csv,.xlsx,.xls" className="hidden" onChange={handleFileUpload} />
                 </label>
               </div>

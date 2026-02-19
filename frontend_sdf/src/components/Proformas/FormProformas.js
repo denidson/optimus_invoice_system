@@ -136,7 +136,7 @@ function FormProformas() {
     { field: "iva_categoria_id", headerName: "iva_categoria_id", editable: false },
     {
       field: "tasa_porcentaje",
-      headerName: "Impuesto",
+      headerName: "Impuesto (%)",
       flex: 1,
       type: "number",
       editable: false,
@@ -149,7 +149,7 @@ function FormProformas() {
     },
     {
       field: "precio_unitario",
-      headerName: "Precio Unitario",
+      headerName: "Precio Unitario (Bs.)",
       flex: 1,
       type: "number",
       editable: (type == 'NC' ? false : true),
@@ -162,7 +162,7 @@ function FormProformas() {
     },
     {
       field: "descuento_porcentaje",
-      headerName: "Desc %",
+      headerName: "Desc (%)",
       flex: 1,
       type: "number",
       editable: true,
@@ -175,7 +175,7 @@ function FormProformas() {
     },
     {
       field: "total",
-      headerName: "Total",
+      headerName: "Total (Bs.)",
       flex: 1,
       sortable: false,
       align: "right",        // alinea el contenido a la derecha
@@ -189,7 +189,7 @@ function FormProformas() {
         const descuento_porcentaje = Number(params.row.descuento_porcentaje) || 0;
         const total = cantidad * (precio - (precio * descuento_porcentaje/100));
         //handleCellEditCommit(params);
-        return formatMoney(total);
+        return formatDecimal(total);
       }
     },
     {
