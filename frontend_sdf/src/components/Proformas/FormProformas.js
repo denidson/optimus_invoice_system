@@ -47,7 +47,7 @@ function ProductoEditCell({ params, products }) {
           {...p}
           inputRef={inputRef} // aquí va el ref para el foco
           variant="standard"
-          placeholder="Seleccione un producto..."
+          placeholder="Seleccione un producto/servicio..."
           fullWidth
           InputProps={{
             ...p.InputProps,
@@ -107,7 +107,7 @@ function FormProformas() {
     //{ field: 'producto_id', headerName: 'Producto', flex: 4, editable: true },
     {
       field: "producto_id",
-      headerName: "Producto",
+      headerName: "Producto/Servicio",
       flex: 4,
       editable: true,
       headerAlign: "center",
@@ -539,8 +539,8 @@ function FormProformas() {
         if (newErrors.items == undefined){
           newErrors.items = [];
         }
-        newErrors.items.push("No se pueden procesar las lineas sin producto especificado.");
-        errorToast.push("- No se pueden procesar las lineas sin producto especificado.");
+        newErrors.items.push("No se pueden procesar las lineas sin producto/servicio especificado.");
+        errorToast.push("- No se pueden procesar las lineas sin producto/servicio especificado.");
         //toast.error("No se pueden procesar las lineas sin producto especificado.");
         setButtonDisabled(false);
         //return;
@@ -560,8 +560,8 @@ function FormProformas() {
           if (newErrors.items == undefined){
             newErrors.items = [];
           }
-          newErrors.items.push(`No se puede procesar la linea del producto (${preInvoice.items[i].producto.nombre}) debido a que la cantidad asignada supera la cantidad disponible (${preInvoice.items[i].cantidad_disponible}).`);
-          errorToast.push(`- No se puede procesar la linea del producto (${preInvoice.items[i].producto.nombre}) debido a que la cantidad asignada supera la cantidad disponible (${preInvoice.items[i].cantidad_disponible}).`);
+          newErrors.items.push(`No se puede procesar la linea del producto/servicio (${preInvoice.items[i].producto.nombre}) debido a que la cantidad asignada supera la cantidad disponible (${preInvoice.items[i].cantidad_disponible}).`);
+          errorToast.push(`- No se puede procesar la linea del producto/servicio (${preInvoice.items[i].producto.nombre}) debido a que la cantidad asignada supera la cantidad disponible (${preInvoice.items[i].cantidad_disponible}).`);
           //toast.error("No se pueden procesar las lineas con cantidades menor o igual que 0.");
           setButtonDisabled(false);
           //return;
@@ -1403,7 +1403,7 @@ const handleRadioChange = (event) => {
                       <div className="w-full lg:w-12/12 px-4 mt-1 text-center">
                         <hr class="my-6 border-b-1 border-blueGray-300"/>
                         <Tabs value={tab} onChange={(e, v) => setTab(v)} textColor="primary" indicatorColor="primary" centered>
-                          <Tab value="productos" label="Productos" />
+                          <Tab value="productos" label="Productos/Servicios" />
                           <Tab value="conceptos" label="Conceptos" />
                         </Tabs>
                       </div>
@@ -1502,6 +1502,7 @@ const handleRadioChange = (event) => {
                       </label>
                       <div className="apply_igtf mt-3 p-4 border rounded bg-gray-50 hidden">
                         <label className="block text-blueGray-600 text-xs font-bold mb-2">Monto pagado en divisas</label>
+                        <label className="block text-blueGray-600 text-xs font-bold mb-2">Nota: El monto ingresado debe ser expresado en (Bs.)</label>
                         <input
                           type="number" step="0.01"
                           className="border-0 px-3 py-3 placeholder-blueGray-300 text-right text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
