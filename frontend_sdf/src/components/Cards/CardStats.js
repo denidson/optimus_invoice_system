@@ -11,6 +11,7 @@ export default function CardStats({
   statIconName,
   statIconColor,
   className = "",
+  collapsed = false,
 }) {
   return (
     <div
@@ -26,14 +27,17 @@ export default function CardStats({
             </h5>
 
             <span
-              className="
+              className={`
                 block
                 font-bold
                 text-blueGray-700
                 whitespace-nowrap
                 leading-tight
-                text-[clamp(1.35rem,2.3vw,2rem)]
-              "
+                ${collapsed
+                  ? "text-[clamp(1.35rem,2.3vw,2rem)]"
+                  : "text-[clamp(1.1rem,1.6vw,1.5rem)]"
+                }
+              `}
             >
               {statTitle}
             </span>
@@ -43,7 +47,7 @@ export default function CardStats({
           <div className="flex-shrink-0 ml-auto">
             <div
               className={
-                "text-white inline-flex items-center justify-center w-12 h-12 shadow-lg rounded-full " +
+                "text-white inline-flex items-center justify-center w-10 h-10 shadow-lg rounded-full " +
                 statIconColor
               }
             >

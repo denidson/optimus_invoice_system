@@ -17,7 +17,7 @@ import {
 
 import { getClients } from "../services/api_clients";
 
-export default function Dashboard() {
+export default function Dashboard({ collapsed }) {
   const { user } = useContext(AuthContext);
 
   const isAdmin = user?.rol === "admin";
@@ -177,6 +177,7 @@ export default function Dashboard() {
       <HeaderStats
         summary={summaryQuery.data}
         isLoading={summaryQuery.isFetching}
+        collapsed={collapsed}
       />
 
       <div className="px-4 md:px-8 mx-auto w-full">

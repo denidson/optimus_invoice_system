@@ -33,7 +33,11 @@ export default function AdminLayout({ children }) {
         <Navbar nombreUsuario={nombreUsuario} />
 
         {/* Contenido */}
-        <main className="flex-1 overflow-x-hidden">{children}</main>
+        <main className="flex-1 overflow-x-hidden">
+          {React.Children.map(children, (child) =>
+            React.isValidElement(child) ? React.cloneElement(child, { collapsed }) : child
+          )}
+        </main>
       </div>
     </div>
   );

@@ -1,7 +1,7 @@
 import CardStats from "../Cards/CardStats";
 import { formatDecimal } from "../../utils/formatters";
 
-export default function HeaderStats({ summary, isLoading }) {
+export default function HeaderStats({ summary, isLoading, collapsed }) {
   const currency = summary?.currency || "$";
 
   // Mostrar spinner o valor
@@ -20,15 +20,7 @@ export default function HeaderStats({ summary, isLoading }) {
         <div className="flex flex-wrap -mx-4">
           <div className="w-full lg:w-6/12 xl:w-3/12 px-4 flex mb-4 lg:mb-0">
             <CardStats
-              statSubtitle="TOTAL FACTURADO (FC)"
-              statTitle={renderValue(summary?.total_facturado_fc)}
-              statIconName="fas fa-file-invoice-dollar"
-              statIconColor="bg-twilight-indigo-500"
-            />
-          </div>
-
-          <div className="w-full lg:w-6/12 xl:w-3/12 px-4 flex mb-4 lg:mb-0">
-            <CardStats
+              collapsed={collapsed}
               statSubtitle="TOTAL NETO GENERAL"
               statTitle={renderValue(summary?.total_neto_general)}
               statIconName="fas fa-chart-line"
@@ -36,8 +28,19 @@ export default function HeaderStats({ summary, isLoading }) {
             />
           </div>
 
+          <div className="w-full lg:w-6/12 xl:w-3/12 px-4 flex mb-4 lg:mb-0">
+            <CardStats
+              collapsed={collapsed}
+              statSubtitle="TOTAL FACTURADO"
+              statTitle={renderValue(summary?.total_facturado_fc)}
+              statIconName="fas fa-file-invoice-dollar"
+              statIconColor="bg-twilight-indigo-500"
+            />
+          </div>
+
           <div className="w-full lg:w-6/12 xl:w-3/12 px-4 flex mb-4 xl:mb-0">
             <CardStats
+              collapsed={collapsed}
               statSubtitle="TOTAL NOTAS DE CRÉDITO"
               statTitle={renderValue(summary?.total_notas_credito_nc)}
               statIconName="fas fa-arrow-down"
@@ -47,6 +50,7 @@ export default function HeaderStats({ summary, isLoading }) {
 
           <div className="w-full lg:w-6/12 xl:w-3/12 px-4 flex">
             <CardStats
+              collapsed={collapsed}
               statSubtitle="TOTAL NOTAS DE DÉBITO"
               statTitle={renderValue(summary?.total_notas_debito_nd)}
               statIconName="fas fa-arrow-up"
