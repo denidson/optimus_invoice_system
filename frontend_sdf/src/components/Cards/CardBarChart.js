@@ -42,7 +42,7 @@ export default function CardBarChart({ data = [], currency = "USD", isLoading })
 
   // Formatter para datalabels
   const dataLabelFormatter = (value) =>
-    `${currency ? currency + " " : ""}${value.toLocaleString("es-ES", {
+    `${value.toLocaleString("es-ES", {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
     })}`;
@@ -75,7 +75,7 @@ export default function CardBarChart({ data = [], currency = "USD", isLoading })
               callbacks: {
                 label: (ctx) => {
                   const value = ctx.parsed.y;
-                  return `${currency || ""} ${value.toLocaleString("es-ES", {
+                  return `${value.toLocaleString("es-ES", {
                     minimumFractionDigits: 2,
                     maximumFractionDigits: 2,
                   })}`;
