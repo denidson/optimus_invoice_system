@@ -6,8 +6,6 @@ import Logo from "../../assets/img/Quantus-Invoice.png";
 import LogoCollapse from "../../assets/img/Quantus-Invoice3.png";
 import { AuthContext } from "../../context/AuthContext";
 
-/* ================= TOOLTIP ================= */
-
 function Tooltip({ targetRef, text, visible }) {
   const [coords, setCoords] = useState({ top: 0, left: 0 });
 
