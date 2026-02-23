@@ -76,6 +76,7 @@ export default function Sidebar({ collapsed, setCollapsed }) {
         { to: "/debit-note", icon: "fas fa-file-invoice", label: "Notas de Débito" },
         { to: "/withholdings", icon: "fas fa-file-invoice", label: "Retenciones" },
         { to: "/dispatch-guide", icon: "fas fa-file-invoice", label: "Guía de despacho" },
+        { to: "/salesBook", icon: "fas fa-file-invoice", label: "Libro de ventas" },
       ],
     },
     {

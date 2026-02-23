@@ -52,3 +52,31 @@ export const showInvoice = async (id) => {
     throw error;
   }
 };
+
+export const getSalesBook = async (params = {}) => {
+  try {
+    const authData = localStorage.getItem("authData");
+    if (!authData) return [];
+
+    const { rol } = JSON.parse(authData);
+
+    // Determinar endpoint según rol
+    const endpoint = rol === "admin" ? "/api/reports/libro-ventas" : "/api/reports/libro-ventas";
+
+    const query = new URLSearchParams();
+
+    if (params.periodo) query.append("periodo", params.periodo);
+    if (params.desde) query.append("desde", params.desde);
+    if (params.hasta) query.append("hasta", params.hasta);
+
+    const response = await api.get(`${endpoint}?${query.toString()}`);
+    return response.data;
+  } catch (error) {
+    if (error.response && error.response.status === 404) {
+      // No se encontraron facturas
+      return [];
+    }
+    console.error("Error al obtener las facturas:", error);
+    throw error;
+  }
+};

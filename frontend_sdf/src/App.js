@@ -34,6 +34,8 @@ import ListDispatchGuide from "./pages/DispatchGuide/ListDispatchGuide";
 import FormDispatchGuide from "./pages/DispatchGuide/FormDispatchGuide";
 import ListCreditNote from "./pages/CreditNote/ListCreditNote";
 import ListCreditDebit from "./pages/DebitNote/ListDebitNote";
+import SalesBook from "./pages/SalesBook/SalesBook";
+SalesBook
 // Seguridad
 import PrivateRoute from "./components/PrivateRoute";
 import RoleRoute from "./components/RoleRoute";
@@ -106,7 +108,15 @@ function App() {
               </PrivateRoute>
             }
           />
-
+          {/* Pre-facturación */}
+          <Route
+            path="/salesBook"
+            element={
+              <PrivateRoute>
+                <SalesBook />
+              </PrivateRoute>
+            }
+          />
           {/* Clientes (admin) */}
           <Route
             path="/clients"

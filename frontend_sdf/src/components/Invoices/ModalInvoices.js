@@ -1,5 +1,5 @@
 import React from "react";
-import { formatDecimal, formatMoney, formatDateTime, formatText } from "../../utils/formatters";
+import { formatDecimal, formatMoney, formatDateTime, formatText, formatDate } from "../../utils/formatters";
 
 function ModalPreinvoices({ isOpen, onClose, message }) {
   if (!isOpen) return null;
@@ -29,7 +29,7 @@ function ModalPreinvoices({ isOpen, onClose, message }) {
         <div className="flex flex-wrap justify-between px-2 mb-4">
           <div className="w-1/5 text-start">
             <label className="font-bold text-blueGray-700">Fecha de {(message.tipo_documento == 'FC' ? 'Factura' : (message.tipo_documento == 'ND' ? 'Nota de Débito' : 'Nota de Crédito') )}:</label>
-            <div>{message.fecha_factura ? message.fecha_factura.replace('T',' ').substr(0,19) : ''}</div>
+            <div>{message.fecha_factura ? formatDate(message.fecha_factura):''}</div>
           </div>
           <div className="w-1/5 text-start">
             <label className="font-bold text-blueGray-700">Número de control:</label>

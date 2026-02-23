@@ -14,6 +14,14 @@ export const formatDecimal = (value) => {
   }).format(Number(value || 0));
 };
 
+export const formatInteger = (value) => {
+  return new Intl.NumberFormat("es-ES", {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+    useGrouping: true,
+  }).format(Number(value || 0));
+};
+
 export const formatDate = (value) => {
   if (!value) return "";
 
@@ -76,4 +84,10 @@ export const validateFormatPhone = (phone) => {
   const phoneRegex = /^\d{4}-\d{7}$/;
   const isValidPhone = phoneRegex.test(phone);
   return isValidPhone;
+};
+
+export const validateFormatRif = (rif) => {
+  if (!rif) return false;
+  const rifRegex = /^(?:\d{6,8}|[JVEGP]-\d{8}-\d)$/;
+  return rifRegex.test(rif);
 };

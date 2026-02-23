@@ -16,7 +16,7 @@ import { Autocomplete, TextField } from "@mui/material";
 import { Tabs, Tab, Box } from "@mui/material";
 import { esES } from '@mui/x-data-grid/locales';
 import $ from "jquery";
-import { formatDecimal, formatMoney, formatDate, formatDateTime, formatText, validateFormatEmail, validateFormatPhone } from "../../utils/formatters";
+import { formatDecimal, formatMoney, formatDate, formatDateTime, formatText, validateFormatEmail, validateFormatPhone, validateFormatRif } from "../../utils/formatters";
 
 // Componente editor para el Autocomplete
 function ProductoEditCell({ params, products }) {
@@ -462,6 +462,12 @@ function FormProformas() {
       //toast.error("Debe indicar el R.I.F. del cliente.");
       setButtonDisabled(false);
       //return;
+    }
+    if (preInvoice.cliente_final_rif){
+      if (!validateFormatRif(preInvoice.cliente_final_rif)){
+        newErrors.cliente_final_rif = "R.I.F. del cliente no presenta un formato válido";
+        errorToast.push("- R.I.F. del cliente no presenta un formato válido");
+      }
     }
     if (!preInvoice.cliente_final_nombre  && preInvoice.cliente_final_id == '#') {
       newErrors.cliente_final_nombre = "Nombre del cliente es obligatorio";

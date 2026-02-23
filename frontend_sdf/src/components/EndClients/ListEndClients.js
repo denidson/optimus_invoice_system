@@ -262,6 +262,10 @@ function ListEndClients() {
                       return formatText(data);
                     }
                   },
+                  { title: "Tipo de contribuyente", data: "tipo_contribuyente", render: (data, type, row) => {
+                      return formatText(data?.nombre || '');
+                    }
+                  },
                   {
                     title: "Condición",
                     data: "activo",
@@ -275,6 +279,7 @@ function ListEndClients() {
                   },
                   {
                     title: "Acciones",
+                    className: 'no-export',
                     data: "activo",
                     render: (data, type, row) => `
                       <div class="flex justify-center items-center space-x-2">
@@ -327,7 +332,7 @@ function ListEndClients() {
                             if (CAMPOS_EXCLUIDOS.includes(key)) return false;
 
                             if (!value) return false;
-
+                            value = (value?.nombre || value)
                             return String(value).toUpperCase().includes(searchValue.toUpperCase());
                           })
                         );
@@ -455,7 +460,8 @@ function ListEndClients() {
                                 "Dirección": formatText(item.direccion),
                                 "Región": formatText(item.region),
                                 "Zona":formatText(item.zona),
-                                "Condición": formatText(item.estado
+                                "Tipo de contribuyente":formatText(item.tipo_contribuyente?.nombre || ''),
+                                "Condición": formatText(item.activo
                                     ? "Activo"
                                     : "Inactivo")
                               })));

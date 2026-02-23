@@ -8,7 +8,7 @@ import { useLocation } from "react-router-dom"; // Para la obtener el parametro 
 import { toast, ToastContainer } from "react-toastify"; // Importamos las funciones necesarias
 import "react-toastify/dist/ReactToastify.css"; // Importar el CSS de las notificaciones
 import $ from "jquery";
-import { validateFormatEmail, validateFormatPhone } from "../../utils/formatters";
+import { validateFormatEmail, validateFormatPhone, validateFormatRif } from "../../utils/formatters";
 
 function FormEndClients() {
   const navigate = useNavigate(); // Hook para redirección
@@ -66,6 +66,12 @@ function FormEndClients() {
       newErrors.rif = "R.I.F. es obligatorio";
       errorToast.push("- R.I.F. es obligatorio");
     }
+    if (client.rif){
+      if (!validateFormatRif(client.rif)){
+        newErrors.rif = "R.I.F. no presenta un formato válido";
+        errorToast.push("- R.I.F. no presenta un formato válido");
+      }
+    }
     if (!client.nombre){
       newErrors.nombre = "Nombre es obligatorio";
       errorToast.push("- Nombre es obligatorio");
@@ -117,6 +123,8 @@ function FormEndClients() {
       var message = '';
       if (client.id == '#'){
         delete client.id;
+        client.tipo_documento_identidad = client.rif.substr(0, 1);
+        client.numero_documento = client.rif.toString().replaceAll('-','').substr(1, client.rif.toString().replaceAll('-','').length);
         console.log("Client(F): ", client);
         data = await createEndClient(client);
         //var clientList = [client];
@@ -125,6 +133,8 @@ function FormEndClients() {
         //console.log("Client(F)-data: ", data);
         message = '!Creación de cliente realizada correctamente!';
       }else{
+        client.tipo_documento_identidad = client.rif.substr(0, 1);
+        client.numero_documento = client.rif.toString().replaceAll('-','').substr(1, client.rif.toString().replaceAll('-','').length);
         data = await editEndClient(decryptText(clientId), client); // Llamamos a editClient con el ID
         //console.log("Client(F)-editClient-data: ", data);
         //console.log("Client(F)-editClient-client: ", client);
@@ -174,7 +184,7 @@ function FormEndClients() {
               </div>
             </div>
             <div className="flex-auto px-4 lg:px-10 py-10 pt-0">
-              <h6 class="text-blueGray-400 text-sm mt-3 my-6 font-bold uppercase">Informacion del cliente</h6>
+              <h6 class="text-blueGray-400 text-sm mt-3 my-6 font-bold uppercase">Información del cliente</h6>
               <form onSubmit={handleSubmit}>
                 <hr class="my-6 border-b-1 border-blueGray-300"/>
                 <div className="flex flex-wrap">
@@ -250,7 +260,7 @@ function FormEndClients() {
                   </div>
                   <div className="w-full lg:w-10/12 px-4">
                     <div className="relative w-full mb-3">
-                      <label className="block text-blueGray-600 text-xs font-bold mb-2">Razon Social</label>
+                      <label className="block text-blueGray-600 text-xs font-bold mb-2">Razón social</label>
                       <input
                         type="text"
                         className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
@@ -263,7 +273,7 @@ function FormEndClients() {
                   </div>
                   <div className="w-full lg:w-2/12 px-4">
                     <div className="relative w-full mb-3">
-                      <label className="block text-blueGray-600 text-xs font-bold mb-2">Telefono</label>
+                      <label className="block text-blueGray-600 text-xs font-bold mb-2">Teléfono</label>
                       <input
                         type="text"
                         className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
@@ -289,7 +299,7 @@ function FormEndClients() {
                   </div>
                   <div className="w-full lg:w-5/12 px-4">
                     <div className="relative w-full mb-3">
-                      <label className="block text-blueGray-600 text-xs font-bold mb-2">Correo Electronico</label>
+                      <label className="block text-blueGray-600 text-xs font-bold mb-2">Correo electrónico</label>
                       <input
                         type="text"
                         className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
@@ -320,7 +330,7 @@ function FormEndClients() {
                   </div>*/}
                   <div className="w-full lg:w-12/12 px-4">
                     <div className="relative w-full mb-3">
-                      <label className="block text-blueGray-600 text-xs font-bold mb-2">Direccion</label>
+                      <label className="block text-blueGray-600 text-xs font-bold mb-2">Dirección</label>
                       <input
                         type="text"
                         className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
@@ -409,6 +419,25 @@ function FormEndClients() {
                       />
                     </div>
                   </div>*/}
+                  <div className="w-full lg:w-2/12 px-4">
+                    <div className="relative w-full mb-3">
+                      <label className="block text-blueGray-600 text-xs font-bold mb-2">Tipo de contribuyente</label>
+                      <select
+                        className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
+                        value={client.tipo_contribuyente_id}
+                        onChange={(e) => setClient({ ...client, tipo_contribuyente_id: e.target.value })}
+                      >
+                        {typeTaxpayer.length > 0 ? (
+                            typeTaxpayer.map(taxpayer => (
+                            <option key={taxpayer.id} value={taxpayer.id}>{taxpayer.nombre}</option>
+                          ))
+                        ) : (
+                          <option value="0">Seleccione...</option>
+                        )}
+                      </select>
+                      {errors.tipo_contribuyente_id && <p className="text-red-500 text-xs mt-1">{errors.tipo_contribuyente_id}</p>}
+                    </div>
+                  </div>
                   <div className="w-full lg:w-2/12 px-4">
                     <div className="relative w-full mb-3">
                       <label className="block text-blueGray-600 text-xs font-bold mb-4">Condición</label>

@@ -8,7 +8,7 @@ import { useLocation } from "react-router-dom"; // Para la obtener el parametro 
 import { toast, ToastContainer } from "react-toastify"; // Importamos las funciones necesarias
 import "react-toastify/dist/ReactToastify.css"; // Importar el CSS de las notificaciones
 import $ from "jquery";
-import { validateFormatEmail, validateFormatPhone } from "../../utils/formatters";
+import { validateFormatEmail, validateFormatPhone, validateFormatRif } from "../../utils/formatters";
 
 function FormClients() {
   const navigate = useNavigate(); // Hook para redirección
@@ -66,6 +66,12 @@ function FormClients() {
     if (!client.rif){
       newErrors.rif = "R.I.F. es obligatorio";
       errorToast.push("- R.I.F. es obligatorio");
+    }
+    if (client.rif){
+      if (!validateFormatRif(client.rif)){
+        newErrors.rif = "R.I.F. no presenta un formato válido";
+        errorToast.push("- R.I.F. no presenta un formato válido");
+      }
     }
     if (!client.nombre_empresa){
       newErrors.nombre_empresa = "Razón social es obligatoria";
@@ -187,7 +193,7 @@ function FormClients() {
               </div>
             </div>
             <div className="flex-auto px-4 lg:px-10 py-10 pt-0">
-              <h6 class="text-blueGray-400 text-sm mt-3 my-6 font-bold uppercase">Informacion del cliente</h6>
+              <h6 class="text-blueGray-400 text-sm mt-3 my-6 font-bold uppercase">Información del cliente</h6>
               <form onSubmit={handleSubmit}>
                 <hr class="my-6 border-b-1 border-blueGray-300"/>
                 <div className="flex flex-wrap">
@@ -256,7 +262,7 @@ function FormClients() {
                   </div>
                   <div className="w-full lg:w-10/12 px-4">
                     <div className="relative w-full mb-3">
-                      <label className="block text-blueGray-600 text-xs font-bold mb-2">Razon social</label>
+                      <label className="block text-blueGray-600 text-xs font-bold mb-2">Razón social</label>
                       <input
                         type="text"
                         className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
@@ -282,7 +288,7 @@ function FormClients() {
                   </div>
                   <div className="w-full lg:w-2/12 px-4">
                     <div className="relative w-full mb-3">
-                      <label className="block text-blueGray-600 text-xs font-bold mb-2">Telefono</label>
+                      <label className="block text-blueGray-600 text-xs font-bold mb-2">Teléfono</label>
                       <input
                         type="text"
                         className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
