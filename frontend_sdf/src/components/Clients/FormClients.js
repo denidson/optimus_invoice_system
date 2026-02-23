@@ -71,6 +71,10 @@ function FormClients() {
       newErrors.nombre_empresa = "Razón social es obligatoria";
       errorToast.push("- Razón social es obligatoria");
     }
+    if (!client.denominacion_comercial){
+      newErrors.denominacion_comercial = "Denominacion comercial es obligatoria";
+      errorToast.push("- Denominacion comercial es obligatoria");
+    }
     if (!client.telefono){
       newErrors.telefono = "Teléfono es obligatorio";
       errorToast.push("- Teléfono es obligatorio");
@@ -214,19 +218,33 @@ function FormClients() {
                           // Forzar el patrón paso a paso
                           if (value.length === 1) {
                             // Primera posición → solo letras válidas
-                            if (!/[VJEPG]/.test(value)) value = "";
+                            if (!/[VJEPG123456789]/.test(value)) value = "";
                           } else if (value.length === 2) {
-                            // Después de la letra → añadir guion automáticamente
-                            if (!value.includes("-")) value = value[0] + "-" + value[1];
-                          } else if (value.length > 2) {
-                            // Asegurar que los 8 números estén bien colocados
-                            const match = value.match(/^([VJEPG])-(\d{0,8})-?(\d{0,1})?$/);
-                            if (match) {
-                              const [, letra, numeros, verificador] = match;
-                              value = `${letra}-${numeros}${numeros.length === 8 ? "-" : ""}${verificador || ""}`;
+                              // Solo agregar guion si comienza con letra válida
+                              if (/[VJEPG]/.test(value[0]) && /[1234567890]/.test(value[1]) && !value.includes("-")) {
+                                if (/[VJEPG1234567890-]/.test(value[1])){
+                                  value = value[0] + "-" + value[1];
+                                }else{
+                                  value = value[0];
+                                }
+                              }else if (!/[1234567890]/.test(value)) {
+                                value = value[0];
+                              }
+                            } else if (value.length > 2) {
+                            // Nuevo: permitir solo números (hasta 8)
+                            const matchSoloNumeros = value.match(/^\d{0,8}$/);
+
+                            if (matchSoloNumeros) {
+                              value = matchSoloNumeros[0];
                             } else {
-                              // Si el formato se sale de control, lo limpiamos
-                              value = client.rif;
+                              // Caso RIF tradicional
+                              const match = value.match(/^([VJEPG])-(\d{0,8})-?(\d{0,1})?$/);
+                              if (match) {
+                                const [, letra, numeros, verificador] = match;
+                                value = `${letra}-${numeros}${numeros.length === 8 ? "-" : ""}${verificador || ""}`;
+                              } else {
+                                value = client.rif;
+                              }
                             }
                           }
 
@@ -238,7 +256,7 @@ function FormClients() {
                   </div>
                   <div className="w-full lg:w-10/12 px-4">
                     <div className="relative w-full mb-3">
-                      <label className="block text-blueGray-600 text-xs font-bold mb-2">Razon Social</label>
+                      <label className="block text-blueGray-600 text-xs font-bold mb-2">Razon social</label>
                       <input
                         type="text"
                         className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
@@ -248,6 +266,19 @@ function FormClients() {
                       />
                       {errors.nombre_empresa && <p className="text-red-500 text-xs mt-1">{errors.nombre_empresa}</p>}
                       </div>
+                  </div>
+                  <div className="w-full lg:w-12/12 px-4">
+                    <div className="relative w-full mb-3">
+                        <label className="block text-blueGray-600 text-xs font-bold mb-2">Denominación comercial</label>
+                        <input
+                          type="text"
+                          className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
+                          value={client.denominacion_comercial}
+                          placeholder="Denominación comercial"
+                          onChange={(e) => setClient({ ...client, denominacion_comercial: e.target.value.toUpperCase() })}
+                        />
+                        {errors.denominacion_comercial && <p className="text-red-500 text-xs mt-1">{errors.denominacion_comercial}</p>}
+                    </div>
                   </div>
                   <div className="w-full lg:w-2/12 px-4">
                     <div className="relative w-full mb-3">
@@ -277,7 +308,7 @@ function FormClients() {
                   </div>
                   <div className="w-full lg:w-5/12 px-4">
                     <div className="relative w-full mb-3">
-                      <label className="block text-blueGray-600 text-xs font-bold mb-2">Correo Electronico</label>
+                      <label className="block text-blueGray-600 text-xs font-bold mb-2">Correo electrónico</label>
                       <input
                         type="text"
                         className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
@@ -309,7 +340,7 @@ function FormClients() {
                   </div>
                   <div className="w-full lg:w-12/12 px-4">
                     <div className="relative w-full mb-3">
-                      <label className="block text-blueGray-600 text-xs font-bold mb-2">Direccion</label>
+                      <label className="block text-blueGray-600 text-xs font-bold mb-2">Dirección</label>
                       <input
                         type="text"
                         className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
@@ -351,7 +382,7 @@ function FormClients() {
                       {errors.region && <p className="text-red-500 text-xs mt-1">{errors.region}</p>}
                     </div>
                   </div>
-                  <div className="w-full lg:w-2/12 px-4">
+                  <div className="w-full lg:w-3/12 px-4">
                     <div className="relative w-full mb-3">
                       <label className="block text-blueGray-600 text-xs font-bold mb-2">Estado</label>
                       <select id="select_state"
@@ -401,7 +432,7 @@ function FormClients() {
                       {errors.zona && <p className="text-red-500 text-xs mt-1">{errors.zona}</p>}
                     </div>
                   </div>
-                  <div className="w-full lg:w-2/12 px-4">
+                  <div className="w-full lg:w-1/12 px-4">
                     <div className="relative w-full mb-3">
                       <label className="block text-blueGray-600 text-xs font-bold mb-4">Condición</label>
                       {(client.activo == true) ? (

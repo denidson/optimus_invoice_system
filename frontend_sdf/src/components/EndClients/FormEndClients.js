@@ -207,8 +207,14 @@ function FormEndClients() {
                             if (!/[VJEPG123456789]/.test(value)) value = "";
                           } else if (value.length === 2) {
                               // Solo agregar guion si comienza con letra válida
-                              if (/[VJEPG]/.test(value[0]) && !value.includes("-")) {
-                                value = value[0] + "-" + value[1];
+                              if (/[VJEPG]/.test(value[0]) && /[1234567890]/.test(value[1]) && !value.includes("-")) {
+                                if (/[VJEPG1234567890-]/.test(value[1])){
+                                  value = value[0] + "-" + value[1];
+                                }else{
+                                  value = value[0];
+                                }
+                              }else if (!/[1234567890]/.test(value)) {
+                                value = value[0];
                               }
                             } else if (value.length > 2) {
                             // Nuevo: permitir solo números (hasta 8)
@@ -219,7 +225,6 @@ function FormEndClients() {
                             } else {
                               // Caso RIF tradicional
                               const match = value.match(/^([VJEPG])-(\d{0,8})-?(\d{0,1})?$/);
-8
                               if (match) {
                                 const [, letra, numeros, verificador] = match;
                                 value = `${letra}-${numeros}${numeros.length === 8 ? "-" : ""}${verificador || ""}`;

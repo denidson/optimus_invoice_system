@@ -990,6 +990,7 @@ const handleSearchRif = (value, type) => {
 
 const selectClient = async (client, type) => {
   if (type == 'admin'){
+    console.log('selectClient-client: ', client);
     setPreInvoice((prev) => ({
       ...prev,
       cliente_id: client.id || '#',
@@ -997,7 +998,7 @@ const selectClient = async (client, type) => {
       cliente_nombre: client.nombre_empresa || '',
     }));
     if (client && client.id){
-      console.log('selectClient-client: ', client);
+      console.log('selectClient-filterResultsAdmin: ', filterResultsAdmin[0]);
       const datacls = await getEndClients({ client_id: client.id });
       setEndClients(datacls.data);
       const datapts = await getProducts({ client_id: client.id });
@@ -1080,7 +1081,47 @@ const handleRadioChange = (event) => {
                             filterOptions={(options) => options} // usamos tu propio filtro manual
                             value={null}
                             inputValue={preInvoice.cliente_rif || ""}
-                            onInputChange={(e, value) => handleSearchRif(value, 'admin')}
+                            onInputChange={(e) => {
+                              let value = e.target.value.toString().toUpperCase();
+
+                              // Elimina caracteres no válidos (solo letras, números y guiones)
+                              value = value.replace(/[^A-Z0-9-]/g, "");
+
+                              // Forzar el patrón paso a paso
+                              if (value.length === 1) {
+                                // Primera posición → solo letras válidas
+                                if (!/[VJEPG123456789]/.test(value)) value = "";
+                              } else if (value.length === 2) {
+                                  // Solo agregar guion si comienza con letra válida
+                                  if (/[VJEPG]/.test(value[0]) && /[1234567890]/.test(value[1]) && !value.includes("-")) {
+                                    if (/[VJEPG1234567890-]/.test(value[1])){
+                                      value = value[0] + "-" + value[1];
+                                    }else{
+                                      value = value[0];
+                                    }
+                                  }else if (!/[1234567890]/.test(value)) {
+                                    value = value[0];
+                                  }
+                                } else if (value.length > 2) {
+                                // Nuevo: permitir solo números (hasta 8)
+                                const matchSoloNumeros = value.match(/^\d{0,8}$/);
+
+                                if (matchSoloNumeros) {
+                                  value = matchSoloNumeros[0];
+                                } else {
+                                  // Caso RIF tradicional
+                                  const match = value.match(/^([VJEPG])-(\d{0,8})-?(\d{0,1})?$/);
+                                  if (match) {
+                                    const [, letra, numeros, verificador] = match;
+                                    value = `${letra}-${numeros}${numeros.length === 8 ? "-" : ""}${verificador || ""}`;
+                                  } else {
+                                    value = preInvoice.cliente_rif;
+                                  }
+                                }
+                              }
+
+                              handleSearchRif(value, 'admin')
+                            }}
                             onChange={(event, newValue) => {
                               if (newValue) selectClient(newValue, 'admin');
                             }}
@@ -1220,6 +1261,45 @@ const handleRadioChange = (event) => {
                                 placeholder="V-12345678-0"
                                 variant="outlined"
                                 size="small"
+                                onChange={(e) => {
+                                  let value = e.target.value.toUpperCase();
+
+                                  // Elimina caracteres no válidos (solo letras, números y guiones)
+                                  value = value.replace(/[^A-Z0-9-]/g, "");
+
+                                  // Forzar el patrón paso a paso
+                                  if (value.length === 1) {
+                                    // Primera posición → solo letras válidas
+                                    if (!/[VJEPG123456789]/.test(value)) value = "";
+                                  } else if (value.length === 2) {
+                                      // Solo agregar guion si comienza con letra válida
+                                      if (/[VJEPG]/.test(value[0]) && !value.includes("-")) {
+                                        if (/[VJEPG123456789-]/.test(value[1])){
+                                          value = value[0] + "-" + value[1];
+                                        }else{
+                                          value = value[0];
+                                        }
+                                      }
+                                    } else if (value.length > 2) {
+                                    // Nuevo: permitir solo números (hasta 8)
+                                    const matchSoloNumeros = value.match(/^\d{0,8}$/);
+
+                                    if (matchSoloNumeros) {
+                                      value = matchSoloNumeros[0];
+                                    } else {
+                                      // Caso RIF tradicional
+                                      const match = value.match(/^([VJEPG])-(\d{0,8})-?(\d{0,1})?$/);
+                                      if (match) {
+                                        const [, letra, numeros, verificador] = match;
+                                        value = `${letra}-${numeros}${numeros.length === 8 ? "-" : ""}${verificador || ""}`;
+                                      } else {
+                                        value = preInvoice.cliente_final_rif;
+                                      }
+                                    }
+                                  }
+
+                                  setPreInvoice({ ...preInvoice, cliente_final_rif: value });
+                                }}
                                 onKeyDown={(e) => {
                                   // Si el usuario presiona Backspace
                                   if (e.key === "Backspace") {

@@ -103,13 +103,13 @@ export default function ProfileContent({ client: initialClient, profile: initial
               <input
                 type="text"
                 value={data.nombre_empresa}
-                onChange={(e) => setData({ ...data, nombre_empresa: e.target.value })}
+                onChange={(e) => setData({ ...data, nombre_empresa: e.target.value.toUpperCase() })}
                 className="border px-2 py-1 rounded text-center text-xl font-semibold"
               />
               <input
                 type="email"
                 value={data.email}
-                onChange={(e) => setData({ ...data, email: e.target.value })}
+                onChange={(e) => setData({ ...data, email: e.target.value.toUpperCase() })}
                 className="border px-2 py-1 rounded text-center text-gray-500 mt-2"
               />
             </>
@@ -133,14 +133,14 @@ export default function ProfileContent({ client: initialClient, profile: initial
         {isClient && (
           <div className="grid sm:grid-cols-2 gap-4">
 
-            {["rif", "telefono", "direccion", "zona", "estado", "region"].map((field) => (
+            {["rif", "denominacion_comercial", "telefono", "direccion", "zona", "estado", "region"].map((field) => (
               <div key={field}>
-                <h3 className="text-sm text-gray-500">{field.toUpperCase()}</h3>
+                <h3 className="text-sm text-gray-500">{field.replace('_', ' ').toUpperCase()}</h3>
                 {isEditing ? (
                   <input
                     type="text"
                     value={data[field] || ""}
-                    onChange={(e) => setData({ ...data, [field]: e.target.value })}
+                    onChange={(e) => setData({ ...data, [field]: e.target.value.toUpperCase() })}
                     className="border px-2 py-1 rounded w-full"
                   />
                 ) : (
