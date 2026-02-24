@@ -356,7 +356,7 @@ function SalesBook({ title, type }) {
                   dom: //B = Buttons, l = LengthMenu (mostrar X registros), f = Filtro (search), t = Tabla, i = Info (mostrando de X a Y de Z), p = Paginación
                     "<'row'<'col-sm-12 text-start'B>>" +                // Fila 2: botones ocupando todo el ancho
                     "<'row'<'col-sm-6 text-end'l><'col-sm-6'f>>" +    // Fila 1: lengthMenu izquierda, filtro derecha
-                    "<'row'<'col-sm-12'tr>>" +               // Fila 3: tabla
+                    "<'row'<'col-sm-12'rt>>" +               // Fila 3: tabla
                     "<'row'<'col-sm-5 text-start'i><'col-sm-7 text-end'p>>",     // Fila 4: info izquierda, paginación derecha
                   /*dom:
                     "<'row'<'col-sm-12 text-start'B>>" +
@@ -369,6 +369,7 @@ function SalesBook({ title, type }) {
                   scrollX: true,
                   scrollCollapse: true,
                   autoWidth: false,
+                  paging: false,
                   pageLength: 20,         // cantidad inicial por página
                   lengthMenu: [20, 50, 100], // opciones en el desplegable, false para oculta el selector
                   buttons: [
@@ -576,7 +577,7 @@ function SalesBook({ title, type }) {
                       callback({
                         draw: dataTablesParams.draw,
                         recordsTotal: hoja_detalle.length,
-                        recordsFiltered: hoja_resumen,
+                        recordsFiltered: hoja_detalle.length,
                         data: hoja_detalle,
                       });
                     } catch {
@@ -619,112 +620,3 @@ function SalesBook({ title, type }) {
 }
 
 export default SalesBook;
-
-
-
-/* ⚙️ Atributos principales de options
-🔹 Control de datos y renderizado
-
-data: datos a renderizar (array de objetos o array de arrays).
-
-columns: definición de columnas (title, data, render, orderable, searchable, className, etc.).
-
-ajax: URL o función para cargar datos dinámicamente.
-
-deferRender: true → mejora rendimiento cargando filas bajo demanda.
-
-serverSide: true → delega búsqueda, ordenamiento y paginación al backend.
-
-processing: true → muestra mensaje de "Procesando…" cuando hay carga de datos.
-
-🔹 Paginación
-
-paging: habilita/deshabilita paginación (true/false).
-
-pageLength: número de registros por página (ej: 10).
-
-lengthMenu: array con opciones de tamaño de página. Ej: [5, 10, 25, 50] o [[5, 10, -1], [5, 10, "Todos"]].
-
-pagingType: tipo de paginación. Ej: simple, simple_numbers, full, full_numbers, first_last_numbers.
-
-🔹 Búsqueda y filtrado
-
-searching: habilita la caja de búsqueda.
-
-search: objeto de configuración inicial de búsqueda. Ej: { search: "texto" }.
-
-searchDelay: milisegundos de delay antes de lanzar búsqueda (para optimizar).
-
-🔹 Ordenamiento
-
-ordering: habilita ordenamiento en columnas.
-
-order: orden inicial. Ej: [[0, "asc"], [1, "desc"]].
-
-orderFixed: orden fijo que no cambia.
-
-columnDefs: personaliza columnas por índice (targets). Ej: ocultar, hacer no ordenable, etc.
-
-🔹 Estilos y UI
-
-dom: controla la posición de elementos (B=botones, f=filtro, l=selector length, r=processing, t=tabla, i=info, p=paginación). Ej: "Blfrtip".
-
-buttons: array de botones (con extensiones datatables.net-buttons).
-
-autoWidth: ajusta automáticamente el ancho de columnas (true/false).
-
-scrollX: activa scroll horizontal.
-
-scrollY: activa scroll vertical fijo.
-
-responsive: adapta tabla a pantallas pequeñas.
-
-🔹 Idioma
-
-language: objeto para traducir la interfaz. Ejemplo:
-
-language: {
-  decimal: ",",
-  thousands: ".",
-  search: "Buscar:",
-  lengthMenu: "Mostrar _MENU_ registros",
-  info: "Mostrando _START_ a _END_ de _TOTAL_ registros",
-  paginate: { first: "Primero", last: "Último", next: "Siguiente", previous: "Anterior" }
-}
-
-
-También puedes usar un archivo remoto JSON oficial (cdn.datatables.net/plug-ins/.../i18n/Spanish.json).
-
-🔹 Exportación (requiere datatables.net-buttons)
-
-buttons → cada botón puede tener:
-
-extend: tipo de exportación (copyHtml5, excelHtml5, csvHtml5, pdfHtml5, print).
-
-text: texto en el botón.
-
-title: título del documento exportado.
-
-filename: nombre de archivo exportado.
-
-exportOptions: qué columnas exportar.
-
-Ejemplo:
-
-buttons: [
-  { extend: "copyHtml5", text: "Copiar" },
-  { extend: "excelHtml5", text: "Excel", filename: "Lista_Clientes" },
-  { extend: "pdfHtml5", text: "PDF", title: "Lista de Clientes", orientation: "landscape" },
-  { extend: "print", text: "Imprimir" }
-]
-
-🔹 Callbacks y eventos
-
-initComplete: función al finalizar la inicialización.
-
-rowCallback: manipula cada fila en el render.
-
-drawCallback: ejecuta algo cada vez que se dibuja la tabla.
-
-createdRow: manipula fila al momento de ser creada.
-*/
