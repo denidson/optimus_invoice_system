@@ -24,7 +24,6 @@ import { formatDecimal, formatDate, formatDateTime, formatText, formatInteger } 
 import Papa from 'papaparse';
 import { tooltipBtn } from "../../utils/datatableTooltip";
 
-
 window.JSZip = JSZip;
 DataTable.use(DT);
 
@@ -37,7 +36,7 @@ function SalesBook({ title, type }) {
   const [preInvoicesToImport, setPreInvoicesToImport] = useState([]);
   const [filterType, setFilterType] = useState("");
   var responseCache = useState(false);
-
+  const [showSummary, setShowSummary] = useState(null);
   const authData = localStorage.getItem("authData");
   const authclientId = authData ? JSON.parse(authData).cliente_id : null;
   const formattedDate = new Date().toISOString().split("T")[0];
@@ -170,168 +169,168 @@ function SalesBook({ title, type }) {
                     }
                   },
                   {
-                    title: "VCT - Ventas Internas No Gravadas",
+                    title: " Ventas Internas No Gravadas",
                     data: "",
                     render: (data, type, row) => {
                       return formatDecimal(0.0);
                     }
                   },
                   {
-                    title: "VCT - Base Imponible",
+                    title: " Base Imponible",
                     data: "",
                     render: (data, type, row) => {
                       return formatDecimal(0.0);
                     }
                   },
                   {
-                    title: "VCT - % Alicuota",
+                    title: " % Alicuota",
                     data: "",
                     render: (data, type, row) => {
                       return formatDecimal(0.0);
                     }
                   },
                   {
-                    title: "VCT - Impuesto I.V.A",
+                    title: " Impuesto I.V.A",
                     data: "",
                     render: (data, type, row) => {
                       return formatDecimal(0.0);
                     }
                   },
                   {
-                    title: "C - Ventas Internas No Gravadas",
+                    title: "Ventas Internas No Gravadas",
                     data: "ventas_exentas",
                     render: (data, type, row) => {
                       return formatDecimal(data);
                     }
                   },
                   {
-                    title: "C - Base Imponible",
+                    title: "Base Imponible",
                     data: "base_imponible",
                     render: (data, type, row) => {
                       return formatDecimal(data);
                     }
                   },
                   {
-                    title: "C - % Alicuota General",
+                    title: "% Alicuota General",
                     data: "alicuota",
                     render: (data, type, row) => {
                       return formatDecimal(data);
                     }
                   },
                   {
-                    title: "C - Impuesto I.V.A",
+                    title: "Impuesto I.V.A",
                     data: "impuesto_iva",
                     render: (data, type, row) => {
                       return formatDecimal(data);
                     }
                   },
                   {
-                    title: "C - Base Imponible",
+                    title: "Base Imponible",
                     data: "base_imponible",
                     render: (data, type, row) => {
                       return formatDecimal(data);
                     }
                   },
                   {
-                    title: "C - % Alicuota Reducida",
+                    title: "% Alicuota Reducida",
                     data: "alicuota",
                     render: (data, type, row) => {
                       return formatDecimal(data);
                     }
                   },
                   {
-                    title: "C - Impuesto I.V.A",
+                    title: "Impuesto I.V.A",
                     data: "impuesto_iva",
                     render: (data, type, row) => {
                       return formatDecimal(data);
                     }
                   },
                   {
-                    title: "C - Base Imponible",
+                    title: "Base Imponible",
                     data: "base_imponible",
                     render: (data, type, row) => {
                       return formatDecimal(data);
                     }
                   },
                   {
-                    title: "C - % Alicuota Adicional",
+                    title: "% Alicuota Adicional",
                     data: "alicuota",
                     render: (data, type, row) => {
                       return formatDecimal(data);
                     }
                   },
                   {
-                    title: "C - Impuesto I.V.A",
+                    title: "Impuesto I.V.A",
                     data: "impuesto_iva",
                     render: (data, type, row) => {
                       return formatDecimal(data);
                     }
                   },
                   {
-                    title: "NC - Ventas Internas No Gravadas",
+                    title: " Ventas Internas No Gravadas",
                     data: "ventas_exentas",
                     render: (data, type, row) => {
                       return formatDecimal(data);
                     }
                   },
                   {
-                    title: "NC - Base Imponible",
+                    title: " Base Imponible",
                     data: "base_imponible",
                     render: (data, type, row) => {
                       return formatDecimal(data);
                     }
                   },
                   {
-                    title: "NC - % Alicuota General",
+                    title: " % Alicuota General",
                     data: "alicuota",
                     render: (data, type, row) => {
                       return formatDecimal(data);
                     }
                   },
                   {
-                    title: "NC - Impuesto I.V.A",
+                    title: " Impuesto I.V.A",
                     data: "impuesto_iva",
                     render: (data, type, row) => {
                       return formatDecimal(data);
                     }
                   },
                   {
-                    title: "NC - Base Imponible",
+                    title: " Base Imponible",
                     data: "base_imponible",
                     render: (data, type, row) => {
                       return formatDecimal(data);
                     }
                   },
                   {
-                    title: "NC - % Alicuota Reducida",
+                    title: " % Alicuota Reducida",
                     data: "alicuota",
                     render: (data, type, row) => {
                       return formatDecimal(data);
                     }
                   },
                   {
-                    title: "NC - Impuesto I.V.A",
+                    title: " Impuesto I.V.A",
                     data: "impuesto_iva",
                     render: (data, type, row) => {
                       return formatDecimal(data);
                     }
                   },
                   {
-                    title: "NC - Base Imponible",
+                    title: " Base Imponible",
                     data: "base_imponible",
                     render: (data, type, row) => {
                       return formatDecimal(data);
                     }
                   },
                   {
-                    title: "NC - % Alicuota Adicional",
+                    title: " % Alicuota Adicional",
                     data: "alicuota",
                     render: (data, type, row) => {
                       return formatDecimal(data);
                     }
                   },
                   {
-                    title: "NC - Impuesto I.V.A",
+                    title: " Impuesto I.V.A",
                     data: "impuesto_iva",
                     render: (data, type, row) => {
                       return formatDecimal(data);
@@ -355,7 +354,7 @@ function SalesBook({ title, type }) {
                 options={{
                   dom: //B = Buttons, l = LengthMenu (mostrar X registros), f = Filtro (search), t = Tabla, i = Info (mostrando de X a Y de Z), p = Paginación
                     "<'row'<'col-sm-12 text-start'B>>" +                // Fila 2: botones ocupando todo el ancho
-                    "<'row'<'col-sm-6 text-end'l><'col-sm-6'f>>" +    // Fila 1: lengthMenu izquierda, filtro derecha
+                    "<'row'<'col-sm-6 text-end'l><'col-sm-6 py-5'f>>" +    // Fila 1: lengthMenu izquierda, filtro derecha
                     "<'row'<'col-sm-12'rt>>" +               // Fila 3: tabla
                     "<'row'<'col-sm-5 text-start'i><'col-sm-7 text-end'p>>",     // Fila 4: info izquierda, paginación derecha
                   /*dom:
@@ -366,10 +365,11 @@ function SalesBook({ title, type }) {
                   serverSide: true, // si es true la paginación se debe controlar a traves del servidor
                   searching: true,
                   processing: true,
-                  scrollX: true,
+                  //scrollX: true,
                   scrollCollapse: true,
                   autoWidth: false,
                   paging: false,
+                  //fixedHeader: true,
                   pageLength: 20,         // cantidad inicial por página
                   lengthMenu: [20, 50, 100], // opciones en el desplegable, false para oculta el selector
                   buttons: [
@@ -538,8 +538,16 @@ function SalesBook({ title, type }) {
                         const response = $('#filter_type option:selected').val() != '-' ? await getSalesBook(query) : [];
                         //console.log('response: ', response);
                         // Respaldar response anterior
-                        responseCache = response;
-                        //console.log('responseCache: ', responseCache);
+                        if (response.error == undefined){
+                          responseCache = response;
+                          setShowSummary(response);
+                        }else{
+                          response.hoja_detalle = [];
+                          responseCache = response;
+                          setShowSummary(response);
+                        }
+                        console.log('responseCache: ', responseCache);
+                        console.log('responseCache: ', responseCache.hoja_detalle.length);
 
                         // Aseguramos que la estructura esperada esté presente
                         var { hoja_detalle, hoja_resumen } = response;
@@ -601,16 +609,316 @@ function SalesBook({ title, type }) {
                       "overflow": "visible"
                     });
                   },
-                  headerCallback: function(thead) {
-                    $(thead).find("th").css({
-                      "font-size": "0.85rem", 
-                      "text-align": "center",
-                      "font-weight": "bold"
-                    });
-                  }
+                  headerCallback: function(thead, data, start, end, display) {
+                    const api = this.api();
+                    const $table = $(api.table().container());
+
+                    // Función para contar columnas consecutivas con un prefijo
+                    const countSpan = (startIndex, prefix) => {
+                      let span = 0;
+                      const colCount = api.columns().count();
+                      if (prefix == 'gp-end -'){
+                        span = 2;
+                      }else if (prefix == 'gp-start -'){
+                        span = 10;
+                      }else if (startIndex == 10){
+                        span = 4;
+                      }else if (startIndex == 14 || startIndex == 24){
+                        span = 10;
+                      }
+                      //console.log('span: ', span);
+                      return span;
+                    };
+
+                    // Crear la fila de encabezado agrupado
+                    const $groupRow = $('<tr class="group-header"></tr>');
+                    const colCount = api.columns().count();
+                    let colIndex = 0;
+
+                    while (colIndex < colCount) {
+                      const title = api.column(colIndex).header().textContent;
+                      if (colIndex == 10) {
+                        const span = countSpan(colIndex, "");
+                        $groupRow.append(`<th colspan="${span}" class="text-center border">Ventas por cuenta de terceros</th>`);
+                        colIndex += span;
+                      } else if (colIndex == 14) {
+                        const span = countSpan(colIndex, "");
+                        $groupRow.append(`<th colspan="${span}" class="text-center border">Contribuyente</th>`);
+                        colIndex += span;
+                      } else if (colIndex == 24) {
+                        const span = countSpan(colIndex, "");
+                        $groupRow.append(`<th colspan="${span}" class="text-center border">No contribuyente</th>`);
+                        colIndex += span;
+                      } else if (title == 'I.V.A Retenido' || title == 'I.G.T.F Percibido') {
+                        const span = countSpan(colIndex, "gp-end -");
+                        $groupRow.append(`<th colspan="${span}" class="text-center border"></th>`);
+                        colIndex += span;
+                      } else {
+                        const span = countSpan(colIndex, "gp-start -");
+                        $groupRow.append(`<th colspan="${span}" class="text-center border"></th>`);
+                        colIndex += span;
+                      }
+                    }
+
+                    // Función para insertar la fila de agrupación en cualquier thead
+                    const insertGroupHeader = ($thead) => {
+                      // Evitar duplicados
+                      if ($thead.find('tr.group-header').length === 0) {
+                        $thead.find('tr').first().before($groupRow.clone(true));
+                      }
+                    };
+
+                    // Insertar en thead principal
+                    insertGroupHeader($table.find('.dataTables_scrollHead thead'));
+
+                    // Si hay FixedHeader o multiple thead, insertar también
+                    insertGroupHeader($table.find('thead')); // fallback general
+                  },
                 }}
               />
             </div>
+            {(showSummary?.hoja_detalle?.length || 0) > 0 && (
+            <div className="w-full px-4 py-4 overflow-x-auto">
+              <div class="flex flex-wrap py-1">
+                <div class="w-full md:w-4/12 px-2">
+                  <h6 className="text-blueGray-700 text-sm font-bold">Resumen general</h6>
+                </div>
+                <div class="w-full md:w-2/12 px-2">
+                  <h6 className="text-blueGray-700 text-sm font-bold text-center">Base imponible</h6>
+                </div>
+                <div class="w-full md:w-2/12 px-2">
+                  <h6 className="text-blueGray-700 text-sm font-bold text-center">Débito fiscal</h6>
+                </div>
+                <div class="w-full md:w-2/12 px-2">
+                  <h6 className="text-blueGray-700 text-sm font-bold text-center">IVA retenido</h6>
+                </div>
+                <div class="w-full md:w-2/12 px-2">
+                  <h6 className="text-blueGray-700 text-sm font-bold text-center">IGTF percibido</h6>
+                </div>
+              </div>
+              <div class="flex flex-wrap border border-top-1 py-1">
+                <div class="w-full md:w-4/12 px-2">
+                  <h6 className="text-blueGray-700 text-sm font-bold">Total ventas internas no gravadas</h6>
+                </div>
+                <div class="w-full md:w-2/12 px-2">
+                  <h6 className="text-blueGray-700 text-sm font-bold text-end">{formatDecimal(showSummary?.hoja_resumen.ventas_internas_no_gravadas || 0.0)}</h6>
+                </div>
+                <div class="w-full md:w-2/12 px-2">
+                  <h6 className="text-blueGray-700 text-sm font-bold text-end">0,00</h6>
+                </div>
+                <div class="w-full md:w-2/12 px-2">
+                  <h6 className="text-blueGray-700 text-sm font-bold text-end">0,00</h6>
+                </div>
+                <div class="w-full md:w-2/12 px-2">
+                  <h6 className="text-blueGray-700 text-sm font-bold text-end">0,00</h6>
+                </div>
+              </div>
+              <div class="flex flex-wrap border border-top-1 py-1">
+                <div class="w-full md:w-4/12 px-2">
+                  <h6 className="text-blueGray-700 text-sm font-bold">Total nota de crédito no gravadas</h6>
+                </div>
+                <div class="w-full md:w-2/12 px-2">
+                  <h6 className="text-blueGray-700 text-sm font-bold text-end">{formatDecimal(showSummary?.hoja_resumen.ventas_internas_no_gravadas || 0.0)}</h6>
+                </div>
+                <div class="w-full md:w-2/12 px-2">
+                  <h6 className="text-blueGray-700 text-sm font-bold text-end">0,00</h6>
+                </div>
+                <div class="w-full md:w-2/12 px-2">
+                  <h6 className="text-blueGray-700 text-sm font-bold text-end">0,00</h6>
+                </div>
+                <div class="w-full md:w-2/12 px-2">
+                  <h6 className="text-blueGray-700 text-sm font-bold text-end">0,00</h6>
+                </div>
+              </div>
+              <div class="flex flex-wrap border border-top-1 py-1">
+                <div class="w-full md:w-4/12 px-2">
+                  <h6 className="text-blueGray-700 text-sm font-bold">Total nota de débito no gravadas</h6>
+                </div>
+                <div class="w-full md:w-2/12 px-2">
+                  <h6 className="text-blueGray-700 text-sm font-bold text-end">{formatDecimal(showSummary?.hoja_resumen.ventas_internas_no_gravadas || 0.0)}</h6>
+                </div>
+                <div class="w-full md:w-2/12 px-2">
+                  <h6 className="text-blueGray-700 text-sm font-bold text-end">0,00</h6>
+                </div>
+                <div class="w-full md:w-2/12 px-2">
+                  <h6 className="text-blueGray-700 text-sm font-bold text-end">0,00</h6>
+                </div>
+                <div class="w-full md:w-2/12 px-2">
+                  <h6 className="text-blueGray-700 text-sm font-bold text-end">0,00</h6>
+                </div>
+              </div>
+              <div class="flex flex-wrap border border-top-1 py-1">
+                <div class="w-full md:w-4/12 px-2">
+                  <h6 className="text-blueGray-700 text-sm font-bold">Total ventas internas afectadas sólo alícuota general 16.00</h6>
+                </div>
+                <div class="w-full md:w-2/12 px-2">
+                  <h6 className="text-blueGray-700 text-sm font-bold text-end">{formatDecimal(showSummary?.hoja_resumen.ventas_internas_gravadas_alic_general || 0.0)}</h6>
+                </div>
+                <div class="w-full md:w-2/12 px-2">
+                  <h6 className="text-blueGray-700 text-sm font-bold text-end">{formatDecimal(showSummary?.hoja_resumen.iva_alic_general || 0.0)}</h6>
+                </div>
+                <div class="w-full md:w-2/12 px-2">
+                  <h6 className="text-blueGray-700 text-sm font-bold text-end">{formatDecimal(showSummary?.hoja_resumen.total_iva_retenido_periodo || 0.0)}</h6>
+                </div>
+                <div class="w-full md:w-2/12 px-2">
+                  <h6 className="text-blueGray-700 text-sm font-bold text-end">{formatDecimal(showSummary?.hoja_resumen.total_igtf_percibido || 0.0)}</h6>
+                </div>
+              </div>
+              <div class="flex flex-wrap border border-top-1 py-1">
+                <div class="w-full md:w-4/12 px-2">
+                  <h6 className="text-blueGray-700 text-sm font-bold">Total ventas internas afectadas sólo alícuota reducida 8.00</h6>
+                </div>
+                <div class="w-full md:w-2/12 px-2">
+                  <h6 className="text-blueGray-700 text-sm font-bold text-end">{formatDecimal(showSummary?.hoja_resumen.ventas_internas_gravadas_alic_general || 0.0)}</h6>
+                </div>
+                <div class="w-full md:w-2/12 px-2">
+                  <h6 className="text-blueGray-700 text-sm font-bold text-end">{formatDecimal(showSummary?.hoja_resumen.iva_alic_general || 0.0)}</h6>
+                </div>
+                <div class="w-full md:w-2/12 px-2">
+                  <h6 className="text-blueGray-700 text-sm font-bold text-end">{formatDecimal(showSummary?.hoja_resumen.total_iva_retenido_periodo || 0.0)}</h6>
+                </div>
+                <div class="w-full md:w-2/12 px-2">
+                  <h6 className="text-blueGray-700 text-sm font-bold text-end">{formatDecimal(showSummary?.hoja_resumen.total_igtf_percibido || 0.0)}</h6>
+                </div>
+              </div>
+              <div class="flex flex-wrap border border-top-1 py-1">
+                <div class="w-full md:w-4/12 px-2">
+                  <h6 className="text-blueGray-700 text-sm font-bold">Total ventas internas afectadas sólo alícuota adicional 31.00</h6>
+                </div>
+                <div class="w-full md:w-2/12 px-2">
+                  <h6 className="text-blueGray-700 text-sm font-bold text-end">{formatDecimal(showSummary?.hoja_resumen.ventas_internas_gravadas_alic_general || 0.0)}</h6>
+                </div>
+                <div class="w-full md:w-2/12 px-2">
+                  <h6 className="text-blueGray-700 text-sm font-bold text-end">{formatDecimal(showSummary?.hoja_resumen.iva_alic_general || 0.0)}</h6>
+                </div>
+                <div class="w-full md:w-2/12 px-2">
+                  <h6 className="text-blueGray-700 text-sm font-bold text-end">{formatDecimal(showSummary?.hoja_resumen.total_iva_retenido_periodo || 0.0)}</h6>
+                </div>
+                <div class="w-full md:w-2/12 px-2">
+                  <h6 className="text-blueGray-700 text-sm font-bold text-end">{formatDecimal(showSummary?.hoja_resumen.total_igtf_percibido || 0.0)}</h6>
+                </div>
+              </div>
+              <div class="flex flex-wrap border border-top-1 py-1">
+                <div class="w-full md:w-4/12 px-2">
+                  <h6 className="text-blueGray-700 text-sm font-bold">Total notas de crédito o devoluciones aplicadas en ventas 16%</h6>
+                </div>
+                <div class="w-full md:w-2/12 px-2">
+                  <h6 className="text-blueGray-700 text-sm font-bold text-end">{formatDecimal(showSummary?.hoja_resumen.ventas_internas_gravadas_alic_general || 0.0)}</h6>
+                </div>
+                <div class="w-full md:w-2/12 px-2">
+                  <h6 className="text-blueGray-700 text-sm font-bold text-end">{formatDecimal(showSummary?.hoja_resumen.iva_alic_general || 0.0)}</h6>
+                </div>
+                <div class="w-full md:w-2/12 px-2">
+                  <h6 className="text-blueGray-700 text-sm font-bold text-end">{formatDecimal(showSummary?.hoja_resumen.total_iva_retenido_periodo || 0.0)}</h6>
+                </div>
+                <div class="w-full md:w-2/12 px-2">
+                  <h6 className="text-blueGray-700 text-sm font-bold text-end">{formatDecimal(showSummary?.hoja_resumen.total_igtf_percibido || 0.0)}</h6>
+                </div>
+              </div>
+              <div class="flex flex-wrap border border-top-1 py-1">
+                <div class="w-full md:w-4/12 px-2">
+                  <h6 className="text-blueGray-700 text-sm font-bold">Total notas de crédito o devoluciones aplicadas en ventas 8%</h6>
+                </div>
+                <div class="w-full md:w-2/12 px-2">
+                  <h6 className="text-blueGray-700 text-sm font-bold text-end">{formatDecimal(showSummary?.hoja_resumen.ventas_internas_gravadas_alic_general || 0.0)}</h6>
+                </div>
+                <div class="w-full md:w-2/12 px-2">
+                  <h6 className="text-blueGray-700 text-sm font-bold text-end">{formatDecimal(showSummary?.hoja_resumen.iva_alic_general || 0.0)}</h6>
+                </div>
+                <div class="w-full md:w-2/12 px-2">
+                  <h6 className="text-blueGray-700 text-sm font-bold text-end">{formatDecimal(showSummary?.hoja_resumen.total_iva_retenido_periodo || 0.0)}</h6>
+                </div>
+                <div class="w-full md:w-2/12 px-2">
+                  <h6 className="text-blueGray-700 text-sm font-bold text-end">{formatDecimal(showSummary?.hoja_resumen.total_igtf_percibido || 0.0)}</h6>
+                </div>
+              </div>
+              <div class="flex flex-wrap border border-top-1 py-1">
+                <div class="w-full md:w-4/12 px-2">
+                  <h6 className="text-blueGray-700 text-sm font-bold">Total notas de crédito o devoluciones aplicadas en ventas 31%</h6>
+                </div>
+                <div class="w-full md:w-2/12 px-2">
+                  <h6 className="text-blueGray-700 text-sm font-bold text-end">{formatDecimal(showSummary?.hoja_resumen.ventas_internas_gravadas_alic_general || 0.0)}</h6>
+                </div>
+                <div class="w-full md:w-2/12 px-2">
+                  <h6 className="text-blueGray-700 text-sm font-bold text-end">{formatDecimal(showSummary?.hoja_resumen.iva_alic_general || 0.0)}</h6>
+                </div>
+                <div class="w-full md:w-2/12 px-2">
+                  <h6 className="text-blueGray-700 text-sm font-bold text-end">{formatDecimal(showSummary?.hoja_resumen.total_iva_retenido_periodo || 0.0)}</h6>
+                </div>
+                <div class="w-full md:w-2/12 px-2">
+                  <h6 className="text-blueGray-700 text-sm font-bold text-end">{formatDecimal(showSummary?.hoja_resumen.total_igtf_percibido || 0.0)}</h6>
+                </div>
+              </div>
+              <div class="flex flex-wrap border border-top-1 py-1">
+                <div class="w-full md:w-4/12 px-2">
+                  <h6 className="text-blueGray-700 text-sm font-bold">Total notas de débito o recargos aplicadas en Ventas 16%</h6>
+                </div>
+                <div class="w-full md:w-2/12 px-2">
+                  <h6 className="text-blueGray-700 text-sm font-bold text-end">{formatDecimal(showSummary?.hoja_resumen.ventas_internas_gravadas_alic_general || 0.0)}</h6>
+                </div>
+                <div class="w-full md:w-2/12 px-2">
+                  <h6 className="text-blueGray-700 text-sm font-bold text-end">{formatDecimal(showSummary?.hoja_resumen.iva_alic_general || 0.0)}</h6>
+                </div>
+                <div class="w-full md:w-2/12 px-2">
+                  <h6 className="text-blueGray-700 text-sm font-bold text-end">{formatDecimal(showSummary?.hoja_resumen.total_iva_retenido_periodo || 0.0)}</h6>
+                </div>
+                <div class="w-full md:w-2/12 px-2">
+                  <h6 className="text-blueGray-700 text-sm font-bold text-end">{formatDecimal(showSummary?.hoja_resumen.total_igtf_percibido || 0.0)}</h6>
+                </div>
+              </div>
+              <div class="flex flex-wrap border border-top-1 py-1">
+                <div class="w-full md:w-4/12 px-2">
+                  <h6 className="text-blueGray-700 text-sm font-bold">Total notas de débito o recargos aplicadas en Ventas 8%</h6>
+                </div>
+                <div class="w-full md:w-2/12 px-2">
+                  <h6 className="text-blueGray-700 text-sm font-bold text-end">{formatDecimal(showSummary?.hoja_resumen.ventas_internas_gravadas_alic_general || 0.0)}</h6>
+                </div>
+                <div class="w-full md:w-2/12 px-2">
+                  <h6 className="text-blueGray-700 text-sm font-bold text-end">{formatDecimal(showSummary?.hoja_resumen.iva_alic_general || 0.0)}</h6>
+                </div>
+                <div class="w-full md:w-2/12 px-2">
+                  <h6 className="text-blueGray-700 text-sm font-bold text-end">{formatDecimal(showSummary?.hoja_resumen.total_iva_retenido_periodo || 0.0)}</h6>
+                </div>
+                <div class="w-full md:w-2/12 px-2">
+                  <h6 className="text-blueGray-700 text-sm font-bold text-end">{formatDecimal(showSummary?.hoja_resumen.total_igtf_percibido || 0.0)}</h6>
+                </div>
+              </div>
+              <div class="flex flex-wrap border border-top-1 py-1">
+                <div class="w-full md:w-4/12 px-2">
+                  <h6 className="text-blueGray-700 text-sm font-bold">Total notas de débito o recargos aplicadas en ventas 31%</h6>
+                </div>
+                <div class="w-full md:w-2/12 px-2">
+                  <h6 className="text-blueGray-700 text-sm font-bold text-end">{formatDecimal(showSummary?.hoja_resumen.ventas_internas_gravadas_alic_general || 0.0)}</h6>
+                </div>
+                <div class="w-full md:w-2/12 px-2">
+                  <h6 className="text-blueGray-700 text-sm font-bold text-end">{formatDecimal(showSummary?.hoja_resumen.iva_alic_general || 0.0)}</h6>
+                </div>
+                <div class="w-full md:w-2/12 px-2">
+                  <h6 className="text-blueGray-700 text-sm font-bold text-end">{formatDecimal(showSummary?.hoja_resumen.total_iva_retenido_periodo || 0.0)}</h6>
+                </div>
+                <div class="w-full md:w-2/12 px-2">
+                  <h6 className="text-blueGray-700 text-sm font-bold text-end">{formatDecimal(showSummary?.hoja_resumen.total_igtf_percibido || 0.0)}</h6>
+                </div>
+              </div>
+              <div class="flex flex-wrap border border-top-1 py-1">
+                <div class="w-full md:w-4/12 px-2">
+                  <h6 className="text-blueGray-700 text-sm font-bold">Total</h6>
+                </div>
+                <div class="w-full md:w-2/12 px-2">
+                  <h6 className="text-blueGray-700 text-sm font-bold text-end">{formatDecimal(showSummary?.hoja_resumen.ventas_internas_gravadas_alic_general || 0.0)}</h6>
+                </div>
+                <div class="w-full md:w-2/12 px-2">
+                  <h6 className="text-blueGray-700 text-sm font-bold text-end">{formatDecimal(showSummary?.hoja_resumen.iva_alic_general || 0.0)}</h6>
+                </div>
+                <div class="w-full md:w-2/12 px-2">
+                  <h6 className="text-blueGray-700 text-sm font-bold text-end">{formatDecimal(showSummary?.hoja_resumen.total_iva_retenido_periodo || 0.0)}</h6>
+                </div>
+                <div class="w-full md:w-2/12 px-2">
+                  <h6 className="text-blueGray-700 text-sm font-bold text-end">{formatDecimal(showSummary?.hoja_resumen.total_igtf_percibido || 0.0)}</h6>
+                </div>
+              </div>
+            </div>
+            )}
           </div>
         </div>
       </div>
