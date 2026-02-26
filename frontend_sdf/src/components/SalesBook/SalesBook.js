@@ -18,8 +18,7 @@ import JSZip from "jszip";
 import pdfMake from "pdfmake/build/pdfmake";
 import pdfFonts from "pdfmake/build/vfs_fonts";
 //import { read, utils } from 'xlsx';
-import * as XLSX from "xlsx";
-const { read, utils } = XLSX;
+import XLSX from "xlsx-js-style";
 import { formatDecimal, formatDate, formatDateTime, formatText, formatInteger } from "../../utils/formatters";
 import Papa from 'papaparse';
 import { tooltipBtn } from "../../utils/datatableTooltip";
@@ -52,6 +51,182 @@ function SalesBook({ title, type }) {
     table.search("");
     table.columns().search("");
     table.ajax.reload();
+  };
+
+  // Calcular sumatoria de las columnas numéricas de tableData
+  const addTotalsRow = (tableData) => {
+    if (!tableData.length) return tableData;
+
+    // Obtener todas las claves de las columnas
+    const columns = Object.keys(tableData[0]);
+
+    // Creamos el objeto total
+    const totalsRow = {};
+
+    columns.forEach((key) => {
+      // Si es la columna de "Total Ventas  Bs. Incluyendo IVA." o posteriores, sumamos
+      if (key != 'Nro Oper.' && typeof tableData[0][key].v === "number") {
+        totalsRow[key] = tableData.reduce((sum, row) => sum + Number(row[key].v || 0), 0);
+      } else {
+        totalsRow[key] = ""; // columnas de texto que no se suman
+      }
+    });
+    return [...tableData, totalsRow];
+  };
+
+  // Agregar estilos a la fila de totales
+  const styleTotalsRow = (totalsRow) => {
+    const styledRow = {};
+    Object.keys(totalsRow).forEach((key) => {
+      const value = totalsRow[key];
+      styledRow[key] = {
+        v: value,
+        t: typeof value === "number" ? "n" : "s",
+        s: {
+          font: { bold: true },
+          alignment: { horizontal: "right", vertical: "center" },
+          numFmt: typeof value === "number" ? "#,##0.00" : undefined,
+        },
+      };
+    });
+    return styledRow;
+  };
+
+  const styleAmount = {
+    numFmt: '#,##0.00',
+    alignment: { horizontal: "right", vertical: "center" },
+  };
+
+  const buildFooterRows = (summary) => {
+    const r = summary?.hoja_resumen || {};
+
+    const styleHeader = {
+      font: { bold: true, color: { rgb: "FFFFFFFF" } },
+      alignment: { horizontal: "center", vertical: "center" },
+      fill: { fgColor: { rgb: "FF112C55" } },
+    };
+
+    // Helper para generar celdas de título
+    const trg = (value) => ({ v: value, t: "s", s: { font: { bold: true, color: { rgb: "FFFFFFFF" } }, alignment: { horizontal: "left", vertical: "center" }, fill: { fgColor: { rgb: "FF112C55" } } } });
+    const t = (value) => ({ v: value, t: "s", s: styleHeader });
+
+    // Helper para generar celdas numéricas
+    const n = (value) => ({ v: Number(value || 0), t: "n", s: styleAmount });
+
+    return [
+      [],
+
+      [trg("RESUMEN GENERAL")],
+
+      [
+        t("Concepto"), t(""), t(""), t(""), t(""), t(""),
+        t("Base imponible"), t("Débito fiscal"), t("IVA retenido"), t("IGTF percibido")
+      ],
+
+      [
+        trg("Total ventas internas no gravadas"), t(""), t(""), t(""), t(""), t(""),
+        n(r.ventas_internas_no_gravadas),
+        n(0),
+        n(0),
+        n(0)
+      ],
+
+      [
+        trg("Total nota de crédito no gravadas"), t(""), t(""), t(""), t(""), t(""),
+        n(r.notas_credito_no_gravadas),
+        n(0),
+        n(0),
+        n(0)
+      ],
+
+      [
+        trg("Total nota de débito no gravadas"), t(""), t(""), t(""), t(""), t(""),
+        n(r.notas_debito_no_gravadas),
+        n(0),
+        n(0),
+        n(0)
+      ],
+
+      [
+        trg("Total ventas internas afectadas sólo alícuota general 16%"), t(""), t(""), t(""), t(""), t(""),
+        n(r.ventas_internas_gravadas_alic_general),
+        n(r.iva_alic_general),
+        n(r.total_iva_retenido_periodo),
+        n(r.total_igtf_percibido)
+      ],
+
+      [
+        trg("Total ventas internas afectadas sólo alícuota reducida 8%"), t(""), t(""), t(""), t(""), t(""),
+        n(r.ventas_internas_gravadas_alic_reducida),
+        n(r.iva_alic_reducida),
+        n(r.total_iva_retenido_periodo),
+        n(r.total_igtf_percibido)
+      ],
+
+      [
+        trg("Total ventas internas afectadas sólo alícuota adicional 31%"), t(""), t(""), t(""), t(""), t(""),
+        n(r.ventas_internas_gravadas_alic_adicional),
+        n(r.iva_alic_adicional),
+        n(r.total_iva_retenido_periodo),
+        n(r.total_igtf_percibido)
+      ],
+
+      [
+        trg("Total notas de crédito o devoluciones aplicadas en ventas 16%"), t(""), t(""), t(""), t(""), t(""),
+        n(r.notas_credito_16),
+        n(r.iva_notas_credito_16),
+        n(r.total_iva_retenido_periodo),
+        n(r.total_igtf_percibido)
+      ],
+
+      [
+        trg("Total notas de crédito o devoluciones aplicadas en ventas 8%"), t(""), t(""), t(""), t(""), t(""),
+        n(r.notas_credito_8),
+        n(r.iva_notas_credito_8),
+        n(r.total_iva_retenido_periodo),
+        n(r.total_igtf_percibido)
+      ],
+
+      [
+        trg("Total notas de crédito o devoluciones aplicadas en ventas 31%"), t(""), t(""), t(""), t(""), t(""),
+        n(r.notas_credito_31),
+        n(r.iva_notas_credito_31),
+        n(r.total_iva_retenido_periodo),
+        n(r.total_igtf_percibido)
+      ],
+
+      [
+        trg("Total notas de débito o recargos aplicadas en ventas 16%"), t(""), t(""), t(""), t(""), t(""),
+        n(r.notas_debito_16),
+        n(r.iva_notas_debito_16),
+        n(r.total_iva_retenido_periodo),
+        n(r.total_igtf_percibido)
+      ],
+
+      [
+        trg("Total notas de débito o recargos aplicadas en ventas 8%"), t(""), t(""), t(""), t(""), t(""),
+        n(r.notas_debito_8),
+        n(r.iva_notas_debito_8),
+        n(r.total_iva_retenido_periodo),
+        n(r.total_igtf_percibido)
+      ],
+
+      [
+        trg("Total notas de débito o recargos aplicadas en ventas 31%"), t(""), t(""), t(""), t(""), t(""),
+        n(r.notas_debito_31),
+        n(r.iva_notas_debito_31),
+        n(r.total_iva_retenido_periodo),
+        n(r.total_igtf_percibido)
+      ],
+
+      [
+        trg("Total"), t(""), t(""), t(""), t(""), t(""),
+        n(r.total_base_imponible),
+        n(r.total_debito_fiscal),
+        n(r.total_iva_retenido_periodo),
+        n(r.total_igtf_percibido)
+      ],
+    ];
   };
 
   return (
@@ -117,7 +292,17 @@ function SalesBook({ title, type }) {
                     }
                   },
                   { title: "Tipo de documento", data: "tipo_transaccion", className: "dt-center", render: (data, type, row) => {
-                      return formatText(data);
+                      if (data == '01-reg'){
+                        return formatText('Factura');
+                      }else if (data == '02-reg'){
+                        return formatText('Nota de Débito');
+                      }else if (data == '03-reg'){
+                        return formatText('Nota de Crédito');
+                      }else if (data == '07-reg'){
+                        return formatText('Retención');
+                      }else{
+                        return formatText(data);
+                      }
                     }
                   },
                   { title: "Factura o Número de documento", data: "numero_factura", className: "dt-center", render: (data, type, row) => {
@@ -144,23 +329,6 @@ function SalesBook({ title, type }) {
                       return formatText(data);
                     }
                   },
-                  /*{
-                    title: "Tipo de documento",
-                    data: "tipo_documento",
-                    className: "text-center",
-                    orderable: true,
-                    searchable: true,
-                    render: (data, type, row) => {
-                      if (data == 'FC'){
-                        return 'FACTURA';
-                      }else if (data == 'NC'){
-                        return 'NOTA DE CRÉDITO';
-                      } else {
-                        return 'NOTA DE DÉBITO';
-                      }
-
-                    }
-                  },*/
                   {
                     title: "Total Ventas  Bs. Incluyendo IVA.",
                     data: "total_ventas_con_iva",
@@ -378,30 +546,7 @@ function SalesBook({ title, type }) {
                       text: "Exportar",
                       className: "bg-slate-700 hover:bg-slate-600 text-white font-bold py-2 px-4 rounded",
                       buttons: [
-                        {
-                          extend: "copyHtml5",
-                          text: "Copiar",
-                          title: "Libro de ventas"   // nombre del documento en el portapapeles
-                        },
-                        {
-                          extend: "excelHtml5",
-                          text: "Excel",
-                          title: "Libro de ventas",  // título dentro del archivo
-                          filename: "Libro_de_ventas",   // nombre del archivo generado (sin extensión)
-                          exportOptions: {
-                            columns: ':not(.no-export)'
-                          }
-                        },
-                        {
-                          extend: "csvHtml5",
-                          text: "CSV",
-                          title: "Libro de ventas",
-                          filename: "Libro_de_ventas",
-                          exportOptions: {
-                            columns: ':not(.no-export)'
-                          }
-                        },
-                        {
+                        /*{
                           extend: "pdfHtml5",
                           text: "PDF",
                           title: "Libro de ventas",
@@ -420,75 +565,220 @@ function SalesBook({ title, type }) {
                           exportOptions: {
                             columns: ':not(.no-export)'
                           }
-                        },
+                        },*/
                         {
-                          text: "Exportar todo (Excel)",
+                          text: "Excel",
                           exportOptions: {
                             columns: ':not(.no-export)'
                           },
                           action: async function (e, dt, node, config) {
                             const exportButton = node;
                             try {
-                              const allData = [];
+                              $(exportButton).text("Cargando...").prop("disabled", true).css("pointer-events", "none");
 
-
-                              // Mostrar mensaje de progreso
-                              $(exportButton).text("Cargando...").prop("disabled", true).attr("style", "pointer-events: none;");
                               const query = {};
-                              // Añadir filtros según filtro activo
                               if ($('#filter_type option:selected').val() === "periodo" && $("#filtro_periodo").val())
                                 query.periodo = $("#filtro_periodo").val();
-
                               if ($('#filter_type option:selected').val() === "rango_fecha" && $('#filtro_desde').val() && $('#filtro_hasta').val()) {
                                 query.desde = $('#filtro_desde').val();
                                 query.hasta = $('#filtro_hasta').val();
                               }
-                              console.log('query: ', query);
-                              // Cargar todas las páginas hasta completar total_pages
-                              do {
-                                query.page = page;
-                                query.per_page = 100;
-                                const response = await getSalesBook(query);
-                                const { data, total_pages } = response;
 
-                                allData.push(...data);
-                                totalPages = total_pages;
-                                page++;
-                              } while (page <= totalPages);
+                              const response = await getSalesBook(query);
+                              const { hoja_detalle, hoja_resumen } = response;
 
-                              // Convertimos a Excel con xlsx
-                              const wb = utils.book_new();
-                              const ws = utils.json_to_sheet(allData.map(item => ({
-                                "Fecha": formatDate(item.fecha_factura),
-                                "RIF": formatText(item.cliente_final_rif),
-                                "Razon Social": formatText(item.cliente_final_nombre),
-                                "Tipo de documento": item.tipo_documento === "FC"
-                                    ? "FACTURA"
-                                    : item.tipo_documento === "ND" ? "NOTA DE DÉBITO" : "NOTA DE CRÉDITO",
-                                "Correlativo interno": formatText(item.correlativo_interno),
-                                "Factura afectada NC": formatText(item.factura_afectada_rel ? item.factura_afectada_rel.numero_control : ''),
-                                "Base imponible (Bs.)": formatDecimal(item.total_base),
-                                "IVA (Bs.)": formatDecimal(item.total_impuestos),
-                                "Total (Bs.)": formatDecimal(item.total_neto),
-                                "Pago en divisas (Bs.)": formatDecimal(item.monto_pagado_divisas),
-                                "IGTF (Bs.)": formatDecimal(item.igtf_monto),
-                                "Zona":formatText(item.zona),
-                                "Estatus": formatText(item.estatus),
-                              })));
+                              const wb = XLSX.utils.book_new();
+                              const ws = XLSX.utils.aoa_to_sheet([]);
 
-                              utils.book_append_sheet(wb, ws, "Auditoría");
+                              // ---------------------------
+                              // Header
+                              // ---------------------------
+                              const headerRows = [
+                                [{ v: "LIBRO DE VENTAS", s: { font: { bold: true, color: { rgb: "FFFFFFFF" } }, fill: { fgColor: { rgb: "FF112C55" } }, alignment: { horizontal: "left", vertical: "center" } } }],
+                                [{ v: `Período: ${query.periodo || `${query.desde} al ${query.hasta}`}`, s: { font: { bold: true, color: { rgb: "FFFFFFFF" } }, fill: { fgColor: { rgb: "FF112C55" } } } }],
+                                [{ v: `Fecha de emisión: ${formatDate(new Date())}`, s: { font: { bold: true, color: { rgb: "FFFFFFFF" } }, fill: { fgColor: { rgb: "FF112C55" } } } }],
+                                [], // línea en blanco
+                                [
+                                  { v: "", s: { font: { bold: true, color: { rgb: "FFFFFFFF" } } } },
+                                  { v: "Ventas por cuentas de terceros", s: { font: { bold: true, color: { rgb: "FFFFFFFF" } }, alignment: { horizontal: "center" }, fill: { fgColor: { rgb: "FF112C55" } } } },
+                                  { v: "Contribuyente", s: { font: { bold: true, color: { rgb: "FFFFFFFF" } }, alignment: { horizontal: "center" }, fill: { fgColor: { rgb: "FF112C55" } } } },
+                                  { v: "No contribuyente", s: { font: { bold: true, color: { rgb: "FFFFFFFF" } }, alignment: { horizontal: "center" }, fill: { fgColor: { rgb: "FF112C55" } } } },
+                                  { v: "", s: { font: { bold: true, color: { rgb: "FFFFFFFF" } } } },
+                                ],
+                                [
+                                  { v: "Nro Oper.", s: { font: { bold: true, color: { rgb: "FFFFFFFF" } }, alignment: { horizontal: "center" }, fill: { fgColor: { rgb: "FF112C55" } } } },
+                                  { v: "Fecha de la factura", s: { font: { bold: true, color: { rgb: "FFFFFFFF" } }, alignment: { horizontal: "center" }, fill: { fgColor: { rgb: "FF112C55" } } } },
+                                  { v: "Tipo de documento", s: { font: { bold: true, color: { rgb: "FFFFFFFF" } }, alignment: { horizontal: "center" }, fill: { fgColor: { rgb: "FF112C55" } } } },
+                                  { v: "Factura o Número de documento", s: { font: { bold: true, color: { rgb: "FFFFFFFF" } }, alignment: { horizontal: "center" }, fill: { fgColor: { rgb: "FF112C55" } } } },
+                                  { v: "Número de control", s: { font: { bold: true, color: { rgb: "FFFFFFFF" } }, alignment: { horizontal: "center" }, fill: { fgColor: { rgb: "FF112C55" } } } },
+                                  { v: "N° comprobante", s: { font: { bold: true, color: { rgb: "FFFFFFFF" } }, alignment: { horizontal: "center" }, fill: { fgColor: { rgb: "FF112C55" } } } },
+                                  { v: "Número factura afectada", s: { font: { bold: true, color: { rgb: "FFFFFFFF" } }, alignment: { horizontal: "center" }, fill: { fgColor: { rgb: "FF112C55" } } } },
+                                  { v: "Nombre o razón social", s: { font: { bold: true, color: { rgb: "FFFFFFFF" } }, alignment: { horizontal: "center" }, fill: { fgColor: { rgb: "FF112C55" } } } },
+                                  { v: "RIF", s: { font: { bold: true, color: { rgb: "FFFFFFFF" } }, alignment: { horizontal: "center" }, fill: { fgColor: { rgb: "FF112C55" } } } },
+                                  { v: "Total Ventas  Bs. Incluyendo IVA.", s: { font: { bold: true, color: { rgb: "FFFFFFFF" } }, alignment: { horizontal: "center" }, fill: { fgColor: { rgb: "FF112C55" } } } },
+                                  { v: "Ventas Internas No Gravadas", s: { font: { bold: true, color: { rgb: "FFFFFFFF" } }, alignment: { horizontal: "center" }, fill: { fgColor: { rgb: "FF112C55" } } } },
+                                  { v: "Base Imponible", s: { font: { bold: true, color: { rgb: "FFFFFFFF" } }, alignment: { horizontal: "center" }, fill: { fgColor: { rgb: "FF112C55" } } } },
+                                  { v: "% Alicuota", s: { font: { bold: true, color: { rgb: "FFFFFFFF" } }, alignment: { horizontal: "center" }, fill: { fgColor: { rgb: "FF112C55" } } } },
+                                  { v: "Impuesto I.V.A", s: { font: { bold: true, color: { rgb: "FFFFFFFF" } }, alignment: { horizontal: "center" }, fill: { fgColor: { rgb: "FF112C55" } } } },
+                                  { v: "Ventas Internas No Gravadas", s: { font: { bold: true, color: { rgb: "FFFFFFFF" } }, alignment: { horizontal: "center" }, fill: { fgColor: { rgb: "FF112C55" } } } },
+                                  { v: "Base Imponible (General)", s: { font: { bold: true, color: { rgb: "FFFFFFFF" } }, alignment: { horizontal: "center" }, fill: { fgColor: { rgb: "FF112C55" } } } },
+                                  { v: "% Alicuota (General)", s: { font: { bold: true, color: { rgb: "FFFFFFFF" } }, alignment: { horizontal: "center" }, fill: { fgColor: { rgb: "FF112C55" } } } },
+                                  { v: "Impuesto I.V.A (General)", s: { font: { bold: true, color: { rgb: "FFFFFFFF" } }, alignment: { horizontal: "center" }, fill: { fgColor: { rgb: "FF112C55" } } } },
+                                  { v: "Base Imponible (Reducida)", s: { font: { bold: true, color: { rgb: "FFFFFFFF" } }, alignment: { horizontal: "center" }, fill: { fgColor: { rgb: "FF112C55" } } } },
+                                  { v: "% Alicuota (Reducida)", s: { font: { bold: true, color: { rgb: "FFFFFFFF" } }, alignment: { horizontal: "center" }, fill: { fgColor: { rgb: "FF112C55" } } } },
+                                  { v: "Impuesto I.V.A (Reducida)", s: { font: { bold: true, color: { rgb: "FFFFFFFF" } }, alignment: { horizontal: "center" }, fill: { fgColor: { rgb: "FF112C55" } } } },
+                                  { v: "Base Imponible (Adicional)", s: { font: { bold: true, color: { rgb: "FFFFFFFF" } }, alignment: { horizontal: "center" }, fill: { fgColor: { rgb: "FF112C55" } } } },
+                                  { v: "% Alicuota (Adicional)", s: { font: { bold: true, color: { rgb: "FFFFFFFF" } }, alignment: { horizontal: "center" }, fill: { fgColor: { rgb: "FF112C55" } } } },
+                                  { v: "Impuesto I.V.A (Adicional)", s: { font: { bold: true, color: { rgb: "FFFFFFFF" } }, alignment: { horizontal: "center" }, fill: { fgColor: { rgb: "FF112C55" } } } },
+                                  { v: "Ventas Internas No Gravadas", s: { font: { bold: true, color: { rgb: "FFFFFFFF" } }, alignment: { horizontal: "center" }, fill: { fgColor: { rgb: "FF112C55" } } } },
+                                  { v: "Base Imponible (General)", s: { font: { bold: true, color: { rgb: "FFFFFFFF" } }, alignment: { horizontal: "center" }, fill: { fgColor: { rgb: "FF112C55" } } } },
+                                  { v: "% Alicuota (General)", s: { font: { bold: true, color: { rgb: "FFFFFFFF" } }, alignment: { horizontal: "center" }, fill: { fgColor: { rgb: "FF112C55" } } } },
+                                  { v: "Impuesto I.V.A (General)", s: { font: { bold: true, color: { rgb: "FFFFFFFF" } }, alignment: { horizontal: "center" }, fill: { fgColor: { rgb: "FF112C55" } } } },
+                                  { v: "Base Imponible (Reducida)", s: { font: { bold: true, color: { rgb: "FFFFFFFF" } }, alignment: { horizontal: "center" }, fill: { fgColor: { rgb: "FF112C55" } } } },
+                                  { v: "% Alicuota (Reducida)", s: { font: { bold: true, color: { rgb: "FFFFFFFF" } }, alignment: { horizontal: "center" }, fill: { fgColor: { rgb: "FF112C55" } } } },
+                                  { v: "Impuesto I.V.A (Reducida)", s: { font: { bold: true, color: { rgb: "FFFFFFFF" } }, alignment: { horizontal: "center" }, fill: { fgColor: { rgb: "FF112C55" } } } },
+                                  { v: "Base Imponible (Adicional)", s: { font: { bold: true, color: { rgb: "FFFFFFFF" } }, alignment: { horizontal: "center" }, fill: { fgColor: { rgb: "FF112C55" } } } },
+                                  { v: "% Alicuota (Adicional)", s: { font: { bold: true, color: { rgb: "FFFFFFFF" } }, alignment: { horizontal: "center" }, fill: { fgColor: { rgb: "FF112C55" } } } },
+                                  { v: "Impuesto I.V.A (Adicional)", s: { font: { bold: true, color: { rgb: "FFFFFFFF" } }, alignment: { horizontal: "center" }, fill: { fgColor: { rgb: "FF112C55" } } } },
+                                  { v: "I.V.A Retenido", s: { font: { bold: true, color: { rgb: "FFFFFFFF" } }, alignment: { horizontal: "center" }, fill: { fgColor: { rgb: "FF112C55" } } } },
+                                  { v: "I.G.T.F Percibido", s: { font: { bold: true, color: { rgb: "FFFFFFFF" } }, alignment: { horizontal: "center" }, fill: { fgColor: { rgb: "FF112C55" } } } },
+                                ]
+                              ];
+                              XLSX.utils.sheet_add_aoa(ws, headerRows, { origin: "A1" });
+                              // Ahora agregamos los títulos de las agrupaciones
+                              ws["K5"] = {
+                                v: "Ventas por cuentas de terceros", t: "s", s: { font: { bold: true, color: { rgb: "FFFFFFFF" } }, alignment: { horizontal: "center", vertical: "center" }, fill: { fgColor: { rgb: "FF112C55" } } }
+                              };
+                              ws["O5"] = {
+                                v: "Contribuyente", t: "s", s: { font: { bold: true, color: { rgb: "FFFFFFFF" } }, alignment: { horizontal: "center", vertical: "center" }, fill: { fgColor: { rgb: "FF112C55" } } }
+                              };
+                              ws["Y5"] = {
+                                v: "No contribuyente", t: "s", s: { font: { bold: true, color: { rgb: "FFFFFFFF" } }, alignment: { horizontal: "center", vertical: "center" }, fill: { fgColor: { rgb: "FF112C55" } } }
+                              };
+
+                              // ---------------------------
+                              // Tabla detalle
+                              // ---------------------------
+                              const tableData = hoja_detalle.map(item => ({
+                                "Nro Oper.": { v: Number(item.nro_operacion || 0), t: "n", s: { numFmt: '#0', alignment: { horizontal: "right", vertical: "center" } } },
+                                "Fecha de la factura": { v: new Date(item.fecha_documento), t: "d", s: { alignment: { horizontal: "center", vertical: "center" } } },
+                                "Tipo de documento": { v: (item.tipo_transaccion == '01-reg' ?
+                                  formatText('Factura'):(item.tipo_transaccion == '02-reg' ?
+                                   formatText('Nota de Débito'):(item.tipo_transaccion == '03-reg' ?
+                                    formatText('Nota de Crédito'):(item.tipo_transaccion == '07-reg' ?
+                                     formatText('Retención'):formatText(item.tipo_transaccion))))), t: "s", s: { alignment: { horizontal: "center", vertical: "center" } } },
+                                "Factura o Número de documento": { v: formatText(item.numero_factura), t: "s", s: { alignment: { horizontal: "center", vertical: "center" } } },
+                                "Número de control": { v: formatText(item.numero_control), t: "s", s: { alignment: { horizontal: "center", vertical: "center" } } },
+                                "N° comprobante": { v: formatText(item.numero_comprobante_retencion), t: "s", s: { alignment: { horizontal: "center", vertical: "center" } } },
+                                "Número factura afectada": { v: formatText(item.numero_factura_afectada), t: "s", s: { alignment: { horizontal: "center", vertical: "center" } } },
+                                "Nombre o razón social": { v: formatText(item.nombre_razon_social), t: "s", s: { alignment: { horizontal: "left", vertical: "center" } } },
+                                "RIF": { v: formatText(item.rif), t: "s", s: { alignment: { horizontal: "center", vertical: "center" } } },
+                                "Total Ventas  Bs. Incluyendo IVA.": { v: Number(item.total_ventas_con_iva || 0), t: "n", s: styleAmount },
+
+                                // VCT
+                                "VCT - Ventas Internas No Gravadas": { v: 0, t: "n", s: styleAmount },
+                                "VCT - Base Imponible": { v: 0, t: "n", s: styleAmount },
+                                "VCT - % Alicuota": { v: 0, t: "n", s: styleAmount },
+                                "VCT - Impuesto I.V.A": { v: 0, t: "n", s: styleAmount },
+
+                                // CONTRIBUYENTE
+                                "C - Ventas Internas No Gravadas": { v: Number(item.ventas_exentas || 0), t: "n", s: styleAmount },
+                                "C - Base Imponible (General)": { v: Number(item.base_imponible || 0), t: "n", s: styleAmount },
+                                "C - % Alicuota (General)": { v: Number(item.alicuota || 0), t: "n" },
+                                "C - Impuesto I.V.A (General)": { v: Number(item.impuesto_iva || 0), t: "n", s: styleAmount },
+
+                                "C - Base Imponible (Reducida)": { v: Number(item.base_imponible || 0), t: "n", s: styleAmount },
+                                "C - % Alicuota (Reducida)": { v: Number(item.alicuota || 0), t: "n" },
+                                "C - Impuesto I.V.A (Reducida)": { v: Number(item.impuesto_iva || 0), t: "n", s: styleAmount },
+
+                                "C - Base Imponible (Adicional)": { v: Number(item.base_imponible || 0), t: "n", s: styleAmount },
+                                "C - % Alicuota (Adicional)": { v: Number(item.alicuota || 0), t: "n" },
+                                "C - Impuesto I.V.A (Adicional)": { v: Number(item.impuesto_iva || 0), t: "n", s: styleAmount },
+
+                                // NO CONTRIBUYENTE
+                                "NC - Ventas Internas No Gravadas": { v: Number(item.ventas_exentas || 0), t: "n", s: styleAmount },
+                                "NC - Base Imponible (General)": { v: Number(item.base_imponible || 0), t: "n", s: styleAmount },
+                                "NC - % Alicuota (General)": { v: Number(item.alicuota || 0), t: "n" },
+                                "NC - Impuesto I.V.A (General)": { v: Number(item.impuesto_iva || 0), t: "n", s: styleAmount },
+
+                                "NC - Base Imponible (Reducida)": { v: Number(item.base_imponible || 0), t: "n", s: styleAmount },
+                                "NC - % Alicuota (Reducida)": { v: Number(item.alicuota || 0), t: "n" },
+                                "NC - Impuesto I.V.A (Reducida)": { v: Number(item.impuesto_iva || 0), t: "n", s: styleAmount },
+
+                                "NC - Base Imponible (Adicional)": { v: Number(item.base_imponible || 0), t: "n", s: styleAmount },
+                                "NC - % Alicuota (Adicional)": { v: Number(item.alicuota || 0), t: "n" },
+                                "NC - Impuesto I.V.A (Adicional)": { v: Number(item.impuesto_iva || 0), t: "n", s: styleAmount },
+
+                                "I.V.A Retenido": { v: Number(item.iva_retenido || 0), t: "n", s: styleAmount },
+                                "I.G.T.F Percibido": { v: Number(item.igtf || 0), t: "n", s: styleAmount }
+                              }));
+
+                              // Sumatoria de lineas:
+                              const tableDataWithTotals = addTotalsRow(tableData).map((row, index, arr) => {
+                                // Solo estilizamos la última fila (la de totales)
+                                if (index === arr.length - 1) {
+                                  return styleTotalsRow(row);
+                                }
+                                return row; // las demás filas se mantienen igual
+                              });
+                              XLSX.utils.sheet_add_json(ws, tableDataWithTotals, { origin: "A7", skipHeader: true });
+
+                              // ---------------------------
+                              // Footer
+                              // ---------------------------
+                              const footerStartRow = tableData.length + headerRows.length + 3;
+                              const footerRows = buildFooterRows(response);
+                              XLSX.utils.sheet_add_aoa(ws, footerRows, { origin: `A${footerStartRow}` });
+
+                              // ---------------------------
+                              // Merges
+                              // ---------------------------
+                              ws["!merges"] = [
+                                // ---------------------------
+                                // Header / agrupaciones
+                                // ---------------------------
+                                { s: { r: 0, c: 0 }, e: { r: 0, c: 6 } },   // Cabecera L1
+                                { s: { r: 1, c: 0 }, e: { r: 1, c: 6 } },   // Cabecera L2
+                                { s: { r: 2, c: 0 }, e: { r: 2, c: 6 } },   // Cabecera L3
+                                { s: { r: 4, c: 0 }, e: { r: 4, c: 9 } },   // Datos principales
+                                { s: { r: 4, c: 10 }, e: { r: 4, c: 13 } }, // VCT
+                                { s: { r: 4, c: 14 }, e: { r: 4, c: 23 } }, // Contribuyente
+                                { s: { r: 4, c: 24 }, e: { r: 4, c: 33 } }, // No contribuyente
+                                { s: { r: 4, c: 34 }, e: { r: 4, c: 35 } },  // Finales
+                                // ---------------------------
+                                // Footer / resumen
+                                // ---------------------------
+                                { s: { r: footerStartRow, c: 0 }, e: { r: footerStartRow, c: 9 } },   // Resumen General
+                                { s: { r: footerStartRow + 1, c: 0 }, e: { r: footerStartRow + 1, c: 5 } }, // Titulos
+                                { s: { r: footerStartRow + 2, c: 0 }, e: { r: footerStartRow + 2, c: 5 } }, // Total ventas internas no gravadas
+                                { s: { r: footerStartRow + 3, c: 0 }, e: { r: footerStartRow + 3, c: 5 } }, // Total nota de crédito no gravadas
+                                { s: { r: footerStartRow + 4, c: 0 }, e: { r: footerStartRow + 4, c: 5 } }, // Total nota de débito no gravadas
+                                { s: { r: footerStartRow + 5, c: 0 }, e: { r: footerStartRow + 5, c: 5 } }, // Total ventas internas afectadas sólo alícuota general 16%
+                                { s: { r: footerStartRow + 6, c: 0 }, e: { r: footerStartRow + 6, c: 5 } }, // Total ventas internas afectadas sólo alícuota reducida 8%
+                                { s: { r: footerStartRow + 7, c: 0 }, e: { r: footerStartRow + 7, c: 5 } }, // Total ventas internas afectadas sólo alícuota adicional 31%
+                                { s: { r: footerStartRow + 8, c: 0 }, e: { r: footerStartRow + 8, c: 5 } }, // Total notas de crédito o devoluciones aplicadas en ventas 16%
+                                { s: { r: footerStartRow + 9, c: 0 }, e: { r: footerStartRow + 9, c: 5 } }, // Total notas de crédito o devoluciones aplicadas en ventas 8%
+                                { s: { r: footerStartRow + 10, c: 0 }, e: { r: footerStartRow + 10, c: 5 } }, // Total notas de crédito o devoluciones aplicadas en ventas 31%
+                                { s: { r: footerStartRow + 11, c: 0 }, e: { r: footerStartRow + 11, c: 5 } }, // Total notas de débito o recargos aplicadas en ventas 16%
+                                { s: { r: footerStartRow + 12, c: 0 }, e: { r: footerStartRow + 12, c: 5 } }, // Total notas de débito o recargos aplicadas en ventas 8%
+                                { s: { r: footerStartRow + 13, c: 0 }, e: { r: footerStartRow + 13, c: 5 } }, // Total notas de débito o recargos aplicadas en ventas 31%
+                                { s: { r: footerStartRow + 14, c: 0 }, e: { r: footerStartRow + 14, c: 5 } }, // Total
+                              ];
+
+                              XLSX.utils.book_append_sheet(wb, ws, "Libro de ventas");
 
                               const wbout = XLSX.write(wb, { bookType: "xlsx", type: "array" });
                               const blob = new Blob([wbout], { type: "application/octet-stream" });
                               const link = document.createElement("a");
                               link.href = URL.createObjectURL(blob);
-                              link.download = "Libro_de_ventas.xlsx";
+                              link.download = `Libro_de_ventas_${formatDate(new Date())}.xlsx`;
                               link.click();
 
-                              $(exportButton).text("Exportar todo (Excel)").prop("disabled", false).attr("style", "pointer-events: auto;");;
+                              $(exportButton).text("Exportar todo (Excel)").prop("disabled", false).css("pointer-events", "auto");
                               toast.success("Archivo exportado correctamente.");
+
                             } catch (error) {
-                              $(exportButton).text("Exportar todo (Excel)").prop("disabled", false).attr("style", "pointer-events: auto;");;
+                              $(exportButton).text("Exportar todo (Excel)").prop("disabled", false).css("pointer-events", "auto");
                               console.error("Error al exportar:", error);
                               toast.error("Error al exportar los datos.");
                             }
@@ -546,8 +836,6 @@ function SalesBook({ title, type }) {
                           responseCache = response;
                           setShowSummary(response);
                         }
-                        console.log('responseCache: ', responseCache);
-                        console.log('responseCache: ', responseCache.hoja_detalle.length);
 
                         // Aseguramos que la estructura esperada esté presente
                         var { hoja_detalle, hoja_resumen } = response;

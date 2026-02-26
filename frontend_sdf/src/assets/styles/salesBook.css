@@ -4,10 +4,10 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Evita que el body scrollee */
+/* Evita que el body scrollee
 html, body {
   overflow-x: hidden;
-}
+}*/
 
 /* Fuerza el scroll interno */
 .dataTables_wrapper {
