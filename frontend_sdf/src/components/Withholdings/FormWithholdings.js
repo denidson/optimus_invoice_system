@@ -184,7 +184,12 @@ function FormWithholdings() {
           const cantidad = parseFloat((item.cantidad || 0).toString().replace(",", "."));
           return sum + precio * cantidad;
         }, 0);
-
+        const impuesto = itemsGroup.reduce((sum, item) => {
+          const precio = parseFloat((item.precio_unitario || 0).toString().replace(",", "."));
+          const alicuota = parseFloat((item.iva_categoria?.tasa_porcentaje || 0).toString().replace(",", "."));
+          const cantidad = parseFloat((item.cantidad || 0).toString().replace(",", "."));
+          return sum + ((precio * (1 + (alicuota/100))) - precio) * cantidad;
+        }, 0);
         return {
           id: Date.now() + Math.random(), // id único
           comprobante_id: fullInvoice.id,
@@ -194,7 +199,9 @@ function FormWithholdings() {
           factura_afectada_fecha: fullInvoice.fecha_emision || "",
           monto_documento: parseFloat((fullInvoice.total_neto || 0).toString().replace(",", ".")) || 0,
           monto_base_imponible: parseFloat(baseImponible.toFixed(2)) || 0,
+          monto_impuesto: parseFloat(impuesto.toFixed(2)) || 0,
           iva: parseFloat(iva),
+          iva_categoria_id: itemsGroup[0].iva_categoria_id,
           retencion_id: null,
           tipo_retencion: null,
           monto_retenido: 0,
@@ -277,12 +284,15 @@ function FormWithholdings() {
   // COLUMNAS DATAGRID
   // **********************************************************
   const columns = [
-    { field: "factura_afectada_numero", headerName: "Nro. Factura", flex: 1 },
-    { field: "factura_afectada_control", headerName: "Nro. Control", flex: 1 },
+    { field: "factura_afectada_numero", headerName: "Nro. Factura", flex: 1, headerAlign: "center", },
+    { field: "factura_afectada_control", headerName: "Nro. Control", flex: 1, headerAlign: "center", },
     {
       field: "factura_afectada_fecha",
       headerName: "Fecha",
       flex: 1,
+      width: 120,
+      maxWidth: 120,
+      headerAlign: "center",
       renderCell: (params) =>
         params.row.factura_afectada_fecha?.includes("T")
           ? params.row.factura_afectada_fecha.split("T")[0]
@@ -292,6 +302,8 @@ function FormWithholdings() {
       field: "monto_documento",
       headerName: "Total Neto",
       flex: 1,
+      headerAlign: "center",
+      type: "number",
       renderCell: (params) =>
         Number(params.row.monto_documento ?? 0).toLocaleString("es-VE", {
           minimumFractionDigits: 2,
@@ -302,6 +314,8 @@ function FormWithholdings() {
       field: "monto_base_imponible",
       headerName: "Base Imponible",
       flex: 1,
+      headerAlign: "center",
+      type: "number",
       renderCell: (params) =>
         Number(params.row.monto_base_imponible ?? 0).toLocaleString("es-VE", {
           minimumFractionDigits: 2,
@@ -312,13 +326,34 @@ function FormWithholdings() {
       field: "iva",
       headerName: "IVA %",
       flex: 1,
+      headerAlign: "center",
+      type: "number",
       renderCell: (params) => `${params.row.iva || 0}`,
+    },
+    {
+      field: "iva_categoria_id",
+      headerName: "iva_categoria_id",
+      flex: 1,
+      renderCell: (params) => `${params.row.iva_categoria_id || 0}`,
+    },
+    {
+      field: "monto_impuesto",
+      headerName: "Impuesto",
+      flex: 1,
+      headerAlign: "center",
+      type: "number",
+      renderCell: (params) =>
+        Number(params.row.monto_impuesto ?? 0).toLocaleString("es-VE", {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2,
+        }),
     },
     {
       field: "retencion_id",
       headerName: "Tipo Retención",
       width: 250,
       editable: true,
+      headerAlign: "center",
       renderCell: (params) => params.row.tipo_retencion?.descripcion || "—",
       renderEditCell: (params) => (
         <WithholdingEditCell
@@ -332,6 +367,8 @@ function FormWithholdings() {
       field: "monto_retenido",
       headerName: "Monto Retenido",
       flex: 1,
+      headerAlign: "center",
+      type: "number",
       renderCell: (params) =>
         Number(params.row.monto_retenido ?? 0).toLocaleString("es-VE", {
           minimumFractionDigits: 2,
@@ -342,6 +379,7 @@ function FormWithholdings() {
       field: "acciones",
       headerName: "",
       flex: 0.4,
+      headerAlign: "center",
       sortable: false,
       renderCell: (params) => (
         <Button color="error" size="small" onClick={() => handleDeleteRow(params.row.id)}>
@@ -425,6 +463,7 @@ function FormWithholdings() {
         monto_documento: item.monto_documento.toFixed(2),
         monto_base_imponible: item.monto_base_imponible.toFixed(2),
         retencion_id: item.retencion_id,
+        iva_categoria_id: item.iva_categoria_id,
         monto_retenido: item.monto_retenido.toFixed(2),
       })),
     };
@@ -574,6 +613,15 @@ function FormWithholdings() {
                 autoHeight
                 pageSize={5}
                 localeText={esES.components.MuiDataGrid.defaultProps.localeText}
+                columnVisibilityModel={{
+                  iva_categoria_id: false, // oculta la columna "iva_categoria_id"
+                }}
+                sx={{
+                  '& .MuiDataGrid-columnHeaderTitle': {
+                    fontWeight: 'bold',   // ahora sí en negrita
+                    fontSize: '0.80rem',
+                  },
+                }}
               />
             </div>
             <div className="w-full lg:w-12/12 px-5 my-1 text-center">

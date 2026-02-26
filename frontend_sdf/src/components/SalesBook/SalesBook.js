@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo, useRef } from "react";
 import { useNavigate } from "react-router-dom"; 
 import { getSalesBook } from '../../services/api_invoices';
+import { showClient } from '../../services/api_clients';
 import { createPreInvoice } from "../../services/api_pre_invoices";
 import { encryptText } from '../../services/api';
 import { toast, ToastContainer } from "react-toastify";
@@ -109,6 +110,7 @@ function SalesBook({ title, type }) {
     // Helper para generar celdas de título
     const trg = (value) => ({ v: value, t: "s", s: { font: { bold: true, color: { rgb: "FFFFFFFF" } }, alignment: { horizontal: "left", vertical: "center" }, fill: { fgColor: { rgb: "FF112C55" } } } });
     const t = (value) => ({ v: value, t: "s", s: styleHeader });
+    const ti = (value) => ({ v: value, t: "s", s: { font: { bold: true }, alignment: { horizontal: "left", vertical: "center" } } });
 
     // Helper para generar celdas numéricas
     const n = (value) => ({ v: Number(value || 0), t: "n", s: styleAmount });
@@ -124,105 +126,105 @@ function SalesBook({ title, type }) {
       ],
 
       [
-        trg("Total ventas internas no gravadas"), t(""), t(""), t(""), t(""), t(""),
-        n(r.ventas_internas_no_gravadas),
+        ti("Total ventas internas no gravadas"), t(""), t(""), t(""), t(""), t(""),
+        n(r.resumen_por_tipo['01-reg'].ventas_exentas),
         n(0),
         n(0),
         n(0)
       ],
 
       [
-        trg("Total nota de crédito no gravadas"), t(""), t(""), t(""), t(""), t(""),
-        n(r.notas_credito_no_gravadas),
+        ti("Total nota de crédito no gravadas"), t(""), t(""), t(""), t(""), t(""),
+        n(r.resumen_por_tipo['03-reg'].ventas_exentas),
         n(0),
         n(0),
         n(0)
       ],
 
       [
-        trg("Total nota de débito no gravadas"), t(""), t(""), t(""), t(""), t(""),
-        n(r.notas_debito_no_gravadas),
+        ti("Total nota de débito no gravadas"), t(""), t(""), t(""), t(""), t(""),
+        n(r.resumen_por_tipo['02-reg'].ventas_exentas),
         n(0),
         n(0),
         n(0)
       ],
 
       [
-        trg("Total ventas internas afectadas sólo alícuota general 16%"), t(""), t(""), t(""), t(""), t(""),
-        n(r.ventas_internas_gravadas_alic_general),
-        n(r.iva_alic_general),
-        n(r.total_iva_retenido_periodo),
+        ti(`Total ventas internas afectadas sólo alícuota general ${formatDecimal(r.alicuota_general)}%`), t(""), t(""), t(""), t(""), t(""),
+        n(r.resumen_por_tipo['01-reg'].base_imponible_general),
+        n(r.resumen_por_tipo['01-reg'].iva_general),
+        n(r.resumen_por_tipo['01-reg'].iva_retenido_general),
         n(r.total_igtf_percibido)
       ],
 
       [
-        trg("Total ventas internas afectadas sólo alícuota reducida 8%"), t(""), t(""), t(""), t(""), t(""),
-        n(r.ventas_internas_gravadas_alic_reducida),
-        n(r.iva_alic_reducida),
-        n(r.total_iva_retenido_periodo),
-        n(r.total_igtf_percibido)
+        ti(`Total ventas internas afectadas sólo alícuota reducida ${formatDecimal(r.alicuota_reducida)}%`), t(""), t(""), t(""), t(""), t(""),
+        n(r.resumen_por_tipo['01-reg'].base_imponible_reducida),
+        n(r.resumen_por_tipo['01-reg'].iva_reducida),
+        n(r.resumen_por_tipo['01-reg'].iva_retenido_reducida),
+        n(0.0)
       ],
 
       [
-        trg("Total ventas internas afectadas sólo alícuota adicional 31%"), t(""), t(""), t(""), t(""), t(""),
-        n(r.ventas_internas_gravadas_alic_adicional),
-        n(r.iva_alic_adicional),
-        n(r.total_iva_retenido_periodo),
-        n(r.total_igtf_percibido)
+        ti(`Total ventas internas afectadas sólo alícuota adicional ${formatDecimal(r.alicuota_adicional)}%`), t(""), t(""), t(""), t(""), t(""),
+        n(r.resumen_por_tipo['01-reg'].base_imponible_adicional),
+        n(r.resumen_por_tipo['01-reg'].iva_adicional),
+        n(r.resumen_por_tipo['01-reg'].iva_retenido_adicional),
+        n(0.0)
       ],
 
       [
-        trg("Total notas de crédito o devoluciones aplicadas en ventas 16%"), t(""), t(""), t(""), t(""), t(""),
-        n(r.notas_credito_16),
-        n(r.iva_notas_credito_16),
-        n(r.total_iva_retenido_periodo),
-        n(r.total_igtf_percibido)
+        ti(`Total notas de crédito o devoluciones aplicadas en ventas ${formatDecimal(r.alicuota_general)}%`), t(""), t(""), t(""), t(""), t(""),
+        n(r.resumen_por_tipo['03-reg'].base_imponible_general),
+        n(r.resumen_por_tipo['03-reg'].iva_general),
+        n(r.resumen_por_tipo['03-reg'].iva_retenido_general),
+        n(0.0)
       ],
 
       [
-        trg("Total notas de crédito o devoluciones aplicadas en ventas 8%"), t(""), t(""), t(""), t(""), t(""),
-        n(r.notas_credito_8),
-        n(r.iva_notas_credito_8),
-        n(r.total_iva_retenido_periodo),
-        n(r.total_igtf_percibido)
+        ti(`Total notas de crédito o devoluciones aplicadas en ventas ${formatDecimal(r.alicuota_reducida)}%`), t(""), t(""), t(""), t(""), t(""),
+        n(r.resumen_por_tipo['03-reg'].base_imponible_reducida),
+        n(r.resumen_por_tipo['03-reg'].iva_reducida),
+        n(r.resumen_por_tipo['03-reg'].iva_retenido_reducida),
+        n(0.0)
       ],
 
       [
-        trg("Total notas de crédito o devoluciones aplicadas en ventas 31%"), t(""), t(""), t(""), t(""), t(""),
-        n(r.notas_credito_31),
-        n(r.iva_notas_credito_31),
-        n(r.total_iva_retenido_periodo),
-        n(r.total_igtf_percibido)
+        ti(`Total notas de crédito o devoluciones aplicadas en ventas ${formatDecimal(r.alicuota_adicional)}%`), t(""), t(""), t(""), t(""), t(""),
+        n(r.resumen_por_tipo['03-reg'].base_imponible_adicional),
+        n(r.resumen_por_tipo['03-reg'].iva_adicional),
+        n(r.resumen_por_tipo['03-reg'].iva_retenido_adicional),
+        n(0.0)
       ],
 
       [
-        trg("Total notas de débito o recargos aplicadas en ventas 16%"), t(""), t(""), t(""), t(""), t(""),
-        n(r.notas_debito_16),
-        n(r.iva_notas_debito_16),
-        n(r.total_iva_retenido_periodo),
-        n(r.total_igtf_percibido)
+        ti(`Total notas de débito o recargos aplicadas en ventas ${formatDecimal(r.alicuota_general)}%`), t(""), t(""), t(""), t(""), t(""),
+        n(r.resumen_por_tipo['02-reg'].base_imponible_general),
+        n(r.resumen_por_tipo['02-reg'].iva_general),
+        n(r.resumen_por_tipo['02-reg'].iva_retenido_general),
+        n(0.0)
       ],
 
       [
-        trg("Total notas de débito o recargos aplicadas en ventas 8%"), t(""), t(""), t(""), t(""), t(""),
-        n(r.notas_debito_8),
-        n(r.iva_notas_debito_8),
-        n(r.total_iva_retenido_periodo),
-        n(r.total_igtf_percibido)
+        ti(`Total notas de débito o recargos aplicadas en ventas ${formatDecimal(r.alicuota_reducida)}%`), t(""), t(""), t(""), t(""), t(""),
+        n(r.resumen_por_tipo['02-reg'].base_imponible_reducida),
+        n(r.resumen_por_tipo['02-reg'].iva_reducida),
+        n(r.resumen_por_tipo['02-reg'].iva_retenido_reducida),
+        n(0.0)
       ],
 
       [
-        trg("Total notas de débito o recargos aplicadas en ventas 31%"), t(""), t(""), t(""), t(""), t(""),
-        n(r.notas_debito_31),
-        n(r.iva_notas_debito_31),
-        n(r.total_iva_retenido_periodo),
-        n(r.total_igtf_percibido)
+        ti(`Total notas de débito o recargos aplicadas en ventas ${formatDecimal(r.alicuota_adicional)}%`), t(""), t(""), t(""), t(""), t(""),
+        n(r.resumen_por_tipo['02-reg'].base_imponible_adicional),
+        n(r.resumen_por_tipo['02-reg'].iva_adicional),
+        n(r.resumen_por_tipo['02-reg'].iva_retenido_adicional),
+        n(0.0)
       ],
 
       [
         trg("Total"), t(""), t(""), t(""), t(""), t(""),
-        n(r.total_base_imponible),
-        n(r.total_debito_fiscal),
+        n(Number(r.ventas_internas_no_gravadas || 0.0) + Number(r.base_imponible_general || 0.0) + Number(r.base_imponible_reducida || 0.0) + Number(r.base_imponible_adicional || 0.0)),
+        n(Number(r.iva_general || 0.0) + Number(r.iva_reducida || 0.0) + Number(r.iva_adicional || 0.0)),
         n(r.total_iva_retenido_periodo),
         n(r.total_igtf_percibido)
       ],
@@ -248,11 +250,7 @@ function SalesBook({ title, type }) {
                     <option value="rango_fecha">Fecha</option>
                   </select>
                   {filterType === "periodo" && (
-                    <select id="filtro_periodo" className="border p-2 rounded">
-                      <option value="2025-11">2025-11</option>
-                      <option value="2026-01">2026-01</option>
-                      <option value="2026-02">2026-02</option>
-                    </select>
+                    <input type="month" id="filtro_periodo" name="filtro_periodo"/>
                   )}
                   {filterType === "rango_fecha" && (
                     <>
@@ -336,6 +334,7 @@ function SalesBook({ title, type }) {
                       return formatDecimal(data);
                     }
                   },
+                  ///VCT
                   {
                     title: " Ventas Internas No Gravadas",
                     data: "",
@@ -364,144 +363,226 @@ function SalesBook({ title, type }) {
                       return formatDecimal(0.0);
                     }
                   },
+                  //C
                   {
                     title: "Ventas Internas No Gravadas",
                     data: "ventas_exentas",
                     render: (data, type, row) => {
-                      return formatDecimal(data);
+                      if ((row?.tipo_contribuyente?.id || 1) == 2){
+                        return formatDecimal(data);
+                      }else{
+                        return formatDecimal(0.0);
+                      }
                     }
                   },
                   {
                     title: "Base Imponible",
-                    data: "base_imponible",
+                    data: "base_imponible_general",
                     render: (data, type, row) => {
-                      return formatDecimal(data);
+                      if ((row?.tipo_contribuyente?.id || 1) == 2){
+                        return formatDecimal(data);
+                      }else{
+                        return formatDecimal(0.0);
+                      }
                     }
                   },
                   {
                     title: "% Alicuota General",
-                    data: "alicuota",
+                    data: "alicuota_general",
                     render: (data, type, row) => {
-                      return formatDecimal(data);
+                      if ((row?.tipo_contribuyente?.id || 1) == 2){
+                        return formatDecimal(data);
+                      }else{
+                        return formatDecimal(0.0);
+                      }
                     }
                   },
                   {
                     title: "Impuesto I.V.A",
-                    data: "impuesto_iva",
+                    data: "iva_general",
                     render: (data, type, row) => {
-                      return formatDecimal(data);
+                      if ((row?.tipo_contribuyente?.id || 1) == 2){
+                        return formatDecimal(data);
+                      }else{
+                        return formatDecimal(0.0);
+                      }
                     }
                   },
                   {
                     title: "Base Imponible",
-                    data: "base_imponible",
+                    data: "base_imponible_reducida",
                     render: (data, type, row) => {
-                      return formatDecimal(data);
+                      if ((row?.tipo_contribuyente?.id || 1) == 2){
+                        return formatDecimal(data);
+                      }else{
+                        return formatDecimal(0.0);
+                      }
                     }
                   },
                   {
                     title: "% Alicuota Reducida",
-                    data: "alicuota",
+                    data: "alicuota_reducida",
                     render: (data, type, row) => {
-                      return formatDecimal(data);
+                      if ((row?.tipo_contribuyente?.id || 1) == 2){
+                        return formatDecimal(data);
+                      }else{
+                        return formatDecimal(0.0);
+                      }
                     }
                   },
                   {
                     title: "Impuesto I.V.A",
-                    data: "impuesto_iva",
+                    data: "iva_reducida",
                     render: (data, type, row) => {
-                      return formatDecimal(data);
+                      if ((row?.tipo_contribuyente?.id || 1) == 2){
+                        return formatDecimal(data);
+                      }else{
+                        return formatDecimal(0.0);
+                      }
                     }
                   },
                   {
                     title: "Base Imponible",
-                    data: "base_imponible",
+                    data: "base_imponible_adicional",
                     render: (data, type, row) => {
-                      return formatDecimal(data);
+                      if ((row?.tipo_contribuyente?.id || 1) == 2){
+                        return formatDecimal(data);
+                      }else{
+                        return formatDecimal(0.0);
+                      }
                     }
                   },
                   {
                     title: "% Alicuota Adicional",
-                    data: "alicuota",
+                    data: "alicuota_adicional",
                     render: (data, type, row) => {
-                      return formatDecimal(data);
+                      if ((row?.tipo_contribuyente?.id || 1) == 2){
+                        return formatDecimal(data);
+                      }else{
+                        return formatDecimal(0.0);
+                      }
                     }
                   },
                   {
                     title: "Impuesto I.V.A",
-                    data: "impuesto_iva",
+                    data: "iva_adicional",
                     render: (data, type, row) => {
-                      return formatDecimal(data);
+                      if ((row?.tipo_contribuyente?.id || 1) == 2){
+                        return formatDecimal(data);
+                      }else{
+                        return formatDecimal(0.0);
+                      }
                     }
                   },
+                  //NC
                   {
                     title: " Ventas Internas No Gravadas",
                     data: "ventas_exentas",
                     render: (data, type, row) => {
-                      return formatDecimal(data);
+                      if ((row?.tipo_contribuyente?.id || 1) != 2){
+                        return formatDecimal(data);
+                      }else{
+                        return formatDecimal(0.0);
+                      }
                     }
                   },
                   {
                     title: " Base Imponible",
-                    data: "base_imponible",
+                    data: "base_imponible_general",
                     render: (data, type, row) => {
-                      return formatDecimal(data);
+                      if ((row?.tipo_contribuyente?.id || 1) != 2){
+                        return formatDecimal(data);
+                      }else{
+                        return formatDecimal(0.0);
+                      }
                     }
                   },
                   {
                     title: " % Alicuota General",
-                    data: "alicuota",
+                    data: "alicuota_general",
                     render: (data, type, row) => {
-                      return formatDecimal(data);
+                      if ((row?.tipo_contribuyente?.id || 1) != 2){
+                        return formatDecimal(data);
+                      }else{
+                        return formatDecimal(0.0);
+                      }
                     }
                   },
                   {
                     title: " Impuesto I.V.A",
-                    data: "impuesto_iva",
+                    data: "iva_general",
                     render: (data, type, row) => {
-                      return formatDecimal(data);
+                      if ((row?.tipo_contribuyente?.id || 1) != 2){
+                        return formatDecimal(data);
+                      }else{
+                        return formatDecimal(0.0);
+                      }
                     }
                   },
                   {
                     title: " Base Imponible",
-                    data: "base_imponible",
+                    data: "base_imponible_reducida",
                     render: (data, type, row) => {
-                      return formatDecimal(data);
+                      if ((row?.tipo_contribuyente?.id || 1) != 2){
+                        return formatDecimal(data);
+                      }else{
+                        return formatDecimal(0.0);
+                      }
                     }
                   },
                   {
                     title: " % Alicuota Reducida",
-                    data: "alicuota",
+                    data: "alicuota_reducida",
                     render: (data, type, row) => {
-                      return formatDecimal(data);
+                      if ((row?.tipo_contribuyente?.id || 1) != 2){
+                        return formatDecimal(data);
+                      }else{
+                        return formatDecimal(0.0);
+                      }
                     }
                   },
                   {
                     title: " Impuesto I.V.A",
-                    data: "impuesto_iva",
+                    data: "iva_reducida",
                     render: (data, type, row) => {
-                      return formatDecimal(data);
+                      if ((row?.tipo_contribuyente?.id || 1) != 2){
+                        return formatDecimal(data);
+                      }else{
+                        return formatDecimal(0.0);
+                      }
                     }
                   },
                   {
                     title: " Base Imponible",
-                    data: "base_imponible",
+                    data: "base_imponible_adicional",
                     render: (data, type, row) => {
-                      return formatDecimal(data);
+                      if ((row?.tipo_contribuyente?.id || 1) != 2){
+                        return formatDecimal(data);
+                      }else{
+                        return formatDecimal(0.0);
+                      }
                     }
                   },
                   {
                     title: " % Alicuota Adicional",
-                    data: "alicuota",
+                    data: "alicuota_adicional",
                     render: (data, type, row) => {
-                      return formatDecimal(data);
+                      if ((row?.tipo_contribuyente?.id || 1) != 2){
+                        return formatDecimal(data);
+                      }else{
+                        return formatDecimal(0.0);
+                      }
                     }
                   },
                   {
                     title: " Impuesto I.V.A",
-                    data: "impuesto_iva",
+                    data: "iva_adicional",
                     render: (data, type, row) => {
-                      return formatDecimal(data);
+                      if ((row?.tipo_contribuyente?.id || 1) != 2){
+                        return formatDecimal(data);
+                      }else{
+                        return formatDecimal(0.0);
+                      }
                     }
                   },
                   {
@@ -586,197 +667,200 @@ function SalesBook({ title, type }) {
 
                               const response = await getSalesBook(query);
                               const { hoja_detalle, hoja_resumen } = response;
+                              if (hoja_detalle.length > 0){
+                                const responseClient = await showClient(authclientId);
+                                const wb = XLSX.utils.book_new();
+                                const ws = XLSX.utils.aoa_to_sheet([]);
 
-                              const wb = XLSX.utils.book_new();
-                              const ws = XLSX.utils.aoa_to_sheet([]);
-
-                              // ---------------------------
-                              // Header
-                              // ---------------------------
-                              const headerRows = [
-                                [{ v: "LIBRO DE VENTAS", s: { font: { bold: true, color: { rgb: "FFFFFFFF" } }, fill: { fgColor: { rgb: "FF112C55" } }, alignment: { horizontal: "left", vertical: "center" } } }],
-                                [{ v: `Período: ${query.periodo || `${query.desde} al ${query.hasta}`}`, s: { font: { bold: true, color: { rgb: "FFFFFFFF" } }, fill: { fgColor: { rgb: "FF112C55" } } } }],
-                                [{ v: `Fecha de emisión: ${formatDate(new Date())}`, s: { font: { bold: true, color: { rgb: "FFFFFFFF" } }, fill: { fgColor: { rgb: "FF112C55" } } } }],
-                                [], // línea en blanco
-                                [
-                                  { v: "", s: { font: { bold: true, color: { rgb: "FFFFFFFF" } } } },
-                                  { v: "Ventas por cuentas de terceros", s: { font: { bold: true, color: { rgb: "FFFFFFFF" } }, alignment: { horizontal: "center" }, fill: { fgColor: { rgb: "FF112C55" } } } },
-                                  { v: "Contribuyente", s: { font: { bold: true, color: { rgb: "FFFFFFFF" } }, alignment: { horizontal: "center" }, fill: { fgColor: { rgb: "FF112C55" } } } },
-                                  { v: "No contribuyente", s: { font: { bold: true, color: { rgb: "FFFFFFFF" } }, alignment: { horizontal: "center" }, fill: { fgColor: { rgb: "FF112C55" } } } },
-                                  { v: "", s: { font: { bold: true, color: { rgb: "FFFFFFFF" } } } },
-                                ],
-                                [
-                                  { v: "Nro Oper.", s: { font: { bold: true, color: { rgb: "FFFFFFFF" } }, alignment: { horizontal: "center" }, fill: { fgColor: { rgb: "FF112C55" } } } },
-                                  { v: "Fecha de la factura", s: { font: { bold: true, color: { rgb: "FFFFFFFF" } }, alignment: { horizontal: "center" }, fill: { fgColor: { rgb: "FF112C55" } } } },
-                                  { v: "Tipo de documento", s: { font: { bold: true, color: { rgb: "FFFFFFFF" } }, alignment: { horizontal: "center" }, fill: { fgColor: { rgb: "FF112C55" } } } },
-                                  { v: "Factura o Número de documento", s: { font: { bold: true, color: { rgb: "FFFFFFFF" } }, alignment: { horizontal: "center" }, fill: { fgColor: { rgb: "FF112C55" } } } },
-                                  { v: "Número de control", s: { font: { bold: true, color: { rgb: "FFFFFFFF" } }, alignment: { horizontal: "center" }, fill: { fgColor: { rgb: "FF112C55" } } } },
-                                  { v: "N° comprobante", s: { font: { bold: true, color: { rgb: "FFFFFFFF" } }, alignment: { horizontal: "center" }, fill: { fgColor: { rgb: "FF112C55" } } } },
-                                  { v: "Número factura afectada", s: { font: { bold: true, color: { rgb: "FFFFFFFF" } }, alignment: { horizontal: "center" }, fill: { fgColor: { rgb: "FF112C55" } } } },
-                                  { v: "Nombre o razón social", s: { font: { bold: true, color: { rgb: "FFFFFFFF" } }, alignment: { horizontal: "center" }, fill: { fgColor: { rgb: "FF112C55" } } } },
-                                  { v: "RIF", s: { font: { bold: true, color: { rgb: "FFFFFFFF" } }, alignment: { horizontal: "center" }, fill: { fgColor: { rgb: "FF112C55" } } } },
-                                  { v: "Total Ventas  Bs. Incluyendo IVA.", s: { font: { bold: true, color: { rgb: "FFFFFFFF" } }, alignment: { horizontal: "center" }, fill: { fgColor: { rgb: "FF112C55" } } } },
-                                  { v: "Ventas Internas No Gravadas", s: { font: { bold: true, color: { rgb: "FFFFFFFF" } }, alignment: { horizontal: "center" }, fill: { fgColor: { rgb: "FF112C55" } } } },
-                                  { v: "Base Imponible", s: { font: { bold: true, color: { rgb: "FFFFFFFF" } }, alignment: { horizontal: "center" }, fill: { fgColor: { rgb: "FF112C55" } } } },
-                                  { v: "% Alicuota", s: { font: { bold: true, color: { rgb: "FFFFFFFF" } }, alignment: { horizontal: "center" }, fill: { fgColor: { rgb: "FF112C55" } } } },
-                                  { v: "Impuesto I.V.A", s: { font: { bold: true, color: { rgb: "FFFFFFFF" } }, alignment: { horizontal: "center" }, fill: { fgColor: { rgb: "FF112C55" } } } },
-                                  { v: "Ventas Internas No Gravadas", s: { font: { bold: true, color: { rgb: "FFFFFFFF" } }, alignment: { horizontal: "center" }, fill: { fgColor: { rgb: "FF112C55" } } } },
-                                  { v: "Base Imponible (General)", s: { font: { bold: true, color: { rgb: "FFFFFFFF" } }, alignment: { horizontal: "center" }, fill: { fgColor: { rgb: "FF112C55" } } } },
-                                  { v: "% Alicuota (General)", s: { font: { bold: true, color: { rgb: "FFFFFFFF" } }, alignment: { horizontal: "center" }, fill: { fgColor: { rgb: "FF112C55" } } } },
-                                  { v: "Impuesto I.V.A (General)", s: { font: { bold: true, color: { rgb: "FFFFFFFF" } }, alignment: { horizontal: "center" }, fill: { fgColor: { rgb: "FF112C55" } } } },
-                                  { v: "Base Imponible (Reducida)", s: { font: { bold: true, color: { rgb: "FFFFFFFF" } }, alignment: { horizontal: "center" }, fill: { fgColor: { rgb: "FF112C55" } } } },
-                                  { v: "% Alicuota (Reducida)", s: { font: { bold: true, color: { rgb: "FFFFFFFF" } }, alignment: { horizontal: "center" }, fill: { fgColor: { rgb: "FF112C55" } } } },
-                                  { v: "Impuesto I.V.A (Reducida)", s: { font: { bold: true, color: { rgb: "FFFFFFFF" } }, alignment: { horizontal: "center" }, fill: { fgColor: { rgb: "FF112C55" } } } },
-                                  { v: "Base Imponible (Adicional)", s: { font: { bold: true, color: { rgb: "FFFFFFFF" } }, alignment: { horizontal: "center" }, fill: { fgColor: { rgb: "FF112C55" } } } },
-                                  { v: "% Alicuota (Adicional)", s: { font: { bold: true, color: { rgb: "FFFFFFFF" } }, alignment: { horizontal: "center" }, fill: { fgColor: { rgb: "FF112C55" } } } },
-                                  { v: "Impuesto I.V.A (Adicional)", s: { font: { bold: true, color: { rgb: "FFFFFFFF" } }, alignment: { horizontal: "center" }, fill: { fgColor: { rgb: "FF112C55" } } } },
-                                  { v: "Ventas Internas No Gravadas", s: { font: { bold: true, color: { rgb: "FFFFFFFF" } }, alignment: { horizontal: "center" }, fill: { fgColor: { rgb: "FF112C55" } } } },
-                                  { v: "Base Imponible (General)", s: { font: { bold: true, color: { rgb: "FFFFFFFF" } }, alignment: { horizontal: "center" }, fill: { fgColor: { rgb: "FF112C55" } } } },
-                                  { v: "% Alicuota (General)", s: { font: { bold: true, color: { rgb: "FFFFFFFF" } }, alignment: { horizontal: "center" }, fill: { fgColor: { rgb: "FF112C55" } } } },
-                                  { v: "Impuesto I.V.A (General)", s: { font: { bold: true, color: { rgb: "FFFFFFFF" } }, alignment: { horizontal: "center" }, fill: { fgColor: { rgb: "FF112C55" } } } },
-                                  { v: "Base Imponible (Reducida)", s: { font: { bold: true, color: { rgb: "FFFFFFFF" } }, alignment: { horizontal: "center" }, fill: { fgColor: { rgb: "FF112C55" } } } },
-                                  { v: "% Alicuota (Reducida)", s: { font: { bold: true, color: { rgb: "FFFFFFFF" } }, alignment: { horizontal: "center" }, fill: { fgColor: { rgb: "FF112C55" } } } },
-                                  { v: "Impuesto I.V.A (Reducida)", s: { font: { bold: true, color: { rgb: "FFFFFFFF" } }, alignment: { horizontal: "center" }, fill: { fgColor: { rgb: "FF112C55" } } } },
-                                  { v: "Base Imponible (Adicional)", s: { font: { bold: true, color: { rgb: "FFFFFFFF" } }, alignment: { horizontal: "center" }, fill: { fgColor: { rgb: "FF112C55" } } } },
-                                  { v: "% Alicuota (Adicional)", s: { font: { bold: true, color: { rgb: "FFFFFFFF" } }, alignment: { horizontal: "center" }, fill: { fgColor: { rgb: "FF112C55" } } } },
-                                  { v: "Impuesto I.V.A (Adicional)", s: { font: { bold: true, color: { rgb: "FFFFFFFF" } }, alignment: { horizontal: "center" }, fill: { fgColor: { rgb: "FF112C55" } } } },
-                                  { v: "I.V.A Retenido", s: { font: { bold: true, color: { rgb: "FFFFFFFF" } }, alignment: { horizontal: "center" }, fill: { fgColor: { rgb: "FF112C55" } } } },
-                                  { v: "I.G.T.F Percibido", s: { font: { bold: true, color: { rgb: "FFFFFFFF" } }, alignment: { horizontal: "center" }, fill: { fgColor: { rgb: "FF112C55" } } } },
-                                ]
-                              ];
-                              XLSX.utils.sheet_add_aoa(ws, headerRows, { origin: "A1" });
-                              // Ahora agregamos los títulos de las agrupaciones
-                              ws["K5"] = {
-                                v: "Ventas por cuentas de terceros", t: "s", s: { font: { bold: true, color: { rgb: "FFFFFFFF" } }, alignment: { horizontal: "center", vertical: "center" }, fill: { fgColor: { rgb: "FF112C55" } } }
-                              };
-                              ws["O5"] = {
-                                v: "Contribuyente", t: "s", s: { font: { bold: true, color: { rgb: "FFFFFFFF" } }, alignment: { horizontal: "center", vertical: "center" }, fill: { fgColor: { rgb: "FF112C55" } } }
-                              };
-                              ws["Y5"] = {
-                                v: "No contribuyente", t: "s", s: { font: { bold: true, color: { rgb: "FFFFFFFF" } }, alignment: { horizontal: "center", vertical: "center" }, fill: { fgColor: { rgb: "FF112C55" } } }
-                              };
-
-                              // ---------------------------
-                              // Tabla detalle
-                              // ---------------------------
-                              const tableData = hoja_detalle.map(item => ({
-                                "Nro Oper.": { v: Number(item.nro_operacion || 0), t: "n", s: { numFmt: '#0', alignment: { horizontal: "right", vertical: "center" } } },
-                                "Fecha de la factura": { v: new Date(item.fecha_documento), t: "d", s: { alignment: { horizontal: "center", vertical: "center" } } },
-                                "Tipo de documento": { v: (item.tipo_transaccion == '01-reg' ?
-                                  formatText('Factura'):(item.tipo_transaccion == '02-reg' ?
-                                   formatText('Nota de Débito'):(item.tipo_transaccion == '03-reg' ?
-                                    formatText('Nota de Crédito'):(item.tipo_transaccion == '07-reg' ?
-                                     formatText('Retención'):formatText(item.tipo_transaccion))))), t: "s", s: { alignment: { horizontal: "center", vertical: "center" } } },
-                                "Factura o Número de documento": { v: formatText(item.numero_factura), t: "s", s: { alignment: { horizontal: "center", vertical: "center" } } },
-                                "Número de control": { v: formatText(item.numero_control), t: "s", s: { alignment: { horizontal: "center", vertical: "center" } } },
-                                "N° comprobante": { v: formatText(item.numero_comprobante_retencion), t: "s", s: { alignment: { horizontal: "center", vertical: "center" } } },
-                                "Número factura afectada": { v: formatText(item.numero_factura_afectada), t: "s", s: { alignment: { horizontal: "center", vertical: "center" } } },
-                                "Nombre o razón social": { v: formatText(item.nombre_razon_social), t: "s", s: { alignment: { horizontal: "left", vertical: "center" } } },
-                                "RIF": { v: formatText(item.rif), t: "s", s: { alignment: { horizontal: "center", vertical: "center" } } },
-                                "Total Ventas  Bs. Incluyendo IVA.": { v: Number(item.total_ventas_con_iva || 0), t: "n", s: styleAmount },
-
-                                // VCT
-                                "VCT - Ventas Internas No Gravadas": { v: 0, t: "n", s: styleAmount },
-                                "VCT - Base Imponible": { v: 0, t: "n", s: styleAmount },
-                                "VCT - % Alicuota": { v: 0, t: "n", s: styleAmount },
-                                "VCT - Impuesto I.V.A": { v: 0, t: "n", s: styleAmount },
-
-                                // CONTRIBUYENTE
-                                "C - Ventas Internas No Gravadas": { v: Number(item.ventas_exentas || 0), t: "n", s: styleAmount },
-                                "C - Base Imponible (General)": { v: Number(item.base_imponible || 0), t: "n", s: styleAmount },
-                                "C - % Alicuota (General)": { v: Number(item.alicuota || 0), t: "n" },
-                                "C - Impuesto I.V.A (General)": { v: Number(item.impuesto_iva || 0), t: "n", s: styleAmount },
-
-                                "C - Base Imponible (Reducida)": { v: Number(item.base_imponible || 0), t: "n", s: styleAmount },
-                                "C - % Alicuota (Reducida)": { v: Number(item.alicuota || 0), t: "n" },
-                                "C - Impuesto I.V.A (Reducida)": { v: Number(item.impuesto_iva || 0), t: "n", s: styleAmount },
-
-                                "C - Base Imponible (Adicional)": { v: Number(item.base_imponible || 0), t: "n", s: styleAmount },
-                                "C - % Alicuota (Adicional)": { v: Number(item.alicuota || 0), t: "n" },
-                                "C - Impuesto I.V.A (Adicional)": { v: Number(item.impuesto_iva || 0), t: "n", s: styleAmount },
-
-                                // NO CONTRIBUYENTE
-                                "NC - Ventas Internas No Gravadas": { v: Number(item.ventas_exentas || 0), t: "n", s: styleAmount },
-                                "NC - Base Imponible (General)": { v: Number(item.base_imponible || 0), t: "n", s: styleAmount },
-                                "NC - % Alicuota (General)": { v: Number(item.alicuota || 0), t: "n" },
-                                "NC - Impuesto I.V.A (General)": { v: Number(item.impuesto_iva || 0), t: "n", s: styleAmount },
-
-                                "NC - Base Imponible (Reducida)": { v: Number(item.base_imponible || 0), t: "n", s: styleAmount },
-                                "NC - % Alicuota (Reducida)": { v: Number(item.alicuota || 0), t: "n" },
-                                "NC - Impuesto I.V.A (Reducida)": { v: Number(item.impuesto_iva || 0), t: "n", s: styleAmount },
-
-                                "NC - Base Imponible (Adicional)": { v: Number(item.base_imponible || 0), t: "n", s: styleAmount },
-                                "NC - % Alicuota (Adicional)": { v: Number(item.alicuota || 0), t: "n" },
-                                "NC - Impuesto I.V.A (Adicional)": { v: Number(item.impuesto_iva || 0), t: "n", s: styleAmount },
-
-                                "I.V.A Retenido": { v: Number(item.iva_retenido || 0), t: "n", s: styleAmount },
-                                "I.G.T.F Percibido": { v: Number(item.igtf || 0), t: "n", s: styleAmount }
-                              }));
-
-                              // Sumatoria de lineas:
-                              const tableDataWithTotals = addTotalsRow(tableData).map((row, index, arr) => {
-                                // Solo estilizamos la última fila (la de totales)
-                                if (index === arr.length - 1) {
-                                  return styleTotalsRow(row);
-                                }
-                                return row; // las demás filas se mantienen igual
-                              });
-                              XLSX.utils.sheet_add_json(ws, tableDataWithTotals, { origin: "A7", skipHeader: true });
-
-                              // ---------------------------
-                              // Footer
-                              // ---------------------------
-                              const footerStartRow = tableData.length + headerRows.length + 3;
-                              const footerRows = buildFooterRows(response);
-                              XLSX.utils.sheet_add_aoa(ws, footerRows, { origin: `A${footerStartRow}` });
-
-                              // ---------------------------
-                              // Merges
-                              // ---------------------------
-                              ws["!merges"] = [
                                 // ---------------------------
-                                // Header / agrupaciones
+                                // Header
                                 // ---------------------------
-                                { s: { r: 0, c: 0 }, e: { r: 0, c: 6 } },   // Cabecera L1
-                                { s: { r: 1, c: 0 }, e: { r: 1, c: 6 } },   // Cabecera L2
-                                { s: { r: 2, c: 0 }, e: { r: 2, c: 6 } },   // Cabecera L3
-                                { s: { r: 4, c: 0 }, e: { r: 4, c: 9 } },   // Datos principales
-                                { s: { r: 4, c: 10 }, e: { r: 4, c: 13 } }, // VCT
-                                { s: { r: 4, c: 14 }, e: { r: 4, c: 23 } }, // Contribuyente
-                                { s: { r: 4, c: 24 }, e: { r: 4, c: 33 } }, // No contribuyente
-                                { s: { r: 4, c: 34 }, e: { r: 4, c: 35 } },  // Finales
+                                const headerRows = [
+                                  [{ v: formatText(responseClient.nombre_empresa), s: { font: { bold: true, color: { rgb: "FFFFFFFF" } }, fill: { fgColor: { rgb: "FF112C55" } }, alignment: { horizontal: "left", vertical: "center" } } }],
+                                  [{ v: formatText(responseClient.rif), s: { font: { bold: true, color: { rgb: "FFFFFFFF" } }, fill: { fgColor: { rgb: "FF112C55" } } } }],
+                                  [{ v: `Libro de ventas: ${query.periodo || `${query.desde} al ${query.hasta}`}`, s: { font: { bold: true, color: { rgb: "FFFFFFFF" } }, fill: { fgColor: { rgb: "FF112C55" } } } }],
+                                  [], // línea en blanco
+                                  [
+                                    { v: "", s: { font: { bold: true, color: { rgb: "FFFFFFFF" } } } },
+                                    { v: "Ventas por cuentas de terceros", s: { font: { bold: true, color: { rgb: "FFFFFFFF" } }, alignment: { horizontal: "center" }, fill: { fgColor: { rgb: "FF112C55" } } } },
+                                    { v: "Contribuyente", s: { font: { bold: true, color: { rgb: "FFFFFFFF" } }, alignment: { horizontal: "center" }, fill: { fgColor: { rgb: "FF112C55" } } } },
+                                    { v: "No contribuyente", s: { font: { bold: true, color: { rgb: "FFFFFFFF" } }, alignment: { horizontal: "center" }, fill: { fgColor: { rgb: "FF112C55" } } } },
+                                    { v: "", s: { font: { bold: true, color: { rgb: "FFFFFFFF" } } } },
+                                  ],
+                                  [
+                                    { v: "Nro Oper.", s: { font: { bold: true, color: { rgb: "FFFFFFFF" } }, alignment: { horizontal: "center" }, fill: { fgColor: { rgb: "FF112C55" } } } },
+                                    { v: "Fecha de la factura", s: { font: { bold: true, color: { rgb: "FFFFFFFF" } }, alignment: { horizontal: "center" }, fill: { fgColor: { rgb: "FF112C55" } } } },
+                                    { v: "Tipo de documento", s: { font: { bold: true, color: { rgb: "FFFFFFFF" } }, alignment: { horizontal: "center" }, fill: { fgColor: { rgb: "FF112C55" } } } },
+                                    { v: "Factura o Número de documento", s: { font: { bold: true, color: { rgb: "FFFFFFFF" } }, alignment: { horizontal: "center" }, fill: { fgColor: { rgb: "FF112C55" } } } },
+                                    { v: "Número de control", s: { font: { bold: true, color: { rgb: "FFFFFFFF" } }, alignment: { horizontal: "center" }, fill: { fgColor: { rgb: "FF112C55" } } } },
+                                    { v: "N° comprobante", s: { font: { bold: true, color: { rgb: "FFFFFFFF" } }, alignment: { horizontal: "center" }, fill: { fgColor: { rgb: "FF112C55" } } } },
+                                    { v: "Número factura afectada", s: { font: { bold: true, color: { rgb: "FFFFFFFF" } }, alignment: { horizontal: "center" }, fill: { fgColor: { rgb: "FF112C55" } } } },
+                                    { v: "Nombre o razón social", s: { font: { bold: true, color: { rgb: "FFFFFFFF" } }, alignment: { horizontal: "center" }, fill: { fgColor: { rgb: "FF112C55" } } } },
+                                    { v: "RIF", s: { font: { bold: true, color: { rgb: "FFFFFFFF" } }, alignment: { horizontal: "center" }, fill: { fgColor: { rgb: "FF112C55" } } } },
+                                    { v: "Total Ventas  Bs. Incluyendo IVA.", s: { font: { bold: true, color: { rgb: "FFFFFFFF" } }, alignment: { horizontal: "center" }, fill: { fgColor: { rgb: "FF112C55" } } } },
+                                    { v: "Ventas Internas No Gravadas", s: { font: { bold: true, color: { rgb: "FFFFFFFF" } }, alignment: { horizontal: "center" }, fill: { fgColor: { rgb: "FF112C55" } } } },
+                                    { v: "Base Imponible", s: { font: { bold: true, color: { rgb: "FFFFFFFF" } }, alignment: { horizontal: "center" }, fill: { fgColor: { rgb: "FF112C55" } } } },
+                                    { v: "% Alicuota", s: { font: { bold: true, color: { rgb: "FFFFFFFF" } }, alignment: { horizontal: "center" }, fill: { fgColor: { rgb: "FF112C55" } } } },
+                                    { v: "Impuesto I.V.A", s: { font: { bold: true, color: { rgb: "FFFFFFFF" } }, alignment: { horizontal: "center" }, fill: { fgColor: { rgb: "FF112C55" } } } },
+                                    { v: "Ventas Internas No Gravadas", s: { font: { bold: true, color: { rgb: "FFFFFFFF" } }, alignment: { horizontal: "center" }, fill: { fgColor: { rgb: "FF112C55" } } } },
+                                    { v: "Base Imponible (General)", s: { font: { bold: true, color: { rgb: "FFFFFFFF" } }, alignment: { horizontal: "center" }, fill: { fgColor: { rgb: "FF112C55" } } } },
+                                    { v: "% Alicuota (General)", s: { font: { bold: true, color: { rgb: "FFFFFFFF" } }, alignment: { horizontal: "center" }, fill: { fgColor: { rgb: "FF112C55" } } } },
+                                    { v: "Impuesto I.V.A (General)", s: { font: { bold: true, color: { rgb: "FFFFFFFF" } }, alignment: { horizontal: "center" }, fill: { fgColor: { rgb: "FF112C55" } } } },
+                                    { v: "Base Imponible (Reducida)", s: { font: { bold: true, color: { rgb: "FFFFFFFF" } }, alignment: { horizontal: "center" }, fill: { fgColor: { rgb: "FF112C55" } } } },
+                                    { v: "% Alicuota (Reducida)", s: { font: { bold: true, color: { rgb: "FFFFFFFF" } }, alignment: { horizontal: "center" }, fill: { fgColor: { rgb: "FF112C55" } } } },
+                                    { v: "Impuesto I.V.A (Reducida)", s: { font: { bold: true, color: { rgb: "FFFFFFFF" } }, alignment: { horizontal: "center" }, fill: { fgColor: { rgb: "FF112C55" } } } },
+                                    { v: "Base Imponible (Adicional)", s: { font: { bold: true, color: { rgb: "FFFFFFFF" } }, alignment: { horizontal: "center" }, fill: { fgColor: { rgb: "FF112C55" } } } },
+                                    { v: "% Alicuota (Adicional)", s: { font: { bold: true, color: { rgb: "FFFFFFFF" } }, alignment: { horizontal: "center" }, fill: { fgColor: { rgb: "FF112C55" } } } },
+                                    { v: "Impuesto I.V.A (Adicional)", s: { font: { bold: true, color: { rgb: "FFFFFFFF" } }, alignment: { horizontal: "center" }, fill: { fgColor: { rgb: "FF112C55" } } } },
+                                    { v: "Ventas Internas No Gravadas", s: { font: { bold: true, color: { rgb: "FFFFFFFF" } }, alignment: { horizontal: "center" }, fill: { fgColor: { rgb: "FF112C55" } } } },
+                                    { v: "Base Imponible (General)", s: { font: { bold: true, color: { rgb: "FFFFFFFF" } }, alignment: { horizontal: "center" }, fill: { fgColor: { rgb: "FF112C55" } } } },
+                                    { v: "% Alicuota (General)", s: { font: { bold: true, color: { rgb: "FFFFFFFF" } }, alignment: { horizontal: "center" }, fill: { fgColor: { rgb: "FF112C55" } } } },
+                                    { v: "Impuesto I.V.A (General)", s: { font: { bold: true, color: { rgb: "FFFFFFFF" } }, alignment: { horizontal: "center" }, fill: { fgColor: { rgb: "FF112C55" } } } },
+                                    { v: "Base Imponible (Reducida)", s: { font: { bold: true, color: { rgb: "FFFFFFFF" } }, alignment: { horizontal: "center" }, fill: { fgColor: { rgb: "FF112C55" } } } },
+                                    { v: "% Alicuota (Reducida)", s: { font: { bold: true, color: { rgb: "FFFFFFFF" } }, alignment: { horizontal: "center" }, fill: { fgColor: { rgb: "FF112C55" } } } },
+                                    { v: "Impuesto I.V.A (Reducida)", s: { font: { bold: true, color: { rgb: "FFFFFFFF" } }, alignment: { horizontal: "center" }, fill: { fgColor: { rgb: "FF112C55" } } } },
+                                    { v: "Base Imponible (Adicional)", s: { font: { bold: true, color: { rgb: "FFFFFFFF" } }, alignment: { horizontal: "center" }, fill: { fgColor: { rgb: "FF112C55" } } } },
+                                    { v: "% Alicuota (Adicional)", s: { font: { bold: true, color: { rgb: "FFFFFFFF" } }, alignment: { horizontal: "center" }, fill: { fgColor: { rgb: "FF112C55" } } } },
+                                    { v: "Impuesto I.V.A (Adicional)", s: { font: { bold: true, color: { rgb: "FFFFFFFF" } }, alignment: { horizontal: "center" }, fill: { fgColor: { rgb: "FF112C55" } } } },
+                                    { v: "I.V.A Retenido", s: { font: { bold: true, color: { rgb: "FFFFFFFF" } }, alignment: { horizontal: "center" }, fill: { fgColor: { rgb: "FF112C55" } } } },
+                                    { v: "I.G.T.F Percibido", s: { font: { bold: true, color: { rgb: "FFFFFFFF" } }, alignment: { horizontal: "center" }, fill: { fgColor: { rgb: "FF112C55" } } } },
+                                  ]
+                                ];
+                                XLSX.utils.sheet_add_aoa(ws, headerRows, { origin: "A1" });
+                                // Ahora agregamos los títulos de las agrupaciones
+                                ws["K5"] = {
+                                  v: "Ventas por cuentas de terceros", t: "s", s: { font: { bold: true, color: { rgb: "FFFFFFFF" } }, alignment: { horizontal: "center", vertical: "center" }, fill: { fgColor: { rgb: "FF112C55" } } }
+                                };
+                                ws["O5"] = {
+                                  v: "Contribuyente", t: "s", s: { font: { bold: true, color: { rgb: "FFFFFFFF" } }, alignment: { horizontal: "center", vertical: "center" }, fill: { fgColor: { rgb: "FF112C55" } } }
+                                };
+                                ws["Y5"] = {
+                                  v: "No contribuyente", t: "s", s: { font: { bold: true, color: { rgb: "FFFFFFFF" } }, alignment: { horizontal: "center", vertical: "center" }, fill: { fgColor: { rgb: "FF112C55" } } }
+                                };
+
                                 // ---------------------------
-                                // Footer / resumen
+                                // Tabla detalle
                                 // ---------------------------
-                                { s: { r: footerStartRow, c: 0 }, e: { r: footerStartRow, c: 9 } },   // Resumen General
-                                { s: { r: footerStartRow + 1, c: 0 }, e: { r: footerStartRow + 1, c: 5 } }, // Titulos
-                                { s: { r: footerStartRow + 2, c: 0 }, e: { r: footerStartRow + 2, c: 5 } }, // Total ventas internas no gravadas
-                                { s: { r: footerStartRow + 3, c: 0 }, e: { r: footerStartRow + 3, c: 5 } }, // Total nota de crédito no gravadas
-                                { s: { r: footerStartRow + 4, c: 0 }, e: { r: footerStartRow + 4, c: 5 } }, // Total nota de débito no gravadas
-                                { s: { r: footerStartRow + 5, c: 0 }, e: { r: footerStartRow + 5, c: 5 } }, // Total ventas internas afectadas sólo alícuota general 16%
-                                { s: { r: footerStartRow + 6, c: 0 }, e: { r: footerStartRow + 6, c: 5 } }, // Total ventas internas afectadas sólo alícuota reducida 8%
-                                { s: { r: footerStartRow + 7, c: 0 }, e: { r: footerStartRow + 7, c: 5 } }, // Total ventas internas afectadas sólo alícuota adicional 31%
-                                { s: { r: footerStartRow + 8, c: 0 }, e: { r: footerStartRow + 8, c: 5 } }, // Total notas de crédito o devoluciones aplicadas en ventas 16%
-                                { s: { r: footerStartRow + 9, c: 0 }, e: { r: footerStartRow + 9, c: 5 } }, // Total notas de crédito o devoluciones aplicadas en ventas 8%
-                                { s: { r: footerStartRow + 10, c: 0 }, e: { r: footerStartRow + 10, c: 5 } }, // Total notas de crédito o devoluciones aplicadas en ventas 31%
-                                { s: { r: footerStartRow + 11, c: 0 }, e: { r: footerStartRow + 11, c: 5 } }, // Total notas de débito o recargos aplicadas en ventas 16%
-                                { s: { r: footerStartRow + 12, c: 0 }, e: { r: footerStartRow + 12, c: 5 } }, // Total notas de débito o recargos aplicadas en ventas 8%
-                                { s: { r: footerStartRow + 13, c: 0 }, e: { r: footerStartRow + 13, c: 5 } }, // Total notas de débito o recargos aplicadas en ventas 31%
-                                { s: { r: footerStartRow + 14, c: 0 }, e: { r: footerStartRow + 14, c: 5 } }, // Total
-                              ];
+                                const tableData = hoja_detalle.map(item => ({
+                                  "Nro Oper.": { v: Number(item.nro_operacion || 0), t: "n", s: { numFmt: '#0', alignment: { horizontal: "right", vertical: "center" } } },
+                                  "Fecha de la factura": { v: new Date(item.fecha_documento), t: "d", s: { alignment: { horizontal: "center", vertical: "center" } } },
+                                  "Tipo de documento": { v: (item.tipo_transaccion == '01-reg' ?
+                                    formatText('Factura'):(item.tipo_transaccion == '02-reg' ?
+                                     formatText('Nota de Débito'):(item.tipo_transaccion == '03-reg' ?
+                                      formatText('Nota de Crédito'):(item.tipo_transaccion == '07-reg' ?
+                                       formatText('Retención'):formatText(item.tipo_transaccion))))), t: "s", s: { alignment: { horizontal: "center", vertical: "center" } } },
+                                  "Factura o Número de documento": { v: formatText(item.numero_factura), t: "s", s: { alignment: { horizontal: "center", vertical: "center" } } },
+                                  "Número de control": { v: formatText(item.numero_control), t: "s", s: { alignment: { horizontal: "center", vertical: "center" } } },
+                                  "N° comprobante": { v: formatText(item.numero_comprobante_retencion), t: "s", s: { alignment: { horizontal: "center", vertical: "center" } } },
+                                  "Número factura afectada": { v: formatText(item.numero_factura_afectada), t: "s", s: { alignment: { horizontal: "center", vertical: "center" } } },
+                                  "Nombre o razón social": { v: formatText(item.nombre_razon_social), t: "s", s: { alignment: { horizontal: "left", vertical: "center" } } },
+                                  "RIF": { v: formatText(item.rif), t: "s", s: { alignment: { horizontal: "center", vertical: "center" } } },
+                                  "Total Ventas  Bs. Incluyendo IVA.": { v: Number(item.total_ventas_con_iva || 0), t: "n", s: styleAmount },
 
-                              XLSX.utils.book_append_sheet(wb, ws, "Libro de ventas");
+                                  // VCT
+                                  "VCT - Ventas Internas No Gravadas": { v: 0, t: "n", s: styleAmount },
+                                  "VCT - Base Imponible": { v: 0, t: "n", s: styleAmount },
+                                  "VCT - % Alicuota": { v: 0, t: "n", s: styleAmount },
+                                  "VCT - Impuesto I.V.A": { v: 0, t: "n", s: styleAmount },
 
-                              const wbout = XLSX.write(wb, { bookType: "xlsx", type: "array" });
-                              const blob = new Blob([wbout], { type: "application/octet-stream" });
-                              const link = document.createElement("a");
-                              link.href = URL.createObjectURL(blob);
-                              link.download = `Libro_de_ventas_${formatDate(new Date())}.xlsx`;
-                              link.click();
+                                  // CONTRIBUYENTE
+                                  "C - Ventas Internas No Gravadas": { v: Number((((item?.tipo_contribuyente?.id || 1) == 2) ? item.ventas_exentas : 0) || 0), t: "n", s: styleAmount },
+                                  "C - Base Imponible (General)": { v: Number((((item?.tipo_contribuyente?.id || 1) == 2) ? item.base_imponible_general : 0) || 0), t: "n", s: styleAmount },
+                                  "C - % Alicuota (General)": { v: Number((((item?.tipo_contribuyente?.id || 1) == 2) ? item.alicuota_general : 0) || 0), t: "n" },
+                                  "C - Impuesto I.V.A (General)": { v: Number((((item?.tipo_contribuyente?.id || 1) == 2) ? item.iva_general : 0) || 0), t: "n", s: styleAmount },
 
-                              $(exportButton).text("Exportar todo (Excel)").prop("disabled", false).css("pointer-events", "auto");
-                              toast.success("Archivo exportado correctamente.");
+                                  "C - Base Imponible (Reducida)": { v: Number((((item?.tipo_contribuyente?.id || 1) == 2) ? item.base_imponible_reducida : 0) || 0), t: "n", s: styleAmount },
+                                  "C - % Alicuota (Reducida)": { v: Number((((item?.tipo_contribuyente?.id || 1) == 2) ? item.alicuota_reducida : 0) || 0), t: "n" },
+                                  "C - Impuesto I.V.A (Reducida)": { v: Number((((item?.tipo_contribuyente?.id || 1) == 2) ? item.iva_reducida : 0) || 0), t: "n", s: styleAmount },
 
+                                  "C - Base Imponible (Adicional)": { v: Number((((item?.tipo_contribuyente?.id || 1) == 2) ? item.base_imponible_adicional : 0) || 0), t: "n", s: styleAmount },
+                                  "C - % Alicuota (Adicional)": { v: Number((((item?.tipo_contribuyente?.id || 1) == 2) ? item.alicuota_adicional : 0) || 0), t: "n" },
+                                  "C - Impuesto I.V.A (Adicional)": { v: Number((((item?.tipo_contribuyente?.id || 1) == 2) ? item.iva_adicional : 0) || 0), t: "n", s: styleAmount },
+
+                                  // NO CONTRIBUYENTE
+                                  "NC - Ventas Internas No Gravadas": { v: Number((((item?.tipo_contribuyente?.id || 1) != 2) ? item.ventas_exentas : 0) || 0), t: "n", s: styleAmount },
+                                  "NC - Base Imponible (General)": { v: Number((((item?.tipo_contribuyente?.id || 1) != 2) ? item.base_imponible_general : 0) || 0), t: "n", s: styleAmount },
+                                  "NC - % Alicuota (General)": { v: Number((((item?.tipo_contribuyente?.id || 1) != 2) ? item.alicuota_general : 0) || 0), t: "n" },
+                                  "NC - Impuesto I.V.A (General)": { v: Number((((item?.tipo_contribuyente?.id || 1) != 2) ? item.iva_general : 0) || 0), t: "n", s: styleAmount },
+
+                                  "NC - Base Imponible (Reducida)": { v: Number((((item?.tipo_contribuyente?.id || 1) != 2) ? item.base_imponible_reducida : 0) || 0), t: "n", s: styleAmount },
+                                  "NC - % Alicuota (Reducida)": { v: Number((((item?.tipo_contribuyente?.id || 1) != 2) ? item.alicuota_reducida : 0) || 0), t: "n" },
+                                  "NC - Impuesto I.V.A (Reducida)": { v: Number((((item?.tipo_contribuyente?.id || 1) != 2) ? item.iva_reducida : 0) || 0), t: "n", s: styleAmount },
+
+                                  "NC - Base Imponible (Adicional)": { v: Number((((item?.tipo_contribuyente?.id || 1) != 2) ? item.base_imponible_adicional : 0) || 0), t: "n", s: styleAmount },
+                                  "NC - % Alicuota (Adicional)": { v: Number((((item?.tipo_contribuyente?.id || 1) != 2) ? item.alicuota_adicional : 0) || 0), t: "n" },
+                                  "NC - Impuesto I.V.A (Adicional)": { v: Number((((item?.tipo_contribuyente?.id || 1) != 2) ? item.iva_adicional : 0) || 0), t: "n", s: styleAmount },
+
+                                  "I.V.A Retenido": { v: Number(item.iva_retenido || 0), t: "n", s: styleAmount },
+                                  "I.G.T.F Percibido": { v: Number(item.igtf || 0), t: "n", s: styleAmount }
+                                }));
+
+                                // Sumatoria de lineas:
+                                const tableDataWithTotals = addTotalsRow(tableData).map((row, index, arr) => {
+                                  // Solo estilizamos la última fila (la de totales)
+                                  if (index === arr.length - 1) {
+                                    return styleTotalsRow(row);
+                                  }
+                                  return row; // las demás filas se mantienen igual
+                                });
+                                XLSX.utils.sheet_add_json(ws, tableDataWithTotals, { origin: "A7", skipHeader: true });
+
+                                // ---------------------------
+                                // Footer
+                                // ---------------------------
+                                const footerStartRow = tableData.length + headerRows.length + 3;
+                                const footerRows = buildFooterRows(response);
+                                XLSX.utils.sheet_add_aoa(ws, footerRows, { origin: `A${footerStartRow}` });
+
+                                // ---------------------------
+                                // Merges
+                                // ---------------------------
+                                ws["!merges"] = [
+                                  // ---------------------------
+                                  // Header / agrupaciones
+                                  // ---------------------------
+                                  { s: { r: 0, c: 0 }, e: { r: 0, c: 6 } },   // Cabecera L1
+                                  { s: { r: 1, c: 0 }, e: { r: 1, c: 6 } },   // Cabecera L2
+                                  { s: { r: 2, c: 0 }, e: { r: 2, c: 6 } },   // Cabecera L3
+                                  { s: { r: 4, c: 0 }, e: { r: 4, c: 9 } },   // Datos principales
+                                  { s: { r: 4, c: 10 }, e: { r: 4, c: 13 } }, // VCT
+                                  { s: { r: 4, c: 14 }, e: { r: 4, c: 23 } }, // Contribuyente
+                                  { s: { r: 4, c: 24 }, e: { r: 4, c: 33 } }, // No contribuyente
+                                  { s: { r: 4, c: 34 }, e: { r: 4, c: 35 } },  // Finales
+                                  // ---------------------------
+                                  // Footer / resumen
+                                  // ---------------------------
+                                  { s: { r: footerStartRow, c: 0 }, e: { r: footerStartRow, c: 9 } },   // Resumen General
+                                  { s: { r: footerStartRow + 1, c: 0 }, e: { r: footerStartRow + 1, c: 5 } }, // Titulos
+                                  { s: { r: footerStartRow + 2, c: 0 }, e: { r: footerStartRow + 2, c: 5 } }, // Total ventas internas no gravadas
+                                  { s: { r: footerStartRow + 3, c: 0 }, e: { r: footerStartRow + 3, c: 5 } }, // Total nota de crédito no gravadas
+                                  { s: { r: footerStartRow + 4, c: 0 }, e: { r: footerStartRow + 4, c: 5 } }, // Total nota de débito no gravadas
+                                  { s: { r: footerStartRow + 5, c: 0 }, e: { r: footerStartRow + 5, c: 5 } }, // Total ventas internas afectadas sólo alícuota general 16%
+                                  { s: { r: footerStartRow + 6, c: 0 }, e: { r: footerStartRow + 6, c: 5 } }, // Total ventas internas afectadas sólo alícuota reducida 8%
+                                  { s: { r: footerStartRow + 7, c: 0 }, e: { r: footerStartRow + 7, c: 5 } }, // Total ventas internas afectadas sólo alícuota adicional 31%
+                                  { s: { r: footerStartRow + 8, c: 0 }, e: { r: footerStartRow + 8, c: 5 } }, // Total notas de crédito o devoluciones aplicadas en ventas 16%
+                                  { s: { r: footerStartRow + 9, c: 0 }, e: { r: footerStartRow + 9, c: 5 } }, // Total notas de crédito o devoluciones aplicadas en ventas 8%
+                                  { s: { r: footerStartRow + 10, c: 0 }, e: { r: footerStartRow + 10, c: 5 } }, // Total notas de crédito o devoluciones aplicadas en ventas 31%
+                                  { s: { r: footerStartRow + 11, c: 0 }, e: { r: footerStartRow + 11, c: 5 } }, // Total notas de débito o recargos aplicadas en ventas 16%
+                                  { s: { r: footerStartRow + 12, c: 0 }, e: { r: footerStartRow + 12, c: 5 } }, // Total notas de débito o recargos aplicadas en ventas 8%
+                                  { s: { r: footerStartRow + 13, c: 0 }, e: { r: footerStartRow + 13, c: 5 } }, // Total notas de débito o recargos aplicadas en ventas 31%
+                                  { s: { r: footerStartRow + 14, c: 0 }, e: { r: footerStartRow + 14, c: 5 } }, // Total
+                                ];
+
+                                XLSX.utils.book_append_sheet(wb, ws, "Libro de ventas");
+
+                                const wbout = XLSX.write(wb, { bookType: "xlsx", type: "array" });
+                                const blob = new Blob([wbout], { type: "application/octet-stream" });
+                                const link = document.createElement("a");
+                                link.href = URL.createObjectURL(blob);
+                                link.download = `Libro_de_ventas_${formatDate(new Date())}.xlsx`;
+                                link.click();
+
+                                $(exportButton).text("Excel").prop("disabled", false).css("pointer-events", "auto");
+                                toast.success("Archivo exportado correctamente.");
+                              }else{
+                                toast.warning("No hay operaciones que exportar.");
+                              }
                             } catch (error) {
                               $(exportButton).text("Exportar todo (Excel)").prop("disabled", false).css("pointer-events", "auto");
                               console.error("Error al exportar:", error);
@@ -989,7 +1073,7 @@ function SalesBook({ title, type }) {
                   <h6 className="text-blueGray-700 text-sm font-bold">Total ventas internas no gravadas</h6>
                 </div>
                 <div class="w-full md:w-2/12 px-2">
-                  <h6 className="text-blueGray-700 text-sm font-bold text-end">{formatDecimal(showSummary?.hoja_resumen.ventas_internas_no_gravadas || 0.0)}</h6>
+                  <h6 className="text-blueGray-700 text-sm font-bold text-end">{formatDecimal(showSummary?.hoja_resumen.resumen_por_tipo['01-reg'].ventas_exentas || 0.0)}</h6>
                 </div>
                 <div class="w-full md:w-2/12 px-2">
                   <h6 className="text-blueGray-700 text-sm font-bold text-end">0,00</h6>
@@ -1006,7 +1090,7 @@ function SalesBook({ title, type }) {
                   <h6 className="text-blueGray-700 text-sm font-bold">Total nota de crédito no gravadas</h6>
                 </div>
                 <div class="w-full md:w-2/12 px-2">
-                  <h6 className="text-blueGray-700 text-sm font-bold text-end">{formatDecimal(showSummary?.hoja_resumen.ventas_internas_no_gravadas || 0.0)}</h6>
+                  <h6 className="text-blueGray-700 text-sm font-bold text-end">{formatDecimal(showSummary?.hoja_resumen.resumen_por_tipo['03-reg'].ventas_exentas || 0.0)}</h6>
                 </div>
                 <div class="w-full md:w-2/12 px-2">
                   <h6 className="text-blueGray-700 text-sm font-bold text-end">0,00</h6>
@@ -1023,7 +1107,7 @@ function SalesBook({ title, type }) {
                   <h6 className="text-blueGray-700 text-sm font-bold">Total nota de débito no gravadas</h6>
                 </div>
                 <div class="w-full md:w-2/12 px-2">
-                  <h6 className="text-blueGray-700 text-sm font-bold text-end">{formatDecimal(showSummary?.hoja_resumen.ventas_internas_no_gravadas || 0.0)}</h6>
+                  <h6 className="text-blueGray-700 text-sm font-bold text-end">{formatDecimal(showSummary?.hoja_resumen.resumen_por_tipo['02-reg'].ventas_exentas || 0.0)}</h6>
                 </div>
                 <div class="w-full md:w-2/12 px-2">
                   <h6 className="text-blueGray-700 text-sm font-bold text-end">0,00</h6>
@@ -1037,33 +1121,16 @@ function SalesBook({ title, type }) {
               </div>
               <div class="flex flex-wrap border border-top-1 py-1">
                 <div class="w-full md:w-4/12 px-2">
-                  <h6 className="text-blueGray-700 text-sm font-bold">Total ventas internas afectadas sólo alícuota general 16.00</h6>
+                  <h6 className="text-blueGray-700 text-sm font-bold">Total ventas internas afectadas sólo alícuota general {formatDecimal(showSummary?.hoja_resumen.alicuota_general)}%</h6>
                 </div>
                 <div class="w-full md:w-2/12 px-2">
-                  <h6 className="text-blueGray-700 text-sm font-bold text-end">{formatDecimal(showSummary?.hoja_resumen.ventas_internas_gravadas_alic_general || 0.0)}</h6>
+                  <h6 className="text-blueGray-700 text-sm font-bold text-end">{formatDecimal(showSummary?.hoja_resumen.resumen_por_tipo['01-reg'].base_imponible_general || 0.0)}</h6>
                 </div>
                 <div class="w-full md:w-2/12 px-2">
-                  <h6 className="text-blueGray-700 text-sm font-bold text-end">{formatDecimal(showSummary?.hoja_resumen.iva_alic_general || 0.0)}</h6>
+                  <h6 className="text-blueGray-700 text-sm font-bold text-end">{formatDecimal(showSummary?.hoja_resumen.resumen_por_tipo['01-reg'].iva_general || 0.0)}</h6>
                 </div>
                 <div class="w-full md:w-2/12 px-2">
-                  <h6 className="text-blueGray-700 text-sm font-bold text-end">{formatDecimal(showSummary?.hoja_resumen.total_iva_retenido_periodo || 0.0)}</h6>
-                </div>
-                <div class="w-full md:w-2/12 px-2">
-                  <h6 className="text-blueGray-700 text-sm font-bold text-end">{formatDecimal(showSummary?.hoja_resumen.total_igtf_percibido || 0.0)}</h6>
-                </div>
-              </div>
-              <div class="flex flex-wrap border border-top-1 py-1">
-                <div class="w-full md:w-4/12 px-2">
-                  <h6 className="text-blueGray-700 text-sm font-bold">Total ventas internas afectadas sólo alícuota reducida 8.00</h6>
-                </div>
-                <div class="w-full md:w-2/12 px-2">
-                  <h6 className="text-blueGray-700 text-sm font-bold text-end">{formatDecimal(showSummary?.hoja_resumen.ventas_internas_gravadas_alic_general || 0.0)}</h6>
-                </div>
-                <div class="w-full md:w-2/12 px-2">
-                  <h6 className="text-blueGray-700 text-sm font-bold text-end">{formatDecimal(showSummary?.hoja_resumen.iva_alic_general || 0.0)}</h6>
-                </div>
-                <div class="w-full md:w-2/12 px-2">
-                  <h6 className="text-blueGray-700 text-sm font-bold text-end">{formatDecimal(showSummary?.hoja_resumen.total_iva_retenido_periodo || 0.0)}</h6>
+                  <h6 className="text-blueGray-700 text-sm font-bold text-end">{formatDecimal(showSummary?.hoja_resumen.resumen_por_tipo['01-reg'].iva_retenido_general)}</h6>
                 </div>
                 <div class="w-full md:w-2/12 px-2">
                   <h6 className="text-blueGray-700 text-sm font-bold text-end">{formatDecimal(showSummary?.hoja_resumen.total_igtf_percibido || 0.0)}</h6>
@@ -1071,121 +1138,138 @@ function SalesBook({ title, type }) {
               </div>
               <div class="flex flex-wrap border border-top-1 py-1">
                 <div class="w-full md:w-4/12 px-2">
-                  <h6 className="text-blueGray-700 text-sm font-bold">Total ventas internas afectadas sólo alícuota adicional 31.00</h6>
+                  <h6 className="text-blueGray-700 text-sm font-bold">Total ventas internas afectadas sólo alícuota reducida {formatDecimal(showSummary?.hoja_resumen.alicuota_reducida)}%</h6>
                 </div>
                 <div class="w-full md:w-2/12 px-2">
-                  <h6 className="text-blueGray-700 text-sm font-bold text-end">{formatDecimal(showSummary?.hoja_resumen.ventas_internas_gravadas_alic_general || 0.0)}</h6>
+                  <h6 className="text-blueGray-700 text-sm font-bold text-end">{formatDecimal(showSummary?.hoja_resumen.resumen_por_tipo['01-reg'].base_imponible_reducida || 0.0)}</h6>
                 </div>
                 <div class="w-full md:w-2/12 px-2">
-                  <h6 className="text-blueGray-700 text-sm font-bold text-end">{formatDecimal(showSummary?.hoja_resumen.iva_alic_general || 0.0)}</h6>
+                  <h6 className="text-blueGray-700 text-sm font-bold text-end">{formatDecimal(showSummary?.hoja_resumen.resumen_por_tipo['01-reg'].iva_reducida || 0.0)}</h6>
                 </div>
                 <div class="w-full md:w-2/12 px-2">
-                  <h6 className="text-blueGray-700 text-sm font-bold text-end">{formatDecimal(showSummary?.hoja_resumen.total_iva_retenido_periodo || 0.0)}</h6>
+                  <h6 className="text-blueGray-700 text-sm font-bold text-end">{formatDecimal(showSummary?.hoja_resumen.resumen_por_tipo['01-reg'].iva_retenido_reducida)}</h6>
                 </div>
                 <div class="w-full md:w-2/12 px-2">
-                  <h6 className="text-blueGray-700 text-sm font-bold text-end">{formatDecimal(showSummary?.hoja_resumen.total_igtf_percibido || 0.0)}</h6>
+                  <h6 className="text-blueGray-700 text-sm font-bold text-end">{formatDecimal(0.0)}</h6>
                 </div>
               </div>
               <div class="flex flex-wrap border border-top-1 py-1">
                 <div class="w-full md:w-4/12 px-2">
-                  <h6 className="text-blueGray-700 text-sm font-bold">Total notas de crédito o devoluciones aplicadas en ventas 16%</h6>
+                  <h6 className="text-blueGray-700 text-sm font-bold">Total ventas internas afectadas sólo alícuota adicional {formatDecimal(showSummary?.hoja_resumen.alicuota_adicional)}%</h6>
                 </div>
                 <div class="w-full md:w-2/12 px-2">
-                  <h6 className="text-blueGray-700 text-sm font-bold text-end">{formatDecimal(showSummary?.hoja_resumen.ventas_internas_gravadas_alic_general || 0.0)}</h6>
+                  <h6 className="text-blueGray-700 text-sm font-bold text-end">{formatDecimal(showSummary?.hoja_resumen.resumen_por_tipo['01-reg'].base_imponible_adicional || 0.0)}</h6>
                 </div>
                 <div class="w-full md:w-2/12 px-2">
-                  <h6 className="text-blueGray-700 text-sm font-bold text-end">{formatDecimal(showSummary?.hoja_resumen.iva_alic_general || 0.0)}</h6>
+                  <h6 className="text-blueGray-700 text-sm font-bold text-end">{formatDecimal(showSummary?.hoja_resumen.resumen_por_tipo['01-reg'].iva_adicional || 0.0)}</h6>
                 </div>
                 <div class="w-full md:w-2/12 px-2">
-                  <h6 className="text-blueGray-700 text-sm font-bold text-end">{formatDecimal(showSummary?.hoja_resumen.total_iva_retenido_periodo || 0.0)}</h6>
+                  <h6 className="text-blueGray-700 text-sm font-bold text-end">{formatDecimal(showSummary?.hoja_resumen.resumen_por_tipo['01-reg'].iva_retenido_adicional)}</h6>
                 </div>
                 <div class="w-full md:w-2/12 px-2">
-                  <h6 className="text-blueGray-700 text-sm font-bold text-end">{formatDecimal(showSummary?.hoja_resumen.total_igtf_percibido || 0.0)}</h6>
+                  <h6 className="text-blueGray-700 text-sm font-bold text-end">{formatDecimal(0.0)}</h6>
                 </div>
               </div>
               <div class="flex flex-wrap border border-top-1 py-1">
                 <div class="w-full md:w-4/12 px-2">
-                  <h6 className="text-blueGray-700 text-sm font-bold">Total notas de crédito o devoluciones aplicadas en ventas 8%</h6>
+                  <h6 className="text-blueGray-700 text-sm font-bold">Total notas de crédito o devoluciones aplicadas en ventas {formatDecimal(showSummary?.hoja_resumen.alicuota_general)}%</h6>
                 </div>
                 <div class="w-full md:w-2/12 px-2">
-                  <h6 className="text-blueGray-700 text-sm font-bold text-end">{formatDecimal(showSummary?.hoja_resumen.ventas_internas_gravadas_alic_general || 0.0)}</h6>
+                  <h6 className="text-blueGray-700 text-sm font-bold text-end">{formatDecimal(showSummary?.hoja_resumen.resumen_por_tipo['03-reg'].base_imponible_general || 0.0)}</h6>
                 </div>
                 <div class="w-full md:w-2/12 px-2">
-                  <h6 className="text-blueGray-700 text-sm font-bold text-end">{formatDecimal(showSummary?.hoja_resumen.iva_alic_general || 0.0)}</h6>
+                  <h6 className="text-blueGray-700 text-sm font-bold text-end">{formatDecimal(showSummary?.hoja_resumen.resumen_por_tipo['03-reg'].iva_general || 0.0)}</h6>
                 </div>
                 <div class="w-full md:w-2/12 px-2">
-                  <h6 className="text-blueGray-700 text-sm font-bold text-end">{formatDecimal(showSummary?.hoja_resumen.total_iva_retenido_periodo || 0.0)}</h6>
+                  <h6 className="text-blueGray-700 text-sm font-bold text-end">{formatDecimal(showSummary?.hoja_resumen.resumen_por_tipo['03-reg'].iva_retenido_general)}</h6>
                 </div>
                 <div class="w-full md:w-2/12 px-2">
-                  <h6 className="text-blueGray-700 text-sm font-bold text-end">{formatDecimal(showSummary?.hoja_resumen.total_igtf_percibido || 0.0)}</h6>
+                  <h6 className="text-blueGray-700 text-sm font-bold text-end">{formatDecimal(0.0)}</h6>
                 </div>
               </div>
               <div class="flex flex-wrap border border-top-1 py-1">
                 <div class="w-full md:w-4/12 px-2">
-                  <h6 className="text-blueGray-700 text-sm font-bold">Total notas de crédito o devoluciones aplicadas en ventas 31%</h6>
+                  <h6 className="text-blueGray-700 text-sm font-bold">Total notas de crédito o devoluciones aplicadas en ventas {formatDecimal(showSummary?.hoja_resumen.alicuota_reducida)}%</h6>
                 </div>
                 <div class="w-full md:w-2/12 px-2">
-                  <h6 className="text-blueGray-700 text-sm font-bold text-end">{formatDecimal(showSummary?.hoja_resumen.ventas_internas_gravadas_alic_general || 0.0)}</h6>
+                  <h6 className="text-blueGray-700 text-sm font-bold text-end">{formatDecimal(showSummary?.hoja_resumen.resumen_por_tipo['03-reg'].base_imponible_reducida || 0.0)}</h6>
                 </div>
                 <div class="w-full md:w-2/12 px-2">
-                  <h6 className="text-blueGray-700 text-sm font-bold text-end">{formatDecimal(showSummary?.hoja_resumen.iva_alic_general || 0.0)}</h6>
+                  <h6 className="text-blueGray-700 text-sm font-bold text-end">{formatDecimal(showSummary?.hoja_resumen.resumen_por_tipo['03-reg'].iva_reducida || 0.0)}</h6>
                 </div>
                 <div class="w-full md:w-2/12 px-2">
-                  <h6 className="text-blueGray-700 text-sm font-bold text-end">{formatDecimal(showSummary?.hoja_resumen.total_iva_retenido_periodo || 0.0)}</h6>
+                  <h6 className="text-blueGray-700 text-sm font-bold text-end">{formatDecimal(showSummary?.hoja_resumen.resumen_por_tipo['03-reg'].iva_retenido_reducida)}</h6>
                 </div>
                 <div class="w-full md:w-2/12 px-2">
-                  <h6 className="text-blueGray-700 text-sm font-bold text-end">{formatDecimal(showSummary?.hoja_resumen.total_igtf_percibido || 0.0)}</h6>
+                  <h6 className="text-blueGray-700 text-sm font-bold text-end">{formatDecimal(0.0)}</h6>
                 </div>
               </div>
               <div class="flex flex-wrap border border-top-1 py-1">
                 <div class="w-full md:w-4/12 px-2">
-                  <h6 className="text-blueGray-700 text-sm font-bold">Total notas de débito o recargos aplicadas en Ventas 16%</h6>
+                  <h6 className="text-blueGray-700 text-sm font-bold">Total notas de crédito o devoluciones aplicadas en ventas {formatDecimal(showSummary?.hoja_resumen.alicuota_adicional)}%</h6>
                 </div>
                 <div class="w-full md:w-2/12 px-2">
-                  <h6 className="text-blueGray-700 text-sm font-bold text-end">{formatDecimal(showSummary?.hoja_resumen.ventas_internas_gravadas_alic_general || 0.0)}</h6>
+                  <h6 className="text-blueGray-700 text-sm font-bold text-end">{formatDecimal(showSummary?.hoja_resumen.resumen_por_tipo['03-reg'].base_imponible_adicional || 0.0)}</h6>
                 </div>
                 <div class="w-full md:w-2/12 px-2">
-                  <h6 className="text-blueGray-700 text-sm font-bold text-end">{formatDecimal(showSummary?.hoja_resumen.iva_alic_general || 0.0)}</h6>
+                  <h6 className="text-blueGray-700 text-sm font-bold text-end">{formatDecimal(showSummary?.hoja_resumen.resumen_por_tipo['03-reg'].iva_adicional || 0.0)}</h6>
                 </div>
                 <div class="w-full md:w-2/12 px-2">
-                  <h6 className="text-blueGray-700 text-sm font-bold text-end">{formatDecimal(showSummary?.hoja_resumen.total_iva_retenido_periodo || 0.0)}</h6>
+                  <h6 className="text-blueGray-700 text-sm font-bold text-end">{formatDecimal(showSummary?.hoja_resumen.resumen_por_tipo['03-reg'].iva_retenido_adicional)}</h6>
                 </div>
                 <div class="w-full md:w-2/12 px-2">
-                  <h6 className="text-blueGray-700 text-sm font-bold text-end">{formatDecimal(showSummary?.hoja_resumen.total_igtf_percibido || 0.0)}</h6>
+                  <h6 className="text-blueGray-700 text-sm font-bold text-end">{formatDecimal(0.0)}</h6>
                 </div>
               </div>
               <div class="flex flex-wrap border border-top-1 py-1">
                 <div class="w-full md:w-4/12 px-2">
-                  <h6 className="text-blueGray-700 text-sm font-bold">Total notas de débito o recargos aplicadas en Ventas 8%</h6>
+                  <h6 className="text-blueGray-700 text-sm font-bold">Total notas de débito o recargos aplicadas en Ventas {formatDecimal(showSummary?.hoja_resumen.alicuota_general)}%</h6>
                 </div>
                 <div class="w-full md:w-2/12 px-2">
-                  <h6 className="text-blueGray-700 text-sm font-bold text-end">{formatDecimal(showSummary?.hoja_resumen.ventas_internas_gravadas_alic_general || 0.0)}</h6>
+                  <h6 className="text-blueGray-700 text-sm font-bold text-end">{formatDecimal(showSummary?.hoja_resumen.resumen_por_tipo['02-reg'].base_imponible_general || 0.0)}</h6>
                 </div>
                 <div class="w-full md:w-2/12 px-2">
-                  <h6 className="text-blueGray-700 text-sm font-bold text-end">{formatDecimal(showSummary?.hoja_resumen.iva_alic_general || 0.0)}</h6>
+                  <h6 className="text-blueGray-700 text-sm font-bold text-end">{formatDecimal(showSummary?.hoja_resumen.resumen_por_tipo['02-reg'].iva_general || 0.0)}</h6>
                 </div>
                 <div class="w-full md:w-2/12 px-2">
-                  <h6 className="text-blueGray-700 text-sm font-bold text-end">{formatDecimal(showSummary?.hoja_resumen.total_iva_retenido_periodo || 0.0)}</h6>
+                  <h6 className="text-blueGray-700 text-sm font-bold text-end">{formatDecimal(showSummary?.hoja_resumen.resumen_por_tipo['02-reg'].iva_retenido_general)}</h6>
                 </div>
                 <div class="w-full md:w-2/12 px-2">
-                  <h6 className="text-blueGray-700 text-sm font-bold text-end">{formatDecimal(showSummary?.hoja_resumen.total_igtf_percibido || 0.0)}</h6>
+                  <h6 className="text-blueGray-700 text-sm font-bold text-end">{formatDecimal(0.0)}</h6>
                 </div>
               </div>
               <div class="flex flex-wrap border border-top-1 py-1">
                 <div class="w-full md:w-4/12 px-2">
-                  <h6 className="text-blueGray-700 text-sm font-bold">Total notas de débito o recargos aplicadas en ventas 31%</h6>
+                  <h6 className="text-blueGray-700 text-sm font-bold">Total notas de débito o recargos aplicadas en Ventas {formatDecimal(showSummary?.hoja_resumen.alicuota_reducida)}%</h6>
                 </div>
                 <div class="w-full md:w-2/12 px-2">
-                  <h6 className="text-blueGray-700 text-sm font-bold text-end">{formatDecimal(showSummary?.hoja_resumen.ventas_internas_gravadas_alic_general || 0.0)}</h6>
+                  <h6 className="text-blueGray-700 text-sm font-bold text-end">{formatDecimal(showSummary?.hoja_resumen.resumen_por_tipo['02-reg'].base_imponible_reducida || 0.0)}</h6>
                 </div>
                 <div class="w-full md:w-2/12 px-2">
-                  <h6 className="text-blueGray-700 text-sm font-bold text-end">{formatDecimal(showSummary?.hoja_resumen.iva_alic_general || 0.0)}</h6>
+                  <h6 className="text-blueGray-700 text-sm font-bold text-end">{formatDecimal(showSummary?.hoja_resumen.resumen_por_tipo['02-reg'].iva_reducida || 0.0)}</h6>
                 </div>
                 <div class="w-full md:w-2/12 px-2">
-                  <h6 className="text-blueGray-700 text-sm font-bold text-end">{formatDecimal(showSummary?.hoja_resumen.total_iva_retenido_periodo || 0.0)}</h6>
+                  <h6 className="text-blueGray-700 text-sm font-bold text-end">{formatDecimal(showSummary?.hoja_resumen.resumen_por_tipo['02-reg'].iva_retenido_reducida)}</h6>
                 </div>
                 <div class="w-full md:w-2/12 px-2">
-                  <h6 className="text-blueGray-700 text-sm font-bold text-end">{formatDecimal(showSummary?.hoja_resumen.total_igtf_percibido || 0.0)}</h6>
+                  <h6 className="text-blueGray-700 text-sm font-bold text-end">{formatDecimal(0.0)}</h6>
+                </div>
+              </div>
+              <div class="flex flex-wrap border border-top-1 py-1">
+                <div class="w-full md:w-4/12 px-2">
+                  <h6 className="text-blueGray-700 text-sm font-bold">Total notas de débito o recargos aplicadas en ventas {formatDecimal(showSummary?.hoja_resumen.alicuota_adicional)}%</h6>
+                </div>
+                <div class="w-full md:w-2/12 px-2">
+                  <h6 className="text-blueGray-700 text-sm font-bold text-end">{formatDecimal(showSummary?.hoja_resumen.resumen_por_tipo['02-reg'].base_imponible_adicional || 0.0)}</h6>
+                </div>
+                <div class="w-full md:w-2/12 px-2">
+                  <h6 className="text-blueGray-700 text-sm font-bold text-end">{formatDecimal(showSummary?.hoja_resumen.resumen_por_tipo['02-reg'].iva_adicional || 0.0)}</h6>
+                </div>
+                <div class="w-full md:w-2/12 px-2">
+                  <h6 className="text-blueGray-700 text-sm font-bold text-end">{formatDecimal(showSummary?.hoja_resumen.resumen_por_tipo['02-reg'].iva_retenido_adicional)}</h6>
+                </div>
+                <div class="w-full md:w-2/12 px-2">
+                  <h6 className="text-blueGray-700 text-sm font-bold text-end">{formatDecimal(0.0)}</h6>
                 </div>
               </div>
               <div class="flex flex-wrap border border-top-1 py-1">
@@ -1193,10 +1277,10 @@ function SalesBook({ title, type }) {
                   <h6 className="text-blueGray-700 text-sm font-bold">Total</h6>
                 </div>
                 <div class="w-full md:w-2/12 px-2">
-                  <h6 className="text-blueGray-700 text-sm font-bold text-end">{formatDecimal(showSummary?.hoja_resumen.ventas_internas_gravadas_alic_general || 0.0)}</h6>
+                  <h6 className="text-blueGray-700 text-sm font-bold text-end">{formatDecimal(Number(showSummary?.hoja_resumen.ventas_internas_no_gravadas || 0.0) + Number(showSummary?.hoja_resumen.base_imponible_general || 0.0) + Number(showSummary?.hoja_resumen.base_imponible_reducida || 0.0) + Number(showSummary?.hoja_resumen.base_imponible_adicional || 0.0))}</h6>
                 </div>
                 <div class="w-full md:w-2/12 px-2">
-                  <h6 className="text-blueGray-700 text-sm font-bold text-end">{formatDecimal(showSummary?.hoja_resumen.iva_alic_general || 0.0)}</h6>
+                  <h6 className="text-blueGray-700 text-sm font-bold text-end">{formatDecimal(Number(showSummary?.hoja_resumen.iva_general || 0.0) + Number(showSummary?.hoja_resumen.iva_reducida || 0.0) + Number(showSummary?.hoja_resumen.iva_adicional || 0.0))}</h6>
                 </div>
                 <div class="w-full md:w-2/12 px-2">
                   <h6 className="text-blueGray-700 text-sm font-bold text-end">{formatDecimal(showSummary?.hoja_resumen.total_iva_retenido_periodo || 0.0)}</h6>
