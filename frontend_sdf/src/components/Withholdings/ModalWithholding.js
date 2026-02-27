@@ -75,6 +75,7 @@ const ModalWithholding = ({ data, onClose }) => {
                 <th className="p-2">Número Control</th>
                 <th className="p-2">Fecha</th>
                 <th className="p-2">Base Imponible</th>
+                <th className="p-2">Alicuota</th>
                 <th className="p-2">Retención %</th>
                 <th className="p-2">Monto Retenido</th>
               </tr>
@@ -104,7 +105,8 @@ const ModalWithholding = ({ data, onClose }) => {
                       <td className="p-2 text-center">{i.factura_afectada_control}</td>
                       <td className="p-2 text-center">{formatDate(i.factura_afectada_fecha)}</td>
                       <td className="p-2 text-end">{formatDecimal(i.monto_base_imponible)}</td>
-                      <td className="p-2 text-center">{i.tipo_retencion.porcentaje} %</td>
+                      <td className="p-2 text-center">{(i.alicuota_iva != null ? formatDecimal(i.alicuota_iva) : '')}</td>
+                      <td className="p-2 text-center">{i.tipo_retencion.descripcion}</td>
                       <td className="p-2 text-end">{formatDecimal(i.monto_retenido)}</td>
                     </tr>
                   );

@@ -76,6 +76,10 @@ function FormEndClients() {
       newErrors.nombre = "Nombre es obligatorio";
       errorToast.push("- Nombre es obligatorio");
     }
+    if (!client.denominacion_comercial){
+      newErrors.denominacion_comercial = "Denominación comercial es obligatorio";
+      errorToast.push("- Denominación comercial es obligatorio");
+    }
     if (!client.telefono){
       newErrors.telefono = "Teléfono es obligatorio";
       errorToast.push("- Teléfono es obligatorio");
@@ -100,6 +104,22 @@ function FormEndClients() {
       newErrors.direccion = "Dirección es obligatoria";
       errorToast.push("- Dirección es obligatoria");
     }
+    if (!client.region || client.region == '#'){
+      newErrors.region = "Región es obligatoria";
+      errorToast.push("- Región es obligatoria");
+    }
+    if (!client.estado || client.estado == '#'){
+      newErrors.estado = "Estado es obligatoria";
+      errorToast.push("- Estado es obligatoria");
+    }
+    if (!client.zona){
+      newErrors.zona = "Zona es obligatoria";
+      errorToast.push("- Zona es obligatoria");
+    }
+    if (!client.tipo_contribuyente_id || client.tipo_contribuyente_id == '#'){
+      newErrors.tipo_contribuyente_id = "Tipo de contribuyente es obligatoria";
+      errorToast.push("- Tipo de contribuyente es obligatoria");
+    }
     setErrors(newErrors);
     if (errorToast.length > 0){
       toast.error(<div>
@@ -117,7 +137,7 @@ function FormEndClients() {
     setButtonDisabled(true); // Iniciar carga (deshabilitar botón)
     if (!validate()) return;
     // Aquí enviarías los datos de nuevo al backend para actualizar al client
-    console.log("Client:", client);
+    //console.log("Client:", client);
     try {
       var data;
       var message = '';
@@ -271,6 +291,20 @@ function FormEndClients() {
                       {errors.nombre && <p className="text-red-500 text-xs mt-1">{errors.nombre}</p>}
                       </div>
                   </div>
+                  <div className="w-full lg:w-2/12 px-4"></div>
+                  <div className="w-full lg:w-10/12 px-4">
+                    <div className="relative w-full mb-3">
+                      <label className="block text-blueGray-600 text-xs font-bold mb-2">Denominación comercial</label>
+                      <input
+                        type="text"
+                        className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
+                        value={client.denominacion_comercial}
+                        placeholder="Denominación comercial"
+                        onChange={(e) => setClient({ ...client, denominacion_comercial: e.target.value.toUpperCase() })}
+                      />
+                      {errors.denominacion_comercial && <p className="text-red-500 text-xs mt-1">{errors.denominacion_comercial}</p>}
+                      </div>
+                  </div>
                   <div className="w-full lg:w-2/12 px-4">
                     <div className="relative w-full mb-3">
                       <label className="block text-blueGray-600 text-xs font-bold mb-2">Teléfono</label>
@@ -310,24 +344,6 @@ function FormEndClients() {
                       {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email}</p>}
                     </div>
                   </div>
-                  {/*<div className="w-full lg:w-2/12 px-4">
-                    <div className="relative w-full mb-3">
-                      <label className="block text-blueGray-600 text-xs font-bold mb-2">Tipo de contribuyente</label>
-                      <select
-                        className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
-                        value={client.tipo_contribuyente_id}
-                        onChange={(e) => setClient({ ...client, tipo_contribuyente_id: e.target.value })}
-                      >
-                        {typeTaxpayer.length > 0 ? (
-                            typeTaxpayer.map(taxpayer => (
-                            <option key={taxpayer.id} value={taxpayer.id}>{taxpayer.nombre}</option>
-                          ))
-                        ) : (
-                          <option value="0">Seleccione...</option>
-                        )}
-                      </select>
-                    </div>
-                  </div>*/}
                   <div className="w-full lg:w-12/12 px-4">
                     <div className="relative w-full mb-3">
                       <label className="block text-blueGray-600 text-xs font-bold mb-2">Dirección</label>
@@ -341,7 +357,7 @@ function FormEndClients() {
                       {errors.direccion && <p className="text-red-500 text-xs mt-1">{errors.direccion}</p>}
                     </div>
                   </div>
-                  {/*<div className="w-full lg:w-2/12 px-4">
+                  <div className="w-full lg:w-2/12 px-4">
                     <div className="relative w-full mb-3">
                       <label className="block text-blueGray-600 text-xs font-bold mb-2">Región</label>
                       <select
@@ -353,7 +369,9 @@ function FormEndClients() {
                           console.log("region_id:", regionId);
                           console.log("region value:", regionValue);
                           $('.region_id').addClass('hidden');
-                          $('.region_' + regionId.toString()).removeClass('hidden');
+                          if (regionId){
+                            $('.region_' + regionId.toString()).removeClass('hidden');
+                          }
                           client.estado = '#';
                           // actualizamos el estado con ambos si quieres
                           setClient({ ...client, region: e.target.value });
@@ -369,6 +387,7 @@ function FormEndClients() {
                         <option region_id="8" value="Oriental">Oriental</option>
                         <option region_id="9" value="Zuliana">Zuliana</option>
                       </select>
+                      {errors.region && <p className="text-red-500 text-xs mt-1">{errors.region}</p>}
                     </div>
                   </div>
                   <div className="w-full lg:w-2/12 px-4">
@@ -406,6 +425,7 @@ function FormEndClients() {
                         <option class="region_id region_8" value="Sucre">Sucre</option>
                         <option class="region_id region_9" value="Zulia">Zulia</option>
                       </select>
+                      {errors.estado && <p className="text-red-500 text-xs mt-1">{errors.estado}</p>}
                     </div>
                   </div>
                   <div className="w-full lg:w-6/12 px-4">
@@ -415,10 +435,11 @@ function FormEndClients() {
                         type="text"
                         className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
                         value={client.zona}
-                        onChange={(e) => setClient({ ...client, zona: e.target.value })}
+                        onChange={(e) => setClient({ ...client, zona: e.target.value.toUpperCase() })}
                       />
+                      {errors.zona && <p className="text-red-500 text-xs mt-1">{errors.zona}</p>}
                     </div>
-                  </div>*/}
+                  </div>*
                   <div className="w-full lg:w-2/12 px-4">
                     <div className="relative w-full mb-3">
                       <label className="block text-blueGray-600 text-xs font-bold mb-2">Tipo de contribuyente</label>
@@ -427,6 +448,7 @@ function FormEndClients() {
                         value={client.tipo_contribuyente_id}
                         onChange={(e) => setClient({ ...client, tipo_contribuyente_id: e.target.value })}
                       >
+                        <option value="0">Seleccione...</option>
                         {typeTaxpayer.length > 0 ? (
                             typeTaxpayer.map(taxpayer => (
                             <option key={taxpayer.id} value={taxpayer.id}>{taxpayer.nombre}</option>

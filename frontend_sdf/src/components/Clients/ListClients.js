@@ -301,6 +301,10 @@ function ListClients() {
                       return formatText(data);
                     }
                   },
+                  { title: "Denominación comercial", data: "denominacion_comercial", render: (data, type, row) => {
+                      return formatText(data);
+                    }
+                  },
                   { title: "Correo electrónico", data: "email", className: "dt-center", render: (data, type, row) => {
                       return formatText(data);
                     }
@@ -359,6 +363,11 @@ function ListClients() {
                   },
                 ]}
                 options={{
+                  columnDefs:[{
+                    targets: [6, 7, 8, 9], // índices de columnas a ocultar (ej: RIF, Zona)
+                    visible: false,
+                    searchable: true // siguen siendo buscables
+                  }],
                   serverSide: false,
                   ajax: async (params, callback) => {
                     const response = await getClients();

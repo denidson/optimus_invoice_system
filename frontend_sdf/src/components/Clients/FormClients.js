@@ -109,11 +109,12 @@ function FormClients() {
       newErrors.direccion = "Dirección es obligatoria";
       errorToast.push("- Dirección es obligatoria");
     }
-    if (!client.region){
+    if (!client.region || client.region == '#'){
       newErrors.region = "Región es obligatoria";
       errorToast.push("- Región es obligatoria");
     }
-    if (!client.estado){
+    console.log('client: ', client);
+    if (!client.estado || client.estado == '#'){
       newErrors.estado = "Estado es obligatorio";
       errorToast.push("- Estado es obligatorio");
     }
@@ -369,7 +370,9 @@ function FormClients() {
                           console.log("region_id:", regionId);
                           console.log("region value:", regionValue);
                           $('.region_id').addClass('hidden');
-                          $('.region_' + regionId.toString()).removeClass('hidden');
+                          if (regionId){
+                            $('.region_' + regionId.toString()).removeClass('hidden');
+                          }
                           client.estado = '#';
                           // actualizamos el estado con ambos si quieres
                           setClient({ ...client, region: e.target.value });

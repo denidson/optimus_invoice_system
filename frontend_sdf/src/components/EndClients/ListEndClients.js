@@ -249,6 +249,10 @@ function ListEndClients() {
                       return formatText(data);
                     }
                   },
+                  { title: "Denominación comercial", data: "denominacion_comercial", render: (data, type, row) => {
+                      return formatText(data);
+                    }
+                  },
                   { title: "Correo electrónico", data: "email", className: "dt-center", render: (data, type, row) => {
                       return formatText(data);
                     }
@@ -262,13 +266,26 @@ function ListEndClients() {
                       return formatText(data);
                     }
                   },
-                  { title: "Tipo de contribuyente", data: "tipo_contribuyente", render: (data, type, row) => {
+                  { title: "Tipo de contribuyente", className: "dt-center", data: "tipo_contribuyente", render: (data, type, row) => {
                       return formatText(data?.nombre || '');
+                    }
+                  },
+                  { title: "Zona", data: "zona", render: (data, type, row) => {
+                      return formatText(data);
+                    }
+                  },
+                  { title: "Estado", data: "estado", render: (data, type, row) => {
+                      return formatText(data);
+                    }
+                  },
+                  { title: "Región", data: "region", render: (data, type, row) => {
+                      return formatText(data);
                     }
                   },
                   {
                     title: "Condición",
                     data: "activo",
+                    className: "dt-center",
                     render: (data, type, row) => {
                       if (!data){
                         return '<i class="fas fa-circle text-red-500 mr-2"></i> ' + formatText('Inactivo');
@@ -299,6 +316,11 @@ function ListEndClients() {
                   },
                 ]}
                 options={{
+                  columnDefs:[{
+                    targets: [5, 7, 8, 9], // índices de columnas a ocultar (ej: RIF, Zona)
+                    visible: false,
+                    searchable: true // siguen siendo buscables
+                  }],
                   serverSide: true, // <--- importante
                   processing: true,
                   ajax: async (dataTablesParams, callback) => {
@@ -454,12 +476,14 @@ function ListEndClients() {
                               const wb = utils.book_new();
                               const ws = utils.json_to_sheet(allData.map(item => ({
                                 "RIF": formatText(item.rif),
-                                "Razon Social": formatText(item.nombre),
+                                "Razón social": formatText(item.nombre),
+                                "Denominación comercial": formatText(item.denominacion_comercial),
                                 "Correo electrónico": formatText(item.email),
                                 "Teléfono": formatText(item.telefono),
                                 "Dirección": formatText(item.direccion),
-                                "Región": formatText(item.region),
                                 "Zona":formatText(item.zona),
+                                "Estado": formatText(item.estado),
+                                "Región": formatText(item.region),
                                 "Tipo de contribuyente":formatText(item.tipo_contribuyente?.nombre || ''),
                                 "Condición": formatText(item.activo
                                     ? "Activo"
