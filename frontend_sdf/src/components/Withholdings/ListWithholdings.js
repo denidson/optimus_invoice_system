@@ -17,6 +17,7 @@ import * as XLSX from "xlsx";
 const { utils, write } = XLSX;
 import { formatDecimal, formatDate, formatDateTime, formatText, formatFiscalPeriod } from "../../utils/formatters";
 import { tooltipBtn } from "../../utils/datatableTooltip";
+import { generateWithholdingPDF } from "../../utils/pdf/WithholdingPDF/generateWithholdingPDF";
 
 window.JSZip = JSZip;
 DataTable.use(DT);
@@ -38,6 +39,19 @@ function ListWithholdings() {
   // ----------------------
   useEffect(() => {
     const table = $("#ListWithholdingsDt").DataTable();
+    $("#ListWithholdingsDt tbody").on(
+      "click",
+      "button.btn-pdf",
+      async function () {
+        const id = $(this).data("id");
+
+        try {
+          await generateWithholdingPDF(id);
+        } catch {
+          toast.error("Error generando PDF");
+        }
+      }
+    );
 
     $("#ListWithholdingsDt tbody").on("click", "button.btn-view", async function () {
       const id = $(this).data("id");
@@ -52,6 +66,7 @@ function ListWithholdings() {
 
     return () => {
       $("#ListWithholdingsDt tbody").off("click", "button.btn-view");
+      $("#ListWithholdingsDt tbody").off("click", "button.btn-pdf");
     };
   }, []);
 
@@ -153,18 +168,27 @@ function ListWithholdings() {
     searchable: false,
     className: 'no-export',
     render: (data, type, row) => {
-      let tooltipText = 'Ver retenciones';
       const viewBtn = tooltipBtn({
         html: `
           <button class="btn-view px-2 py-1 text-gray-700"
             data-id="${row.id}">
-            <i class="fa-solid fa-lg fa-expand"></i>
+            <i class="fa-solid fa-expand"></i>
           </button>
         `,
-        text: tooltipText
+        text: "Ver retenciones"
+      });
+
+      const pdfBtn = tooltipBtn({
+        html: `
+          <button class="btn-pdf px-2 py-1 text-gray-700"
+            data-id="${row.id}">
+            <i class="fa-solid fa-file-pdf"></i>
+          </button>
+        `,
+        text: "Generar PDF"
       });
       // const viewBtn = `<button class="btn-view px-2 py-1 text-gray-700" data-id="${row.id}"><i class="fa-solid fa-lg fa-expand"></i></button>`;
-      return `<div style="display:flex;justify-content:center;align-items:center;gap:0.25rem;white-space:nowrap;">${viewBtn}</div>`;
+      return `<div style="display:flex;justify-content:center;align-items:center;gap:0.25rem;white-space:nowrap;">${viewBtn} ${pdfBtn}</div>`;
     }
   });
 

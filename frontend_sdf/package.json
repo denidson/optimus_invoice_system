@@ -26,6 +26,8 @@
     "framer-motion": "^12.23.24",
     "jquery": "^3.7.1",
     "js-sha256": "^0.11.1",
+    "jspdf": "^4.2.0",
+    "jspdf-autotable": "^5.0.7",
     "jszip": "^3.10.1",
     "lucide-react": "^0.544.0",
     "notus-react": "^1.1.0",
