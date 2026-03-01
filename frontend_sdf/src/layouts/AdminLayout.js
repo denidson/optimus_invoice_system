@@ -16,26 +16,24 @@ export default function AdminLayout({ children }) {
   }, [collapsed]);
 
   return (
-    <div className="flex min-h-screen bg-indigo-50">
-      {/* Sidebar */}
+    <div className="flex min-h-screen bg-indigo-50 overflow-hidden">
       <Sidebar collapsed={collapsed} setCollapsed={setCollapsed} />
 
-      {/* Contenido principal */}
       <div
         className={`
-          flex flex-col flex-1
+          flex flex-col flex-1 min-w-0
           transition-[margin] duration-100 ease-in-out
           ${collapsed ? "md:ml-20" : "md:ml-64"}
           min-h-screen
         `}
       >
-        {/* Navbar */}
         <Navbar nombreUsuario={nombreUsuario} />
 
-        {/* Contenido */}
-        <main className="flex-1 overflow-x-hidden">
+        <main className="flex-1 overflow-x-auto overflow-y-auto sidebar-scroll">
           {React.Children.map(children, (child) =>
-            React.isValidElement(child) ? React.cloneElement(child, { collapsed }) : child
+            React.isValidElement(child)
+              ? React.cloneElement(child, { collapsed })
+              : child
           )}
         </main>
       </div>
