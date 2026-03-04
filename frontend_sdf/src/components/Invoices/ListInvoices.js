@@ -24,7 +24,7 @@ const { read, utils } = XLSX;
 import { formatDecimal, formatDate, formatDateTime, formatText } from "../../utils/formatters";
 import Papa from 'papaparse';
 import { tooltipBtn } from "../../utils/datatableTooltip";
-
+import { generateInvoicesPDF } from "../../utils/pdf/InvoicesPDF/generateInvoicesPDF";
 
 window.JSZip = JSZip;
 DataTable.use(DT);
@@ -56,6 +56,15 @@ function ListInvoices({ title, type }) {
     $("#ListInvoicesDt tbody").on("click", "button.btn-debit-note", function () {
       redirectToCreateNote($(this).data("id"), 'ND');
     });
+    $("#ListInvoicesDt tbody").on( "click",  "button.btn-pdf", async function () {
+        const id = $(this).data("id");
+        try {
+          await generateInvoicesPDF(id);
+        } catch {
+          toast.error("Error generando de Factura PDF");
+        }
+      }
+    );
 
     return () => {
       $("#ListInvoicesDt tbody").off("click", "button.btn-view");
@@ -409,9 +418,17 @@ function ListInvoices({ title, type }) {
                           `,
                           text: "Crear nota de débito"
                         });
+                        const pdfBtn = tooltipBtn({
+                          html: `
+                            <button class="btn-pdf px-2 py-1 text-gray-700"
+                              data-id="${row.id}">
+                              <i class="fa-solid fa-file-pdf"></i>
+                            </button>
+                          `,
+                          text: "Generar PDF"
+                        });
 
-
-                        return `<div style="display:flex;justify-content:center;align-items:center;gap:0.25rem;white-space:nowrap;">${viewBtn}${creditNoteBtn}${debitNoteBtn}</div>`;
+                        return `<div style="display:flex;justify-content:center;align-items:center;gap:0.25rem;white-space:nowrap;">${viewBtn}${pdfBtn}${creditNoteBtn}${debitNoteBtn}</div>`;
                       }else{
                         return `<div style="display:flex;justify-content:center;align-items:center;gap:0.25rem;white-space:nowrap;">${viewBtn}</div>`;
                       }

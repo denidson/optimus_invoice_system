@@ -33,6 +33,7 @@
     "notus-react": "^1.1.0",
     "papaparse": "^5.5.3",
     "pdfmake": "^0.2.20",
+    "qrcode": "^1.5.4",
     "react": "^18.2.0",
     "react-chartjs-2": "^5.3.0",
     "react-dom": "^18.2.0",

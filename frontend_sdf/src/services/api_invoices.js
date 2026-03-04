@@ -53,6 +53,7 @@ export const showInvoice = async (id) => {
   }
 };
 
+// Libro de ventas
 export const getSalesBook = async (params = {}) => {
   try {
     const authData = localStorage.getItem("authData");
@@ -76,7 +77,22 @@ export const getSalesBook = async (params = {}) => {
       // No se encontraron facturas
       return [];
     }
-    console.error("Error al obtener las facturas:", error);
-    throw error;
+    console.error("Error al obtener el libro ventas:", error);
+    return error;
   }
 };
+
+// Formato digital
+export const showDocument = async (id) => {
+  try {
+    const authData = localStorage.getItem("authData");
+    if (authData) {
+      const { rol } = JSON.parse(authData);
+      var response = await api.get(`/api/documents/factura/${id}`);
+      return response.data;
+    }
+  } catch (error) {
+    console.error("Error al facturas:", error);
+    throw error;
+  }
+}
