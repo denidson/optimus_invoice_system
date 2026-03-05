@@ -3,7 +3,6 @@ import autoTable from "jspdf-autotable";
 import { box, text } from "../pdfDraw";
 import { formatDate, formatDecimal } from "../../formatters";
 import { getRetencionISLR } from "../../../services/apiWithholdings";
-
 import exampleLogo from "../../../assets/img/react.jpg";
 
 /* ================= GRID ================= */
