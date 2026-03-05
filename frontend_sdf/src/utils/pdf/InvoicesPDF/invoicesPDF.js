@@ -49,7 +49,7 @@ export const buildInvoicesPDF = async (data) => {
       emisor?.logo_base64 ? "PNG" : "JPG",
       colLogo.x,
       empresaY,
-      colLogo.w,
+      colLogo.w - 5,
       30
     );
   } catch {
@@ -64,7 +64,7 @@ export const buildInvoicesPDF = async (data) => {
   let tempY = empresaY;
   tempY = textWrap(
     doc,
-    emisor.direccion_fiscal || "CALLE PANAMA EDIF LIDOMAR PLAZA PISO MEZZANINA OF 08 URB LOS CAOBOS CARACAS DISTRITO CAPITAL ZONA POSTAL 1050",
+    emisor.direccion_fiscal || "",
     0, // X no importa para medir
     tempY,
     colInfoEmpresa.w - padding * 2,
@@ -110,7 +110,7 @@ export const buildInvoicesPDF = async (data) => {
   let currentInfoY = empresaY + padding;
   currentInfoY = textWrap(
     doc,
-    emisor.direccion_fiscal || "CALLE PANAMA EDIF LIDOMAR PLAZA PISO MEZZANINA OF 08 URB LOS CAOBOS CARACAS DISTRITO CAPITAL ZONA POSTAL 1050",
+    emisor.direccion_fiscal || "",
     colInfoEmpresa.x + padding,
     currentInfoY + padding,
     colInfoEmpresa.w - padding * 2,
@@ -167,7 +167,7 @@ export const buildInvoicesPDF = async (data) => {
   doc.setFontSize(12);
 
   // Primera línea: "FACTURA" a la izquierda, número a la derecha
-  text(doc, "FACTURA", leftX, currentY, 12, "left", true);
+  text(doc, (documento.tipo_documento == "FC" ? "FACTURA":(documento.tipo_documento == "NC" ? "NOTA DE CRÉDITO":"NOTA DE DÉBITO")), leftX, currentY, 12, "left", true);
   text(doc, `${documento.numero_factura}`, rightX, currentY, 12, "right", true);
 
   currentY += 6;
@@ -193,13 +193,30 @@ export const buildInvoicesPDF = async (data) => {
     { align: "right" }
   );
 
-  currentY += 4;
+  currentY += 3;
   doc.text(
     `Fecha de asignación ${formatDate(documento.fecha_asignacion)}`,
     pageWidth - margin,
     currentY,
     { align: "right" }
   );
+
+  if (documento.tipo_documento != 'FC'){
+    doc.text(
+      `N° de factura afectada: ${documento.factura_afectada_numero || ""}`,
+      pageWidth - margin,
+      currentY,
+      { align: "right" }
+    );
+
+    currentY += 3;
+    doc.text(
+      `Fecha de asignación ${formatDate(documento.fecha_asignacion)}`,
+      pageWidth - margin,
+      currentY,
+      { align: "right" }
+    );
+  }
 
   currentY = currentInfoY + 5;
 
@@ -370,7 +387,7 @@ export const buildInvoicesPDF = async (data) => {
 
   line(doc, margin, y, pageWidth - margin - 2, y);
 
-  y = doc.lastAutoTable.finalY + 8;
+  y = doc.lastAutoTable.finalY + 5;
   /* =====================================================
      OBSERVACIÓN
   ===================================================== */
@@ -399,6 +416,20 @@ export const buildInvoicesPDF = async (data) => {
 
   const totalsX = pageWidth - 70;
 
+  if (Number(totales.monto_exento_bs) > 0){
+    doc.text(
+      "Exento",
+      totalsX,
+      y
+    );
+    doc.text(
+      formatDecimal(totales.monto_exento_bs),
+      pageWidth - margin,
+      y,
+      { align: "right" }
+    );
+    y += 3;
+  }
   doc.setFont("helvetica", "normal");
   const lineHeight = 3; // altura entre líneas, ajusta según fuente
   for (let i = 0; i < totales.desglose_impuestos.length; i++) {
@@ -428,24 +459,22 @@ export const buildInvoicesPDF = async (data) => {
       { align: "right" }
     );
 
-    y += lineHeight + 1; // avanzar después del IVA para la siguiente tasa (puedes ajustar el +1 si quieres más separación)
+    y += lineHeight; // avanzar después del IVA para la siguiente tasa (puedes ajustar el +1 si quieres más separación)
   }
 
-  y += 3;
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(11);
   doc.text("Total Factura Bs.:", totalsX, y);
   doc.text(formatDecimal(totales.total_factura_bs), pageWidth - margin, y, { align: "right" });
 
+  y += 3;
+  doc.text("IGTF "+formatDecimal(totales.igtf_porcentaje)+"% ($" + formatDecimal(totales.igtf_usd) + ") Bs.:", totalsX, y);
+  doc.text(formatDecimal(totales.igtf_bs), pageWidth - margin, y, { align: "right" });
+
   y += 5;
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(11);
 
   doc.text("Total a Pagar Bs.:", totalsX, y);
   doc.text(formatDecimal(totales.total_factura_bs), pageWidth - margin, y, { align: "right" });
-
-  y += 5;
-
-  doc.text("IGTF("+formatDecimal(totales.igtf_porcentaje)+"%):", totalsX, y);
-  doc.text(formatDecimal(totales.igtf_bs), pageWidth - margin, y, { align: "right" });
 
   y += 12;
 

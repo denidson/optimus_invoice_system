@@ -45,31 +45,35 @@ function ListInvoices({ title, type }) {
   const rol = authData ? JSON.parse(authData)['rol'] : null;
 
   useEffect(() => {
-    const table = $("#ListInvoicesDt").DataTable();
+    const $tableBody = $("#ListInvoicesDt tbody");
 
-    $("#ListInvoicesDt tbody").on("click", "button.btn-view", function () {
+    // 🔥 Eliminar cualquier evento previo del namespace
+    $tableBody.off("click.invoiceEvents");
+
+    // Registrar eventos con namespace
+    $tableBody.on("click.invoiceEvents", "button.btn-view", function () {
       handleOpenModalInvoices($(this).data("id"));
     });
-    $("#ListInvoicesDt tbody").on("click", "button.btn-credit-note", function () {
-      redirectToCreateNote($(this).data("id"), 'NC');
+
+    $tableBody.on("click.invoiceEvents", "button.btn-credit-note", function () {
+      redirectToCreateNote($(this).data("id"), "NC");
     });
-    $("#ListInvoicesDt tbody").on("click", "button.btn-debit-note", function () {
-      redirectToCreateNote($(this).data("id"), 'ND');
+
+    $tableBody.on("click.invoiceEvents", "button.btn-debit-note", function () {
+      redirectToCreateNote($(this).data("id"), "ND");
     });
-    $("#ListInvoicesDt tbody").on( "click",  "button.btn-pdf", async function () {
-        const id = $(this).data("id");
-        try {
-          await generateInvoicesPDF(id);
-        } catch {
-          toast.error("Error generando de Factura PDF");
-        }
+
+    $tableBody.on("click.invoiceEvents", "button.btn-pdf", async function () {
+      const id = $(this).data("id");
+      try {
+        await generateInvoicesPDF(id);
+      } catch {
+        toast.error("Error generando Factura PDF");
       }
-    );
+    });
 
     return () => {
-      $("#ListInvoicesDt tbody").off("click", "button.btn-view");
-      $("#ListInvoicesDt tbody").off("click", "button.btn-credit-note");
-      $("#ListInvoicesDt tbody").off("click", "button.btn-debit-note");
+      $tableBody.off("click.invoiceEvents");
     };
   }, []);
 
@@ -287,7 +291,7 @@ function ListInvoices({ title, type }) {
                       return formatText(data);
                     }
                   },
-                  {
+                  /*{
                     title: "Tipo de documento",
                     data: "tipo_documento",
                     className: "text-center",
@@ -303,7 +307,7 @@ function ListInvoices({ title, type }) {
                       }
 
                     }
-                  },
+                  },*/
                   { title: "Número de control", data: "numero_control", className: "dt-center", render: (data, type, row) => {
                       return formatText(data);
                     }
@@ -396,6 +400,15 @@ function ListInvoices({ title, type }) {
                       if (rol === "admin") {
                         return `<div style="display:flex;justify-content:center;align-items:center;gap:0.25rem;white-space:nowrap;">${viewBtn}</div>`;
                       }
+                      const pdfBtn = tooltipBtn({
+                        html: `
+                          <button class="btn-pdf px-2 py-1 text-gray-700"
+                            data-id="${row.id}">
+                            <i class="fa-solid fa-file-pdf"></i>
+                          </button>
+                        `,
+                        text: "Generar PDF"
+                      });
                       if (rol !== "admin" && row.estatus.toUpperCase() != 'ANULADA' && row.tipo_documento == 'FC'){
                         // const creditNoteBtn = `<button class="btn-credit-note px-2 py-1 text-red-600" data-id="${row.id}"><i class="fa-solid fa-lg fa-file-invoice"></i></button>`;
                         // const debitNoteBtn = `<button class="btn-debit-note px-1 py-1 mx-0 text-green-600" data-id="${row.id}" data-correlativo_interno="${row.correlativo_interno}"><i class="fa-solid fa-file-invoice fa-lg"></i></button>`;
@@ -418,26 +431,16 @@ function ListInvoices({ title, type }) {
                           `,
                           text: "Crear nota de débito"
                         });
-                        const pdfBtn = tooltipBtn({
-                          html: `
-                            <button class="btn-pdf px-2 py-1 text-gray-700"
-                              data-id="${row.id}">
-                              <i class="fa-solid fa-file-pdf"></i>
-                            </button>
-                          `,
-                          text: "Generar PDF"
-                        });
-
                         return `<div style="display:flex;justify-content:center;align-items:center;gap:0.25rem;white-space:nowrap;">${viewBtn}${pdfBtn}${creditNoteBtn}${debitNoteBtn}</div>`;
                       }else{
-                        return `<div style="display:flex;justify-content:center;align-items:center;gap:0.25rem;white-space:nowrap;">${viewBtn}</div>`;
+                        return `<div style="display:flex;justify-content:center;align-items:center;gap:0.25rem;white-space:nowrap;">${viewBtn}${pdfBtn}</div>`;
                       }
                     }
                   }
                 ]}
                 options={{
                   columnDefs:[{
-                    targets: [5, 6, 7, 9, 10, 11], // índices de columnas a ocultar (ej: RIF, Zona)
+                    targets: [4, 5, 6, 8, 9, 10], // índices de columnas a ocultar (ej: RIF, Zona)
                     visible: false,
                     searchable: true // siguen siendo buscables
                   }],
@@ -462,13 +465,13 @@ function ListInvoices({ title, type }) {
                         {
                           extend: "copyHtml5",
                           text: "Copiar",
-                          title: "Lista de Facturas"   // nombre del documento en el portapapeles
+                          title: "Lista de " + (type == "FC" ? "Facturas":(type == "NC" ? "Notas de credito":"Notas de debito"))   // nombre del documento en el portapapeles
                         },
                         {
                           extend: "excelHtml5",
                           text: "Excel",
-                          title: "Lista de Facturas",  // título dentro del archivo
-                          filename: "Lista_facturas",   // nombre del archivo generado (sin extensión)
+                          title: "Lista de " + (type == "FC" ? "Facturas":(type == "NC" ? "Notas de credito":"Notas de debito")),  // título dentro del archivo
+                          filename: "Lista_" + (type == "FC" ? "facturas":(type == "NC" ? "notas_de_credito":"notas_de_debito")),   // nombre del archivo generado (sin extensión)
                           exportOptions: {
                             columns: ':not(.no-export)'
                           }
@@ -476,8 +479,8 @@ function ListInvoices({ title, type }) {
                         {
                           extend: "csvHtml5",
                           text: "CSV",
-                          title: "Lista de Facturas",
-                          filename: "Lista_facturas",
+                          title: "Lista de " + (type == "FC" ? "Facturas":(type == "NC" ? "Notas de credito":"Notas de debito")),
+                          filename: "Lista_" + (type == "FC" ? "facturas":(type == "NC" ? "notas_de_credito":"notas_de_debito")),
                           exportOptions: {
                             columns: ':not(.no-export)'
                           }
@@ -485,8 +488,8 @@ function ListInvoices({ title, type }) {
                         {
                           extend: "pdfHtml5",
                           text: "PDF",
-                          title: "Lista de Facturas",
-                          filename: "Lista_facturas",
+                          title: "Lista de " + (type == "FC" ? "Facturas":(type == "NC" ? "Notas de credito":"Notas de debito")),
+                          filename: "Lista_" + (type == "FC" ? "facturas":(type == "NC" ? "notas_de_credito":"notas_de_debito")),
                           exportOptions: {
                             columns: ':not(.no-export)'
                           },
@@ -497,7 +500,7 @@ function ListInvoices({ title, type }) {
                         {
                           extend: "print",
                           text: "Imprimir",
-                          title: "Lista de Facturas",
+                          title: "Lista de " + (type == "FC" ? "Facturas":(type == "NC" ? "Notas de credito":"Notas de debito")),
                           exportOptions: {
                             columns: ':not(.no-export)'
                           }
@@ -576,7 +579,7 @@ function ListInvoices({ title, type }) {
                               const blob = new Blob([wbout], { type: "application/octet-stream" });
                               const link = document.createElement("a");
                               link.href = URL.createObjectURL(blob);
-                              link.download = "Facturas.xlsx";
+                              link.download = (type == "FC" ? "Facturas":(type == "NC" ? "Notas_de_credito":"Notas_de_debito")) + ".xlsx";
                               link.click();
 
                               $(exportButton).text("Exportar todo (Excel)").prop("disabled", false).attr("style", "pointer-events: auto;");;

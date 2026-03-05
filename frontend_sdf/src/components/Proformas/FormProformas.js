@@ -500,6 +500,7 @@ function FormProformas() {
       if (!validateFormatEmail(preInvoice.cliente_final_email)){
         newErrors.cliente_final_email = "Correo electrónico no presenta un formato válido";
         errorToast.push("- Correo electrónico no presenta un formato válido");
+        setButtonDisabled(false);
       }
     }
     if (!preInvoice.cliente_final_direccion) {
