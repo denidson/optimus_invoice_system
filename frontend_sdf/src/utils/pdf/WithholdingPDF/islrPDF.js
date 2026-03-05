@@ -37,7 +37,6 @@ const labelValue = (doc, label, value, x, y) => {
 };
 
 /* ================================================= */
-
 export const buildISLRPDF = async (comprobante_id) => {
 
   const data = await getRetencionISLR(comprobante_id);
