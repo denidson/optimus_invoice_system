@@ -1,7 +1,7 @@
 import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
-import { box, text, grid, boxCustom, line, textWrap } from "../pdfDraw";
-import { formatDate, formatDecimal, formatText } from "../../formatters";
+import { box, text, grid, boxCustom, line, textWrap, labelValue } from "../pdfDraw";
+import { formatDate, formatDecimal, formatText, formatMoney } from "../../formatters";
 import exampleLogo from "../../../assets/img/react.jpg";
 import QRCode from "qrcode";
 
@@ -175,8 +175,10 @@ export const buildInvoicesPDF = async (data) => {
   doc.setFontSize(7);
 
   // Segunda línea: fecha a la izquierda, hora a la derecha
-  text(doc, `Fecha emisión: ${formatDate(documento.fecha_emision)}`, leftX, currentY, 8, "left", false);
-  text(doc, `Hora emisión: ${formatText(documento.hora_emision)}`, pageWidth - margin, currentY, 8, "right", false);
+  labelValue(doc, "Fecha emisión", formatDate(documento.fecha_emision) || "", leftX, currentY, 8, "left");
+  //text(doc, `Fecha emisión: ${formatDate(documento.fecha_emision)}`, leftX, currentY, 8, "left", false);
+  labelValue(doc, "Hora emisión", formatText(documento.hora_emision) || "", rightX - 32, currentY, 8, "right");
+  //text(doc, `Hora emisión: ${formatText(documento.hora_emision)}`, pageWidth - margin, currentY, 8, "right", false);
 
   currentY += 6;
   /* =====================================================
@@ -186,37 +188,34 @@ export const buildInvoicesPDF = async (data) => {
   doc.setFont("helvetica", "bold");
   doc.setFontSize(7);
 
-  doc.text(
-    `N° de Control ${documento.numero_control || ""}`,
-    pageWidth - margin,
-    currentY,
-    { align: "right" }
-  );
+  text(doc, "N° de Control:", leftX + 20, currentY, 7, "left", true);
+  text(doc, formatText(documento.numero_control || ""), rightX + 3, currentY, 7, "right", false);
 
   currentY += 3;
-  doc.text(
-    `Fecha de asignación ${formatDate(documento.fecha_asignacion)}`,
-    pageWidth - margin,
-    currentY,
-    { align: "right" }
-  );
+  text(doc, "Fecha de asignación:", leftX + 20, currentY, 7, "left", true);
+  text(doc, formatDate(documento.fecha_asignacion) || "", rightX + 3, currentY, 7, "right", false);
 
   if (documento.tipo_documento != 'FC'){
-    doc.text(
-      `N° de factura afectada: ${documento.factura_afectada_numero || ""}`,
-      pageWidth - margin,
-      currentY,
-      { align: "right" }
-    );
+    currentY += 3;
+    text(doc, "N° de factura afectada:", leftX + 20, currentY, 7, "left", true);
+    text(doc, formatText(documento.factura_afectada_numero || ""), rightX + 3, currentY, 7, "right", false);
 
     currentY += 3;
-    doc.text(
-      `Fecha de asignación ${formatDate(documento.fecha_asignacion)}`,
-      pageWidth - margin,
-      currentY,
-      { align: "right" }
-    );
+    text(doc, "Fecha de emisión de la factura:", leftX + 20, currentY, 7, "left", true);
+    text(doc, formatDate(documento.factura_afectada_fecha_emision || ""), rightX + 3, currentY, 7, "right", false);
+
+    currentY += 3;
+    text(doc, "Hora de emisión de la factura:", leftX + 20, currentY, 7, "left", true);
+    text(doc, formatText(documento.factura_afectada_hora_emision || ""), rightX + 3, currentY, 7, "right", false);
+
+    currentY += 3;
+    text(doc, "Fecha de asignación de la factura:", leftX + 20, currentY, 7, "left", true);
+    text(doc, formatDate(documento.factura_afectada_fecha_asignacion || ""), rightX + 3, currentY, 7, "right", false);
   }
+
+  currentY += 3;
+  text(doc, "Tasa de cambio:", leftX + 20, currentY, 7, "left", true);
+  text(doc, formatMoney(totales.tipo_cambio_bcv), rightX + 3, currentY, 7, "right", false);
 
   currentY = currentInfoY + 5;
 
@@ -240,7 +239,7 @@ export const buildInvoicesPDF = async (data) => {
 
   textWrap(
     doc,
-    "INSTITUTO NACIONAL DE LOS ESPACIOS ACUATICOS",//cliente.nombre || ""
+    formatText(cliente.nombre || ""),
     margin + 5,
     y,
     (pageWidth / 4) - 15,
@@ -265,7 +264,7 @@ export const buildInvoicesPDF = async (data) => {
 
   const addressY = textWrap(
     doc,
-    cliente.direccion || "CALLE PANAMA EDIF LIDOMAR PLAZA PISO MEZZANINA OF 08 URB LOS CAOBOS CARACAS DISTRITO CAPITAL ZONA POSTAL 1050",
+    formatText(cliente.direccion || ""),
     (pageWidth / 4),
     y,
     (pageWidth / 2) - 20,
@@ -277,7 +276,7 @@ export const buildInvoicesPDF = async (data) => {
 
   const addressLenY = textWrap(
     doc,
-    cliente.direccion || "CALLE PANAMA EDIF LIDOMAR PLAZA PISO MEZZANINA OF 08 URB LOS CAOBOS CARACAS DISTRITO CAPITAL ZONA POSTAL 1050",
+    formatText(cliente.direccion || ""),
     (pageWidth / 4),
     0,
     (pageWidth / 2) - 20,
@@ -288,7 +287,7 @@ export const buildInvoicesPDF = async (data) => {
     true
   );
 
-  const qrUrl = documento.url_validacion || "https://tu-url-validacion.com";
+  /*const qrUrl = documento.url_validacion || "https://tu-url-validacion.com";
 
   const qrBase64 = await QRCode.toDataURL(qrUrl, {
     width: 120,
@@ -302,7 +301,7 @@ export const buildInvoicesPDF = async (data) => {
     y - 18,
     qrSize,
     qrSize
-  );
+  );*/
 
   y = addressY + 3;
 
@@ -318,7 +317,7 @@ export const buildInvoicesPDF = async (data) => {
   const emptyRows = Array.from({ length: emptyRowsCount }, () => ["", "", "", "", "", "", ""]);
   const tableBody = [...items.map(i => [
     formatText(i.codigo),
-    formatText(i.descripcion),
+    formatText(i.nombre_producto || i.descripcion),
     formatDecimal(i.cantidad),
     formatDecimal(i.precio_unitario),
     formatDecimal(i.tasa_iva) + "%",
@@ -466,7 +465,7 @@ export const buildInvoicesPDF = async (data) => {
   doc.text(formatDecimal(totales.total_factura_bs), pageWidth - margin, y, { align: "right" });
 
   y += 3;
-  doc.text("IGTF "+formatDecimal(totales.igtf_porcentaje)+"% ($" + formatDecimal(totales.igtf_usd) + ") Bs.:", totalsX, y);
+  doc.text("IGTF "+formatDecimal(totales.igtf_porcentaje)+"% ($" + formatDecimal(Number(totales.monto_pagado_divisas) / Number(totales.tipo_cambio_bcv != "0.00" ? totales.tipo_cambio_bcv : "1.00")) + ") Bs.:", totalsX, y);
   doc.text(formatDecimal(totales.igtf_bs), pageWidth - margin, y, { align: "right" });
 
   y += 5;
@@ -478,9 +477,16 @@ export const buildInvoicesPDF = async (data) => {
 
   y += 12;
 
-  /* =====================================================
-     BLOQUE LEGAL INFERIOR
-  ===================================================== */
+  /* ================================================= */
+  /* ================= FOOTER ======================== */
+  /* ================================================= */
+
+  const footerHeight = 35;
+  const footerTop = doc.internal.pageSize.height - footerHeight;
+
+      /* =====================================================
+         BLOQUE LEGAL INFERIOR
+      ===================================================== */
 
   doc.setFontSize(6);
   doc.setFont("helvetica", "normal");
@@ -488,14 +494,60 @@ export const buildInvoicesPDF = async (data) => {
   const maxWidth = pageWidth - margin*2;
   y = textWrap(
     doc,
-    data.legal.leyenda_legal_2 || "Este pago estará sujeto al cobro adicional del 3% del Impuesto a las Grandes Transacciones Financieras (IGTF), de conformidad con la Providencia Administrativa SNAT/2022/000013 publicada en la G.O. N° 42.339 del 17-03-2022, en caso de ser cancelado en divisas. No aplicara en pago en Bs. Este documento se expresa en Bolívares con su equivalencia en divisas al tipo de cambio corriente del mercado a la fecha de su emisión, según lo establecido en el artículo 13 numeral 14 de la Providencia Administrativa SNAT/2011/00071 (...) en concordancia con el artículo 128 de la Ley del Banco Central de Venezuela (BCV); artículo 25 de la Ley que establece el Impuesto al valor Agregado (IVA) y 38 del Reglamento General de la Ley que establece el Impuesto al Valor Agregado (RLIVA)",
+    formatText(data.legal.leyenda_legal) || "Este pago estará sujeto al cobro adicional del 3% del Impuesto a las Grandes Transacciones Financieras (IGTF), de conformidad con la Providencia Administrativa SNAT/2022/000013 publicada en la G.O. N° 42.339 del 17-03-2022, en caso de ser cancelado en divisas. No aplicara en pago en Bs. Este documento se expresa en Bolívares con su equivalencia en divisas al tipo de cambio corriente del mercado a la fecha de su emisión, según lo establecido en el artículo 13 numeral 14 de la Providencia Administrativa SNAT/2011/00071 (...) en concordancia con el artículo 128 de la Ley del Banco Central de Venezuela (BCV); artículo 25 de la Ley que establece el Impuesto al valor Agregado (IVA) y 38 del Reglamento General de la Ley que establece el Impuesto al Valor Agregado (RLIVA)",
     margin,       // X inicial
-    y,            // Y inicial
+    footerTop,            // Y inicial
     maxWidth,     // ancho máximo
     5,            // tamaño fuente
     "center",     // alineación centrada
     true,          // negrita
     2.5
+  );
+
+  y += 3;
+  y = textWrap(
+    doc,
+    `DOCUMENTO EMITIDO CONFORME A LA PROVIDENCIA ADMINISTRATIVA ${formatText(data.legal.providencia_nomenclatura) || "SNAT/2024/000102"}.`,
+    margin,       // X inicial
+    y,            // Y inicial
+    maxWidth,     // ancho máximo
+    6,            // tamaño fuente
+    "center",     // alineación centrada
+    false,          // negrita
+    3
+  );
+  y = textWrap(
+    doc,
+    `${formatText(data.legal.leyenda_pie) || ""}`,
+    margin,       // X inicial
+    y,            // Y inicial
+    maxWidth,     // ancho máximo
+    6,            // tamaño fuente
+    "center",     // alineación centrada
+    false,          // negrita
+    3
+  );
+  y = textWrap(
+    doc,
+    `Imprenta Digital Autorizada mediante Providencia Administrativa ${formatText(data.legal.providencia_descripcion) || "SENIAT/INTI/011"} de fecha ${formatDate(data.legal.providencia_fecha) || "10/11/2023"}.`,
+    margin,       // X inicial
+    y,            // Y inicial
+    maxWidth,     // ancho máximo
+    6,            // tamaño fuente
+    "center",     // alineación centrada
+    false,          // negrita
+    3
+  );
+  y = textWrap(
+    doc,
+    `Nro. de Control ${formatText(data.legal.autorizacion_imprenta) || "Desde 00-00000001 Hasta Nro. 00-00084000 de fecha 23/08/2024."}.`,
+    margin,       // X inicial
+    y,            // Y inicial
+    maxWidth,     // ancho máximo
+    6,            // tamaño fuente
+    "center",     // alineación centrada
+    false,          // negrita
+    3
   );
   doc.save(`FACT_${documento.numero_factura}.pdf`);
 };
