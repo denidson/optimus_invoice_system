@@ -22,7 +22,6 @@ const grid = (cols = 12, margin = 10, pageWidth = 280, gap = 2) => {
 /* ===== LABEL BOLD + VALUE NORMAL ===== */
 const labelValue = (doc, label, value, x, y) => {
   doc.setFontSize(9);
-
   // label bold
   doc.setFont("helvetica", "bold");
   doc.text(`${label}:`, x, y);
