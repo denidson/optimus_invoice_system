@@ -64,7 +64,7 @@ export const buildInvoicesPDF = async (data) => {
   let tempY = empresaY;
   tempY = textWrap(
     doc,
-    emisor.direccion_fiscal || "",
+    formatText(emisor.direccion_fiscal) || "",
     0, // X no importa para medir
     tempY,
     colInfoEmpresa.w - padding * 2,
@@ -77,7 +77,7 @@ export const buildInvoicesPDF = async (data) => {
 
   tempY = textWrap(
     doc,
-    emisor.telefono || "",
+    formatText(emisor.telefono) || "",
     0,
     tempY,
     colInfoEmpresa.w - padding * 2,
@@ -90,7 +90,7 @@ export const buildInvoicesPDF = async (data) => {
 
   tempY = textWrap(
     doc,
-    `Código de Actividad Económica: ${emisor.codigo_actividad || ""}`,
+    `Código de Actividad Económica: ${formatText(emisor.codigo_actividad) || ""}`,
     0,
     tempY,
     colInfoEmpresa.w - padding * 2,
@@ -110,7 +110,7 @@ export const buildInvoicesPDF = async (data) => {
   let currentInfoY = empresaY + padding;
   currentInfoY = textWrap(
     doc,
-    emisor.direccion_fiscal || "",
+    formatText(emisor.direccion_fiscal) || "",
     colInfoEmpresa.x + padding,
     currentInfoY + padding,
     colInfoEmpresa.w - padding * 2,
@@ -122,7 +122,7 @@ export const buildInvoicesPDF = async (data) => {
 
   currentInfoY = textWrap(
     doc,
-    emisor.telefono || "",
+    formatText(emisor.telefono) || "",
     colInfoEmpresa.x + padding,
     currentInfoY,
     colInfoEmpresa.w - padding * 2,
@@ -134,7 +134,7 @@ export const buildInvoicesPDF = async (data) => {
 
   currentInfoY = textWrap(
     doc,
-    `Código de Actividad Económica: ${emisor.codigo_actividad || ""}`,
+    `Código de Actividad Económica: ${formatText(emisor.codigo_actividad) || ""}`,
     colInfoEmpresa.x + padding,
     currentInfoY,
     colInfoEmpresa.w - padding * 2,

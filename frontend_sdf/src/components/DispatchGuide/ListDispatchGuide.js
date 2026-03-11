@@ -17,6 +17,7 @@ import * as XLSX from "xlsx";
 const { utils, write } = XLSX;
 import { formatDecimal, formatMoney, formatDate, formatDateTime, formatText, formatFiscalPeriod } from "../../utils/formatters";
 import { tooltipBtn } from "../../utils/datatableTooltip";
+import { generateDispatchGuidePDF } from "../../utils/pdf/DispacheGuidesPDF/generateDispacheGuidesPDF";
 
 window.JSZip = JSZip;
 DataTable.use(DT);
@@ -50,8 +51,23 @@ function ListDispatchGuide() {
       }
     });
 
+    $("#ListDispatchGuideDt tbody").on(
+      "click",
+      "button.btn-pdf",
+      async function () {
+        const id = $(this).data("id");
+
+        try {
+          await generateDispatchGuidePDF(id);
+        } catch {
+          toast.error("Error generando PDF");
+        }
+      }
+    );
+
     return () => {
       $("#ListDispatchGuideDt tbody").off("click", "button.btn-view");
+      $("#ListDispatchGuideDt tbody").off("click", "button.btn-pdf");
     };
   }, []);
 
@@ -145,8 +161,17 @@ function ListDispatchGuide() {
           `,
           text: tooltipText
         });
+        const pdfBtn = tooltipBtn({
+          html: `
+            <button class="btn-pdf px-2 py-1 text-gray-700"
+              data-id="${row.id}">
+              <i class="fa-solid fa-file-pdf"></i>
+            </button>
+          `,
+          text: "Generar PDF"
+        });
         // const viewBtn = `<button class="btn-view px-2 py-1 text-gray-700" data-id="${row.id}"><i class="fa-solid fa-lg fa-expand"></i></button>`;
-        return `<div style="display:flex;justify-content:center;align-items:center;gap:0.25rem;white-space:nowrap;">${viewBtn}</div>`;
+        return `<div style="display:flex;justify-content:center;align-items:center;gap:0.25rem;white-space:nowrap;">${viewBtn}${pdfBtn}</div>`;
       }
     });
   // ----------------------

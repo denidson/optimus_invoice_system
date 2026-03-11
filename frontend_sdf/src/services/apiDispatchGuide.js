@@ -57,3 +57,19 @@ export const createDispatchGuide = async (body) => {
     throw error;
   }
 };
+
+// Consultar una guia de despacho por comprobante ID
+export const documentsDispatchGuide = async (id) => {
+  try {
+    const authData = localStorage.getItem("authData");
+    if (authData) {
+      const { rol } = JSON.parse(authData);
+      var response;
+      response = await api.get(`/api/documents/guia-despacho/${id}`);
+      return response.data;
+    }
+  } catch (error) {
+    console.error("Error al consultar la guia de despacho:", error);
+    throw error;
+  }
+};
