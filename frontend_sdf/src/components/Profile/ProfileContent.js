@@ -3,6 +3,7 @@ import { editClient } from '../../services/api_clients';
 import { changePassword } from "../../services/apiProfile"; 
 import { getTypeTaxpayer } from '../../services/api_type_taxpayer';
 import { toast, ToastContainer } from "react-toastify";
+import LogoUploader from "../../components/LogoUploader/LogoUploader";
 import "react-toastify/dist/ReactToastify.css";
 
 export default function ProfileContent({ client: initialClient, profile: initialProfile }) {
@@ -85,11 +86,34 @@ export default function ProfileContent({ client: initialClient, profile: initial
 
       {/* --- ENCABEZADO --- */}
       <div className="relative w-full max-w-3xl">
+        {/* Fondo azul */}
         <div className="bg-[#4551f7] h-32 rounded-t-2xl shadow" />
+        {/* Logo */}
         <div className="absolute -bottom-12 left-1/2 transform -translate-x-1/2">
-          <div className="w-24 h-24 rounded-full border-4 border-white bg-gray-200 flex items-center justify-center text-3xl font-semibold text-blue-600 shadow-lg">
-            {data.nombre_empresa?.[0] || data.nombre?.[0] || "?"}
-          </div>
+          {isEditing && isClient ? (
+            <LogoUploader
+              logo={data.logo}
+              size={96}
+              mode="edit"
+              onChange={(base64) =>
+                setData({ ...data, logo: base64 })
+              }
+            />
+          ) : (
+            <div className="w-24 h-24 rounded-full border-4 border-white shadow-lg overflow-hidden bg-gray-200">
+              {data.logo ? (
+                <img
+                  src={data.logo}
+                  alt="Logo"
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <div className="flex items-center justify-center w-full h-full text-3xl font-semibold text-blue-600">
+                  {data.nombre_empresa?.[0] || data.nombre?.[0] || "?"}
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </div>
 
@@ -97,7 +121,7 @@ export default function ProfileContent({ client: initialClient, profile: initial
       <div className="w-full max-w-3xl mt-16 bg-white rounded-b-2xl shadow-md p-6">
 
         {/* NOMBRE + EMAIL */}
-        <div className="text-center mb-6">
+        <div className="text-center mb-6 mt-12">
           {isEditing && isClient ? (
             <>
               <input

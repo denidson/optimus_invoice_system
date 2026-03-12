@@ -32,6 +32,10 @@ export const showClient = async (id) => {
       }else{
         response = await api.get(`/api/clients/${id}`);
       }
+      var resLogo = await getClientLogo(response.data.id);
+      if (resLogo){
+        response.data.logo = resLogo;
+      }
       return response.data;
     }
   } catch (error) {
@@ -47,11 +51,28 @@ export const editClient = async (id, body) => {
     if (authData) {
       const { rol } = JSON.parse(authData);
       var response;
+      // Extraer logo y preparar objeto con content_type
+      let logoPayload = null;
+      if (body.logo) {
+        // Extraer tipo MIME desde el base64
+        const match = body.logo.match(/^data:(image\/[a-zA-Z]+);base64,/);
+        const content_type = match ? match[1] : "image/png";
+        logoPayload = {
+          logo: body.logo,
+          content_type
+        };
+        // Eliminar logo del body principal para no enviarlo duplicado
+        delete body.logo;
+      }
       if (rol == 'admin'){
         response = await api.put(`/admin/clients/${id}`, body);
       }else{
         response = await api.put(`/api/clients/${id}`, body);
       }
+      if (logoPayload) {
+        await api.put(`/api/clients/${id}/logo`, logoPayload);
+      }
+
       return response.data;
     }
   } catch (error) {
@@ -93,5 +114,27 @@ export const activateClient = async (id) => {
   } catch (error) {
     console.error("Error al eliminar el cliente:", error);
     throw error;
+  }
+};
+
+export const getClientLogo = async (id) => {
+  try {
+    const response = await api.get(`/api/clients/${id}/logo`, {
+      responseType: "arraybuffer" // muy importante para manejar binarios
+    });
+
+    // Convertir a base64 para usar en jsPDF
+    const base64 = btoa(
+      new Uint8Array(response.data).reduce(
+        (data, byte) => data + String.fromCharCode(byte),
+        ""
+      )
+    );
+
+    // Detectar tipo de imagen (puedes ajustarlo si sabes que siempre es PNG)
+    return `data:image/png;base64,${base64}`;
+  } catch (err) {
+    console.error("Error al obtener logo del cliente:", err);
+    return null;
   }
 };

@@ -9,6 +9,7 @@ import { toast, ToastContainer } from "react-toastify"; // Importamos las funcio
 import "react-toastify/dist/ReactToastify.css"; // Importar el CSS de las notificaciones
 import $ from "jquery";
 import { validateFormatEmail, validateFormatPhone, validateFormatRif } from "../../utils/formatters";
+import LogoUploader from "../../components/LogoUploader/LogoUploader";
 
 function FormClients() {
   const navigate = useNavigate(); // Hook para redirección
@@ -261,7 +262,7 @@ function FormClients() {
                       {errors.rif && <p className="text-red-500 text-xs mt-1">{errors.rif}</p>}
                     </div>
                   </div>
-                  <div className="w-full lg:w-10/12 px-4">
+                  <div className="w-full lg:w-9/12 px-4">
                     <div className="relative w-full mb-3">
                       <label className="block text-blueGray-600 text-xs font-bold mb-2">Razón social</label>
                       <input
@@ -274,7 +275,10 @@ function FormClients() {
                       {errors.nombre_empresa && <p className="text-red-500 text-xs mt-1">{errors.nombre_empresa}</p>}
                       </div>
                   </div>
-                  <div className="w-full lg:w-12/12 px-4">
+                  <div className="w-full lg:w-1/12 px-4">
+
+                  </div>
+                  <div className="w-full lg:w-11/12 px-4">
                     <div className="relative w-full mb-3">
                         <label className="block text-blueGray-600 text-xs font-bold mb-2">Denominación comercial</label>
                         <input
@@ -285,6 +289,20 @@ function FormClients() {
                           onChange={(e) => setClient({ ...client, denominacion_comercial: e.target.value.toUpperCase() })}
                         />
                         {errors.denominacion_comercial && <p className="text-red-500 text-xs mt-1">{errors.denominacion_comercial}</p>}
+                    </div>
+                  </div>
+                  <div className="w-full lg:w-1/12 px-4">
+                    <div className="relative w-full mb-3">
+                      <div className="absolute -bottom-12 left-1/2 transform -translate-x-1/2">
+                          <div className="w-24 h-24 border-4 border-white shadow-lg overflow-hidden bg-gray-200">
+                              <LogoUploader
+                                logo={client.logo}
+                                onChange={(base64) => setClient({ ...client, logo: base64 })}
+                                size={96}
+                                mode="edit"
+                              />
+                          </div>
+                      </div>
                     </div>
                   </div>
                   <div className="w-full lg:w-2/12 px-4">

@@ -151,7 +151,7 @@ function ListDispatchGuide() {
       searchable: false,
       className: 'no-export',
       render: (data, type, row) => {
-        let tooltipText = 'Ver retenciones';
+        let tooltipText = 'Ver guías de despacho';
         const viewBtn = tooltipBtn({
           html: `
             <button class="btn-view px-2 py-1 text-gray-700"

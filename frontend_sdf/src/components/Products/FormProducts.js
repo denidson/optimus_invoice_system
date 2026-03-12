@@ -84,9 +84,21 @@ function FormProducts({ cliente_id: clienteProp, rol }) {
       newErrors.iva_categoria_id = "Debe seleccionar IVA";
       errorToast.push("- Debe seleccionar IVA");
     }
+    if (!product.descripcion){
+      newErrors.descripcion = "Descripción es obligatorio";
+      errorToast.push("- Descripción es obligatorio");
+    }
     if (rol === "admin" && !product.cliente_id){
       newErrors.cliente_id = "Debe seleccionar un cliente";
       errorToast.push("- Debe seleccionar un cliente");
+    }
+    if (!product.masa_kg){
+      newErrors.masa_kg = "Masa (Kg) es obligatorio";
+      errorToast.push("- Masa (Kg) es obligatorio");
+    }
+    if (!product.volumen){
+      newErrors.volumen = "Volumen (cm³) es obligatorio";
+      errorToast.push("- Volumen (cm³) es obligatorio");
     }
     setErrors(newErrors);
     if (errorToast.length > 0){
@@ -224,7 +236,7 @@ function FormProducts({ cliente_id: clienteProp, rol }) {
                 </div>
 
                 {/* Descripción */}
-                <div className="w-full px-2 mb-4">
+                <div className="w-full px-0 mb-4">
                   <label className="block text-blueGray-600 text-xs font-bold mb-2">Descripción</label>
                   <textarea
                     className="border-0 px-3 py-3 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full"
@@ -232,8 +244,36 @@ function FormProducts({ cliente_id: clienteProp, rol }) {
                     placeholder="Descripción del producto"
                     onChange={(e) => setProduct({ ...product, descripcion: e.target.value.toString().toUpperCase() })}
                   />
+                  {errors.descripcion && <p className="text-red-500 text-xs mt-1">{errors.descripcion}</p>}
                 </div>
 
+                <div className="flex flex-wrap -mx-2 mb-4">
+                  <div className="w-1/2 px-2">
+                    <label className="block text-blueGray-600 text-xs font-bold mb-2">Masa (Kg)</label>
+                    <input
+                        type="number"
+                        step="0.001"
+                        className={inputClass("precio_base") + ' text-end'}
+                        value={product.masa_kg}
+                        placeholder="0,00"
+                        onChange={(e) => setProduct({ ...product, masa_kg: e.target.value })}
+                      />
+                      {errors.masa_kg && <p className="text-red-500 text-xs mt-1">{errors.masa_kg}</p>}
+                  </div>
+
+                  <div className="w-1/2 px-2">
+                    <label className="block text-blueGray-600 text-xs font-bold mb-2">Volumen (cm³)</label>
+                    <input
+                        type="number"
+                        step="0.001"
+                        className={inputClass("precio_base") + ' text-end'}
+                        value={product.volumen}
+                        placeholder="0,00"
+                        onChange={(e) => setProduct({ ...product, volumen: e.target.value })}
+                      />
+                      {errors.volumen && <p className="text-red-500 text-xs mt-1">{errors.volumen}</p>}
+                  </div>
+                </div>
                 {/* Cliente */}
                 <div className="w-full px-2 mb-4">
                   <label className="block text-blueGray-600 text-xs font-bold mb-2">Cliente</label>
