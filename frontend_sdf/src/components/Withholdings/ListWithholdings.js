@@ -18,7 +18,6 @@ const { utils, write } = XLSX;
 import { formatDecimal, formatDate, formatDateTime, formatText, formatFiscalPeriod } from "../../utils/formatters";
 import { tooltipBtn } from "../../utils/datatableTooltip";
 import { generateWithholdingPDF } from "../../utils/pdf/WithholdingPDF/generateWithholdingPDF";
-
 window.JSZip = JSZip;
 DataTable.use(DT);
 
