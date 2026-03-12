@@ -66,7 +66,7 @@ function ListInvoices({ title, type }) {
     $tableBody.on("click.invoiceEvents", "button.btn-pdf", async function () {
       const id = $(this).data("id");
       try {
-        await generateInvoicesPDF(id);
+        await generateInvoicesPDF(id, "download");
       } catch {
         toast.error("Error generando Factura PDF");
       }

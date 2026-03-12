@@ -35,6 +35,7 @@ import FormDispatchGuide from "./pages/DispatchGuide/FormDispatchGuide";
 import ListCreditNote from "./pages/CreditNote/ListCreditNote";
 import ListCreditDebit from "./pages/DebitNote/ListDebitNote";
 import SalesBook from "./pages/SalesBook/SalesBook";
+import PublicDocument from "./pages/PublicDocument";
 SalesBook
 // Seguridad
 import PrivateRoute from "./components/PrivateRoute";
@@ -61,6 +62,7 @@ function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
           <Route path="/reset-password" element={<ResetPassword />} />
+          <Route path="/document/:id" element={<PublicDocument />} />
 
           {/* =================== */}
           {/* Rutas privadas */}

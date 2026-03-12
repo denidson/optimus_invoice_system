@@ -3,21 +3,27 @@ import { showDocument } from "../../../services/api_invoices";
 import { getClientLogo } from "../../../services/api_clients";
 import { toast, ToastContainer } from "react-toastify";
 
-export const generateInvoicesPDF = async (invoiceId) => {
+/**
+ * Genera PDF de factura.
+ * @param {string} invoiceId - ID de la factura
+ * @param {"download"|"view"} mode - "download" para descargar, "view" para visor
+ */
+export const generateInvoicesPDF = async (invoiceId, mode = "download") => {
   try {
     const data = await showDocument(invoiceId);
-    console.log('generateInvoicesPDF: ', data);
     if (!data?.items?.length) {
-      console.warn("Documento sin lineas");
-      toast.info("El documento " + data.documento.numero_factura +" no presenta lineas asociadas.");
+      toast.info(`El documento ${data.documento.numero_factura} no presenta lineas asociadas.`);
       return;
     }
-    if (data.emisor.logo_url){
-      var cliente_id = data.emisor.logo_url.split('/')[3]
+
+    if (data.emisor.logo_url) {
+      const cliente_id = data.emisor.logo_url.split("/")[3];
       data.emisor.logo_base64 = await getClientLogo(cliente_id);
     }
-    await buildInvoicesPDF(data);
+
+    return await buildInvoicesPDF(data, invoiceId, mode);
   } catch (err) {
     console.error("Error generando PDF", err);
+    toast.error("Error generando PDF");
   }
 };

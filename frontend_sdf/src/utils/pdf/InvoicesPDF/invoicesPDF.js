@@ -5,7 +5,7 @@ import { formatDate, formatDecimal, formatText, formatMoney } from "../../format
 import exampleLogo from "../../../assets/img/react.jpg";
 import QRCode from "qrcode";
 
-export const buildInvoicesPDF = async (data) => {
+export const buildInvoicesPDF = async (data, invoiceId, mode = "download") => {
   const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "letter" });
 
   const pageWidth = doc.internal.pageSize.width;
@@ -287,7 +287,9 @@ export const buildInvoicesPDF = async (data) => {
     true
   );
 
-  const qrUrl = documento.url_validacion || "https://tu-url-validacion.com";
+  const baseUrl = window.location.origin;
+
+  const qrUrl = `${baseUrl}/document/${invoiceId}`;
 
   const qrBase64 = await QRCode.toDataURL(qrUrl, {
     width: 120,
@@ -549,5 +551,10 @@ export const buildInvoicesPDF = async (data) => {
     false,          // negrita
     3
   );
-  doc.save(`FACT_${documento.numero_factura}.pdf`);
+  const pdfBlob = doc.output("blob");
+  if(mode === "download"){
+    doc.save(`FACT_${documento.numero_factura}.pdf`);
+  } else {
+    return URL.createObjectURL(pdfBlob);
+  }
 };
