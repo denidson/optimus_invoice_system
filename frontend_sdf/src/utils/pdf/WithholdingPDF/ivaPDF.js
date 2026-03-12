@@ -3,6 +3,7 @@ import autoTable from "jspdf-autotable"; // npm i jspdf jspdf-autotable
 import { box, text } from "../pdfDraw";
 import { formatDate, formatDecimal } from "../../formatters";
 import { getRetencionIVA } from "../../../services/apiWithholdings";
+import { getClientLogo } from "../../../services/api_clients";
 import { format } from "crypto-js";
 
 /* ================= GRID HELPERS ================= */
@@ -24,6 +25,11 @@ export const buildIVAPDF = async (comprobante_id) => {
   // Obtener datos desde la API
   const data = await getRetencionIVA(comprobante_id);
   if (!data) return;
+
+  if (data.empresa.logo_url){
+    var cliente_id = data.empresa.logo_url.split('/')[3]
+    data.empresa.logo_base64 = await getClientLogo(cliente_id);
+  }
 
   const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "letter" });
   const g = grid();

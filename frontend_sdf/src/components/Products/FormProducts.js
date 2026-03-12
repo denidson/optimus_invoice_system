@@ -92,13 +92,13 @@ function FormProducts({ cliente_id: clienteProp, rol }) {
       newErrors.cliente_id = "Debe seleccionar un cliente";
       errorToast.push("- Debe seleccionar un cliente");
     }
-    if (!product.masa_kg){
-      newErrors.masa_kg = "Masa (Kg) es obligatorio";
-      errorToast.push("- Masa (Kg) es obligatorio");
+    if (!product.peso_kg){
+      newErrors.peso_kg = "Peso (Kg) es obligatorio";
+      errorToast.push("- Peso (Kg) es obligatorio");
     }
-    if (!product.volumen){
-      newErrors.volumen = "Volumen (cm³) es obligatorio";
-      errorToast.push("- Volumen (cm³) es obligatorio");
+    if (!product.volumen_m3){
+      newErrors.volumen_m3 = "Volumen (M³) es obligatorio";
+      errorToast.push("- Volumen (M³) es obligatorio");
     }
     setErrors(newErrors);
     if (errorToast.length > 0){
@@ -124,6 +124,8 @@ function FormProducts({ cliente_id: clienteProp, rol }) {
         descripcion: product.descripcion,
         iva_categoria_id: parseInt(product.iva_categoria_id, 10),
         aplica_iva: product.aplica_iva ?? true,
+        peso_kg: product.peso_kg,
+        volumen_m3: product.volumen_m3,
       };
 
       if (product.cliente_id) body.cliente_id = product.cliente_id;
@@ -249,29 +251,29 @@ function FormProducts({ cliente_id: clienteProp, rol }) {
 
                 <div className="flex flex-wrap -mx-2 mb-4">
                   <div className="w-1/2 px-2">
-                    <label className="block text-blueGray-600 text-xs font-bold mb-2">Masa (Kg)</label>
+                    <label className="block text-blueGray-600 text-xs font-bold mb-2">Peso (Kg)</label>
                     <input
                         type="number"
                         step="0.001"
                         className={inputClass("precio_base") + ' text-end'}
-                        value={product.masa_kg}
-                        placeholder="0,00"
-                        onChange={(e) => setProduct({ ...product, masa_kg: e.target.value })}
+                        value={product.peso_kg}
+                        placeholder="0,000"
+                        onChange={(e) => setProduct({ ...product, peso_kg: e.target.value })}
                       />
-                      {errors.masa_kg && <p className="text-red-500 text-xs mt-1">{errors.masa_kg}</p>}
+                      {errors.peso_kg && <p className="text-red-500 text-xs mt-1">{errors.peso_kg}</p>}
                   </div>
 
                   <div className="w-1/2 px-2">
-                    <label className="block text-blueGray-600 text-xs font-bold mb-2">Volumen (cm³)</label>
+                    <label className="block text-blueGray-600 text-xs font-bold mb-2">Volumen (M³)</label>
                     <input
                         type="number"
-                        step="0.001"
+                        step="0.0001"
                         className={inputClass("precio_base") + ' text-end'}
-                        value={product.volumen}
-                        placeholder="0,00"
-                        onChange={(e) => setProduct({ ...product, volumen: e.target.value })}
+                        value={product.volumen_m3}
+                        placeholder="0,0000"
+                        onChange={(e) => setProduct({ ...product, volumen_m3: e.target.value })}
                       />
-                      {errors.volumen && <p className="text-red-500 text-xs mt-1">{errors.volumen}</p>}
+                      {errors.volumen_m3 && <p className="text-red-500 text-xs mt-1">{errors.volumen_m3}</p>}
                   </div>
                 </div>
                 {/* Cliente */}

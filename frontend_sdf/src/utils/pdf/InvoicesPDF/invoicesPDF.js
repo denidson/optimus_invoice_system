@@ -50,7 +50,7 @@ export const buildInvoicesPDF = async (data) => {
       colLogo.x,
       empresaY,
       colLogo.w - 5,
-      30
+      (emisor.direccion_fiscal != '' ? 30 : 25),
     );
   } catch {
     doc.addImage(exampleLogo, "JPG", colLogo.x, y, colLogo.w, 25);
@@ -287,7 +287,7 @@ export const buildInvoicesPDF = async (data) => {
     true
   );
 
-  /*const qrUrl = documento.url_validacion || "https://tu-url-validacion.com";
+  const qrUrl = documento.url_validacion || "https://tu-url-validacion.com";
 
   const qrBase64 = await QRCode.toDataURL(qrUrl, {
     width: 120,
@@ -301,7 +301,7 @@ export const buildInvoicesPDF = async (data) => {
     y - 18,
     qrSize,
     qrSize
-  );*/
+  );
 
   y = addressY + 3;
 

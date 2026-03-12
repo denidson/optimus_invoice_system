@@ -3,6 +3,7 @@ import autoTable from "jspdf-autotable";
 import { box, text } from "../pdfDraw";
 import { formatDate, formatDecimal } from "../../formatters";
 import { getRetencionISLR } from "../../../services/apiWithholdings";
+import { getClientLogo } from "../../../services/api_clients";
 import exampleLogo from "../../../assets/img/react.jpg";
 
 /* ================= GRID ================= */
@@ -39,6 +40,11 @@ export const buildISLRPDF = async (comprobante_id) => {
 
   const data = await getRetencionISLR(comprobante_id);
   if (!data) return;
+
+  if (data.empresa.logo_url){
+    var cliente_id = data.empresa.logo_url.split('/')[3]
+    data.empresa.logo_base64 = await getClientLogo(cliente_id);
+  }
 
   const doc = new jsPDF({
     orientation: "landscape",

@@ -1,7 +1,7 @@
 import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
 import { box, text, grid, boxCustom, line, textWrap, labelValue } from "../pdfDraw";
-import { formatDate, formatDecimal, formatText, formatMoney } from "../../formatters";
+import { formatDate, formatDecimal, formatText, formatMoney, formatDecimalSpecial } from "../../formatters";
 import { getRetencionISLR } from "../../../services/apiWithholdings";
 import exampleLogo from "../../../assets/img/react.jpg";
 
@@ -79,7 +79,7 @@ export const buildDispacheGuidesPDF = async (data) => {
 
   text(
     doc,
-    formatText("Guía de despacho") + " " + formatText(documento.numero_guia || ""),
+    formatText("Guía de despacho"),
     colCenter.x + colCenter.w / 2,
     y + 10,
     11,
@@ -90,7 +90,7 @@ export const buildDispacheGuidesPDF = async (data) => {
   if (documento.numero_guia){
     text(
       doc,
-      formatText("Guía de despacho") + " " + formatText(documento.numero_guia || ""),
+      formatText(documento.numero_guia),
       colCenter.x + colCenter.w / 2,
       y + 16,
       11,
@@ -284,9 +284,11 @@ export const buildDispacheGuidesPDF = async (data) => {
   const tableData = items.map(d => [
     formatText(d.descripcion),
     formatDecimal(d.cantidad),
-    formatDecimal(d.masa_kg),
+    formatDecimalSpecial(d.peso_unitario_kg, 3),
+    formatDecimalSpecial(d.masa_kg, 3),
     formatDecimal(d.capacidad),
-    formatDecimal(d.volumen),
+    formatDecimalSpecial(d.volumen_unitario_m3, 4),
+    formatDecimalSpecial(d.volumen, 4),
     formatText(d.unidad_medida),
   ]);
 
@@ -295,9 +297,11 @@ export const buildDispacheGuidesPDF = async (data) => {
     head: [[
       "Descripción",
       "Cantidad",
-      "Masa (kg)",
+      "Peso Unit. (Kg)",
+      "Peso (Kg)",
       "Capacidad",
-      "Volumen",
+      "Volumen Unit. (M³)",
+      "Volumen (M³)",
       "Unidad de medida",
     ]],
     body: tableData,
@@ -313,17 +317,14 @@ export const buildDispacheGuidesPDF = async (data) => {
     headStyles: { fillColor: [220,220,220], textColor:0, fontStyle: "bold", halign: "center" },
     footStyles: { fillColor: [220,220,220], textColor:0, fontStyle: "bold", halign: "right" },
     columnStyles: { 
-        0: {halign:'center'}, 
+        0: {halign:'left'},
         1: {halign:'center'}, 
         2: {halign:'center'}, 
         3:{halign:'center'}, 
-        4:{halign:'right'}, 
+        4:{halign:'center'},
         5:{halign:'center'}, 
-        6:{halign:'right'}, 
-        7:{halign:'right'}, 
-        8:{halign:'center'}, 
-        9:{halign:'right'},
-        10:{halign:'right'} 
+        6:{halign:'center'},
+        7:{halign:'center'},
     },
     margin: { left: col12.x, right: 10 },
     tableWidth: col12.w

@@ -14,6 +14,14 @@ export const formatDecimal = (value) => {
   }).format(Number(value || 0));
 };
 
+export const formatDecimalSpecial = (value, digits=2) => {
+  return new Intl.NumberFormat("es-ES", {
+    minimumFractionDigits: digits,
+    maximumFractionDigits: digits,
+    useGrouping: true,
+  }).format(Number(value || 0));
+};
+
 export const formatInteger = (value) => {
   return new Intl.NumberFormat("es-ES", {
     minimumFractionDigits: 0,

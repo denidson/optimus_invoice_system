@@ -25,7 +25,7 @@ import pdfFonts from "pdfmake/build/vfs_fonts";
 import * as XLSX from "xlsx";
 const { read, utils } = XLSX;3
 import Papa from 'papaparse';
-import { formatDecimal, formatDate, formatDateTime, formatText } from "../../utils/formatters";
+import { formatDecimal, formatDate, formatDateTime, formatText, formatDecimalSpecial } from "../../utils/formatters";
 
 window.JSZip = JSZip;
 DataTable.use(DT);
@@ -253,6 +253,14 @@ function ListProducts() {
                       return formatDecimal(data);
                     }
                   },
+                  { title: "Peso (Kg)", data: "peso_kg", render: (data, type, row) => {
+                      return formatDecimalSpecial(data, 3);
+                    }
+                  },
+                  { title: "Volumen (M³)", data: "volumen_m3", render: (data, type, row) => {
+                      return formatDecimalSpecial(data, 4);
+                    }
+                  },
                   { title: "Condición", data: "activo", className: "dt-center", render: (data, type, row) => {
                       if (!data){
                         return '<i class="fas fa-circle text-red-500 mr-2"></i> ' + formatText('Inactivo');
@@ -278,6 +286,11 @@ function ListProducts() {
                   }
                 ]}
                 options={{
+                  columnDefs:[{
+                    targets: [5, 6], // índices de columnas a ocultar (ej: RIF, Zona)
+                    visible: false,
+                    searchable: true // siguen siendo buscables
+                  }],
                   dom: //B = Buttons, l = LengthMenu (mostrar X registros), f = Filtro (search), t = Tabla, i = Info (mostrando de X a Y de Z), p = Paginación
                     "<'row'<'col-sm-12 text-start'B>>" +                // Fila 2: botones ocupando todo el ancho
                     "<'row'<'col-sm-6 text-end'l><'col-sm-6'f>>" +    // Fila 1: lengthMenu izquierda, filtro derecha
