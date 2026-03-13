@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { generateInvoicesPDF } from "../utils/pdf/InvoicesPDF/generateInvoicesPDF";
+import { decryptText } from "../services/api";
 
 const PublicDocument = () => {
   const { id } = useParams();
@@ -8,7 +9,7 @@ const PublicDocument = () => {
 
   useEffect(() => {
     const loadPDF = async () => {
-      const url = await generateInvoicesPDF(id, "view"); // genera PDF para ver
+      const url = await generateInvoicesPDF(decryptText(id), "view"); // genera PDF para ver
       setPdfUrl(url);
     };
     loadPDF();

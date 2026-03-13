@@ -4,6 +4,7 @@ import { box, text, grid, boxCustom, line, textWrap, labelValue } from "../pdfDr
 import { formatDate, formatDecimal, formatText, formatMoney } from "../../formatters";
 import exampleLogo from "../../../assets/img/react.jpg";
 import QRCode from "qrcode";
+import { encryptText } from '../../../services/api';
 
 export const buildInvoicesPDF = async (data, invoiceId, mode = "download") => {
   const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "letter" });
@@ -289,7 +290,7 @@ export const buildInvoicesPDF = async (data, invoiceId, mode = "download") => {
 
   const baseUrl = window.location.origin;
 
-  const qrUrl = `${baseUrl}/document/${invoiceId}`;
+  const qrUrl = `${baseUrl}/document/${encodeURIComponent(encryptText(invoiceId.toString()))}/`;
 
   const qrBase64 = await QRCode.toDataURL(qrUrl, {
     width: 120,
