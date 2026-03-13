@@ -62,7 +62,7 @@ function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
           <Route path="/reset-password" element={<ResetPassword />} />
-          <Route path="/document/:id" element={<PublicDocument />} />
+          <Route path="/document/:type/:id" element={<PublicDocument />} />
 
           {/* =================== */}
           {/* Rutas privadas */}

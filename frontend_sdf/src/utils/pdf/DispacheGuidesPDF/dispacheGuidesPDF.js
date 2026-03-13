@@ -2,11 +2,12 @@ import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
 import { box, text, grid, boxCustom, line, textWrap, labelValue } from "../pdfDraw";
 import { formatDate, formatDecimal, formatText, formatMoney, formatDecimalSpecial } from "../../formatters";
-import { getRetencionISLR } from "../../../services/apiWithholdings";
 import exampleLogo from "../../../assets/img/react.jpg";
+import QRCode from "qrcode";
+import { encryptText } from '../../../services/api';
 
 /* ================================================= */
-export const buildDispacheGuidesPDF = async (data) => {
+export const buildDispacheGuidesPDF = async (data, dispacheGuideId, mode = "download") => {
 
   //const data = await getRetencionISLR(comprobante_id);
   if (!data) return;
@@ -74,6 +75,26 @@ export const buildDispacheGuidesPDF = async (data) => {
       logoH
     );
   }
+
+  /* ---------- QR ---------- */
+
+  const baseUrl = window.location.origin;
+
+  const qrUrl = `${baseUrl}/document/DG/${encodeURIComponent(encryptText(dispacheGuideId.toString()))}/`;
+
+  const qrBase64 = await QRCode.toDataURL(qrUrl, {
+    width: 120,
+    margin: 1
+  });
+  const qrSize = 17 + 3;
+  doc.addImage(
+    qrBase64,
+    "PNG",
+    colLogo.x + 12,
+    logoY,
+    logoH,
+    logoH
+  );
 
   /* ---------- CENTRO ---------- */
 
@@ -446,5 +467,12 @@ export const buildDispacheGuidesPDF = async (data) => {
     3
   );
 
-  doc.save(`GUIA_DESPACHO_${documento.numero_guia || ""}.pdf`);
+  const pdfBlob = doc.output("blob");
+  console.log('pdfBlob: ', pdfBlob);
+  console.log('mode: ', mode);
+  if(mode === "download"){
+    doc.save(`GUIA_${documento.numero_guia || ""}.pdf`);
+  } else {
+    return URL.createObjectURL(pdfBlob);
+  }
 };
