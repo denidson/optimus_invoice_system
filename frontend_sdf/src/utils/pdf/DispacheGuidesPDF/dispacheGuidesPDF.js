@@ -470,7 +470,6 @@ export const buildDispacheGuidesPDF = async (data, dispacheGuideId, mode = "down
   );
 
   const pdfBlob = doc.output("blob");
-  console.log('pdfBlob: ', pdfBlob);
   if(mode === "download"){
     doc.save(`GUIA_${documento.numero_guia || ""}.pdf`);
   } else {

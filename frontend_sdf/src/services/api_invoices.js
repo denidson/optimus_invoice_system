@@ -85,12 +85,8 @@ export const getSalesBook = async (params = {}) => {
 // Formato digital
 export const showDocument = async (id) => {
   try {
-    const authData = localStorage.getItem("authData");
-    if (authData) {
-      const { rol } = JSON.parse(authData);
-      var response = await api.get(`/api/documents/factura/${id}`);
-      return response.data;
-    }
+    var response = await api.get(`/api/documents/factura/${id}`);
+    return response.data;
   } catch (error) {
     console.error("Error al facturas:", error);
     throw error;

@@ -12,15 +12,19 @@ const PublicDocument = () => {
 
   useEffect(() => {
     const loadPDF = async () => {
-      var url;
+      let url;
       if (type == 'INV'){
         url = await generateInvoicesPDF(decryptText(id), "view"); // genera PDF para ver
-      }else if (type == 'RET'){
-        url = await generateWithholdingPDF(decryptText(id), "view"); // genera PDF para ver
-      }else{
+      }
+      if (type == 'RETISLR'){
+        url = await generateWithholdingPDF(decryptText(id), "view", "ISLR"); // genera PDF para ver
+      }
+      if (type == 'RETIVA'){
+        url = await generateWithholdingPDF(decryptText(id), "view", "IVA"); // genera PDF para ver
+      }
+      if (type == 'DG'){
         url = await generateDispatchGuidePDF(decryptText(id), "view"); // genera PDF para ver
       }
-      console.log('url: ', url)
       setPdfUrl(url);
     };
     loadPDF();

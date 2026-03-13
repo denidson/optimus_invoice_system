@@ -1,34 +1,22 @@
 import { jsPDF } from "jspdf"; 
 import autoTable from "jspdf-autotable"; // npm i jspdf jspdf-autotable
-import { box, text } from "../pdfDraw";
+import { box, text, grid } from "../pdfDraw";
 import { formatDate, formatDecimal } from "../../formatters";
 import { getRetencionIVA } from "../../../services/apiWithholdings";
 import { getClientLogo } from "../../../services/api_clients";
 import { format } from "crypto-js";
-
-/* ================= GRID HELPERS ================= */
-const grid = (cols = 12, margin = 10, pageWidth = 280, gap = 2) => {
-  const totalGap = (cols - 1) * gap;
-  const colWidth = (pageWidth - margin * 2 - totalGap) / cols;
-  return {
-    col: (start, span = 1) => ({
-      x: margin + start * colWidth + start * gap,
-      w: colWidth * span + (span - 1) * gap
-    }),
-    gap,
-    vGap: 3
-  };
-};
+import QRCode from "qrcode";
+import { encryptText } from '../../../services/api';
 
 /* ================= BUILD PDF ================= */
-export const buildIVAPDF = async (comprobante_id) => {
+export const buildIVAPDF = async (comprobante_id, withholdingId, mode = "download") => {
   // Obtener datos desde la API
   const data = await getRetencionIVA(comprobante_id);
   if (!data) return;
 
-  if (data.empresa.logo_url){
-    var cliente_id = data.empresa.logo_url.split('/')[3]
-    data.empresa.logo_base64 = await getClientLogo(cliente_id);
+  if (data.agente_retencion.logo_url){
+    var cliente_id = data.agente_retencion.logo_url.split('/')[3]
+    data.agente_retencion.logo_base64 = await getClientLogo(cliente_id);
   }
 
   const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "letter" });
@@ -63,6 +51,27 @@ export const buildIVAPDF = async (comprobante_id) => {
   if (legal.articulo) {
     doc.text(legal.articulo, col12.x + col12.w/2, yTitle, { maxWidth: col12.w, align: "center" });
   }
+
+  /* ---------- QR ---------- */
+
+  const baseUrl = window.location.origin;
+
+  const qrUrl = `${baseUrl}/document/RETIVA/${encodeURIComponent(encryptText(withholdingId.toString()))}/`;
+
+  const qrBase64 = await QRCode.toDataURL(qrUrl, {
+    width: 120,
+    margin: 1
+  });
+  const qrSize = 23;
+  doc.addImage(
+    qrBase64,
+    "PNG",
+    col12.w - 13,
+    y - 5,
+    qrSize,
+    qrSize
+  );
+
   y = yTitle + 8;
 
   /* ================= NRO COMPROBANTE Y FECHA ================= */
@@ -73,14 +82,14 @@ export const buildIVAPDF = async (comprobante_id) => {
   const gap = 5;
 
   const startX = col5.x;
-  box(doc, startX, y, boxWidth, boxHeight);
-  text(doc, "0. NRO. COMPROBANTE", startX + 2, y + 4, 7);
-  text(doc, cabecera.numero_comprobante, startX + boxWidth / 2, y + 11, 9, "center");
+  box(doc, startX + 5.3, y, boxWidth, boxHeight);
+  text(doc, "0. NRO. COMPROBANTE", startX + 7.3, y + 4, 7);
+  text(doc, cabecera.numero_comprobante, (startX + boxWidth / 2) + 5.3, y + 11, 9, "center");
 
   const x2 = startX + boxWidth + gap;
-  box(doc, x2, y, boxWidth, boxHeight);
-  text(doc, "1. FECHA EMISIÓN", x2 + 2, y + 4, 7);
-  text(doc, formatDate(cabecera.fecha_emision), x2 + boxWidth / 2, y + 11, 9, "center");
+  box(doc, x2 + 2.4, y, boxWidth, boxHeight);
+  text(doc, "1. FECHA EMISIÓN", x2 + 4.4, y + 4, 7);
+  text(doc, formatDate(cabecera.fecha_emision), (x2 + boxWidth / 2) + 2.4, y + 11, 9, "center");
 
   y += boxHeight + vGap;
 
@@ -218,5 +227,10 @@ export const buildIVAPDF = async (comprobante_id) => {
   );
 
   /* ================= GUARDAR PDF ================= */
-  doc.save(`RET_IVA_${cabecera.numero_comprobante}.pdf`);
+  const pdfBlob = doc.output("blob");
+  if(mode === "download"){
+    doc.save(`RET_IVA_${cabecera.numero_comprobante}.pdf`);
+  } else {
+    return URL.createObjectURL(pdfBlob);
+  }
 };

@@ -1,42 +1,15 @@
 import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
-import { box, text } from "../pdfDraw";
-import { formatDate, formatDecimal } from "../../formatters";
+import { box, text, grid, labelValue, textWrap } from "../pdfDraw";
+import { formatDate, formatDecimal, formatText } from "../../formatters";
 import { getRetencionISLR } from "../../../services/apiWithholdings";
 import { getClientLogo } from "../../../services/api_clients";
 import exampleLogo from "../../../assets/img/react.jpg";
-
-/* ================= GRID ================= */
-const grid = (cols = 12, margin = 10, pageWidth = 280, gap = 2) => {
-  const totalGap = (cols - 1) * gap;
-  const colWidth = (pageWidth - margin * 2 - totalGap) / cols;
-
-  return {
-    col: (start, span = 1) => ({
-      x: margin + start * colWidth + start * gap,
-      w: colWidth * span + (span - 1) * gap
-    }),
-    vGap: 3
-  };
-};
-
-/* ===== LABEL BOLD + VALUE NORMAL ===== */
-const labelValue = (doc, label, value, x, y) => {
-  doc.setFontSize(9);
-  // label bold
-  doc.setFont("helvetica", "bold");
-  doc.text(`${label}:`, x, y);
-
-  // calcular ancho label
-  const offset = doc.getTextWidth(`${label}: `);
-
-  // value normal
-  doc.setFont("helvetica", "normal");
-  doc.text(String(value ?? ""), x + offset, y);
-};
+import QRCode from "qrcode";
+import { encryptText } from '../../../services/api';
 
 /* ================================================= */
-export const buildISLRPDF = async (comprobante_id) => {
+export const buildISLRPDF = async (comprobante_id, withholdingId, mode = "download") => {
 
   const data = await getRetencionISLR(comprobante_id);
   if (!data) return;
@@ -108,6 +81,26 @@ export const buildISLRPDF = async (comprobante_id) => {
     );
   }
 
+  /* ---------- QR ---------- */
+
+  const baseUrl = window.location.origin;
+
+  const qrUrl = `${baseUrl}/document/RETISLR/${encodeURIComponent(encryptText(withholdingId.toString()))}/`;
+
+  const qrBase64 = await QRCode.toDataURL(qrUrl, {
+    width: 120,
+    margin: 1
+  });
+  const qrSize = 25;
+  doc.addImage(
+    qrBase64,
+    "PNG",
+    colRight.x + colRight.w - 28,
+    y + 2.5,
+    qrSize,
+    qrSize
+  );
+
   /* ---------- CENTRO ---------- */
 
   text(
@@ -137,16 +130,16 @@ export const buildISLRPDF = async (comprobante_id) => {
     doc,
     "Nº Comprobante",
     cabecera.numero_comprobante,
-    rightX,
-    y + 12
+    rightX - 15,
+    y + 7
   );
 
   labelValue(
     doc,
     "Fecha Emisión",
     formatDate(cabecera.fecha_emision),
-    rightX,
-    y + 20
+    rightX - 15,
+    y + 12
   );
 
   y += headerHeight + 4;
@@ -155,38 +148,110 @@ export const buildISLRPDF = async (comprobante_id) => {
   /* ========= PROVEEDOR / EMPRESA =================== */
   /* ================================================= */
 
-  const hInfo = 24;
-
+  let hInfo = 24;
   const colLeft = g.col(0, 6);
   const colRightInfo = g.col(6, 6);
+  let yLn = 1;
+  var yPro = textWrap(
+    doc,
+    "                    " + formatText(proveedor_beneficiario.direccion2) || "",
+    0, // X no importa para medir
+    0,
+    colLeft.x + 2,
+    7,
+    "justify",
+    false,
+    5,
+    true // measureOnly
+  );
+  var yEmp = textWrap(
+    doc,
+    "                    " + formatText(empresa.direccion2) || "",
+    0, // X no importa para medir
+    0,
+    colRightInfo.x + 2,
+    7,
+    "justify",
+    false,
+    5,
+    true // measureOnly
+  );
+  if (yPro > yEmp){
+    yLn = (yPro / 2);
+    hInfo = hInfo - 5 + yPro;
+  }
+  if (yEmp > yPro){
+    yLn = (yEmp / 2);
+    hInfo = hInfo - 5 + yEmp;
+  }
+  console.log('yPro: ', yPro);
+  console.log('yEmp: ', yEmp);
 
   // Proveedor
   box(doc, colLeft.x, y, colLeft.w, hInfo);
 
   text(doc, "Proveedor/Beneficiario:", colLeft.x + 2, y + 5, 8, "left", true);
-  text(doc, proveedor_beneficiario.nombre, colLeft.x + 2, y + 10);
-  text(doc, `RIF: ${proveedor_beneficiario.rif}`, colLeft.x + 2, y + 15);
-  text(
+  text(doc, formatText(proveedor_beneficiario.nombre), colLeft.x + 2, y + 10);
+  labelValue(
     doc,
-    `Dirección: ${proveedor_beneficiario.direccion || ""}`,
+    "RIF",
+    formatText(proveedor_beneficiario.rif),
+    colLeft.x + 2,
+    y + 15
+  );
+  labelValue(
+    doc,
+    "Dirección",
+    "",
     colLeft.x + 2,
     y + 20
+  );
+
+  textWrap(
+    doc,
+    "                         " + formatText(proveedor_beneficiario.direccion) || "",
+    colLeft.x + 2, // X no importa para medir
+    y + 20,
+    colLeft.w - 3,
+    7,
+    "justify",
+    false,
+    5
   );
 
   // Empresa
   box(doc, colRightInfo.x, y, colRightInfo.w, hInfo);
 
   text(doc, "Empresa:", colRightInfo.x + 2, y + 5, 8, "left", true);
-  text(doc, empresa.nombre, colRightInfo.x + 2, y + 10);
-  text(doc, `RIF: ${empresa.rif}`, colRightInfo.x + 2, y + 15);
-  text(
+  text(doc, formatText(empresa.nombre), colRightInfo.x + 2, y + 10);
+  labelValue(
     doc,
-    `Dirección: ${empresa.direccion || ""}`,
+    "RIF",
+    formatText(empresa.rif),
+    colRightInfo.x + 2,
+    y + 15
+  );
+  labelValue(
+    doc,
+    "Dirección",
+    "",
     colRightInfo.x + 2,
     y + 20
   );
 
-  y += hInfo + 5;
+  textWrap(
+    doc,
+    "                         " + formatText(empresa.direccion) || "",
+    colRightInfo.x + 2, // X no importa para medir
+    y + 20,
+    colRightInfo.w - 3,
+    7,
+    "justify",
+    false,
+    5
+  );
+
+  y += hInfo + (yLn * 5);
 
   /* ================================================= */
   /* ================= TABLA ========================= */
@@ -272,6 +337,11 @@ export const buildISLRPDF = async (comprobante_id) => {
     footerTop + 18,
     9
   );
-
-  doc.save(`RET_ISLR_${cabecera.numero_comprobante}.pdf`);
+  /* ================= GUARDAR PDF ================= */
+  const pdfBlob = doc.output("blob");
+  if(mode === "download"){
+    doc.save(`RET_ISLR_${cabecera.numero_comprobante}.pdf`);
+  } else {
+    return URL.createObjectURL(pdfBlob);
+  }
 };

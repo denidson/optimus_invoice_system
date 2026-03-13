@@ -20,7 +20,7 @@ export const generateDispatchGuidePDF = async (dispatchGuideId, mode = "download
       var cliente_id = data.emisor.logo_url.split('/')[3]
       data.emisor.logo_base64 = await getClientLogo(cliente_id);
     }
-    await buildDispacheGuidesPDF(data, dispatchGuideId, mode);
+    return await buildDispacheGuidesPDF(data, dispatchGuideId, mode);
   } catch (err) {
     console.error("Error generando PDF", err);
   }
