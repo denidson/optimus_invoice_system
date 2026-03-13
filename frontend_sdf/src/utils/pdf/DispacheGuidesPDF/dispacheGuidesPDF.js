@@ -41,8 +41,10 @@ export const buildDispacheGuidesPDF = async (data, dispacheGuideId, mode = "down
   const headerHeight = 30;
 
   const colLogo = g.col(0, 2);
-  const colCenter = g.col(2, 7);
-  const colRight = g.col(9, 3);
+  const colRender = g.col(3, 1);
+  const colCenter = g.col(4, 3);
+  const colRight = g.col(7, 4);
+  const colQr = g.col(10, 2);
 
   // BORDE GENERAL (único)
   box(doc, col12.x, y, col12.w, headerHeight);
@@ -69,7 +71,7 @@ export const buildDispacheGuidesPDF = async (data, dispacheGuideId, mode = "down
     doc.addImage(
       exampleLogo,
       "JPG",
-      colLogo.x + 2,
+      colLogo.x + 4,
       logoY,
       colLogo.w - 4,
       logoH
@@ -90,7 +92,7 @@ export const buildDispacheGuidesPDF = async (data, dispacheGuideId, mode = "down
   doc.addImage(
     qrBase64,
     "PNG",
-    colLogo.x + 12,
+    colQr.x + 12,
     logoY,
     logoH,
     logoH
@@ -469,7 +471,6 @@ export const buildDispacheGuidesPDF = async (data, dispacheGuideId, mode = "down
 
   const pdfBlob = doc.output("blob");
   console.log('pdfBlob: ', pdfBlob);
-  console.log('mode: ', mode);
   if(mode === "download"){
     doc.save(`GUIA_${documento.numero_guia || ""}.pdf`);
   } else {

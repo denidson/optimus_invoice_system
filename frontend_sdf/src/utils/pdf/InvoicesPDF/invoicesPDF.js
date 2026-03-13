@@ -288,9 +288,11 @@ export const buildInvoicesPDF = async (data, invoiceId, mode = "download") => {
     true
   );
 
+  /* ---------- QR ---------- */
+
   const baseUrl = window.location.origin;
 
-  const qrUrl = `${baseUrl}/document/${encodeURIComponent(encryptText(invoiceId.toString()))}/`;
+  const qrUrl = `${baseUrl}/document/INV/${encodeURIComponent(encryptText(invoiceId.toString()))}/`;
 
   const qrBase64 = await QRCode.toDataURL(qrUrl, {
     width: 120,

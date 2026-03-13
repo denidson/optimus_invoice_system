@@ -40,7 +40,7 @@ const PublicDocument = () => {
     <div
       style={{
         padding: 10,
-        height: "100vh",       // altura completa del navegador
+        height: "100vh",
         boxSizing: "border-box",
         backgroundColor: "#f5f5f5",
       }}
