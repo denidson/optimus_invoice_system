@@ -218,6 +218,189 @@ function ListInvoices({ title, type }) {
     table.ajax.reload();
   };
 
+  var columns = [];
+  var columnDefs = [];
+  columns.push({
+      title: "Fecha",
+      data: "fecha_factura",
+      className: "dt-center",
+      render: (data, type, row) => {
+        return formatDate(data);
+      }
+    });
+    columns.push({
+     title: "RIF", data: "cliente_final_rif", className: "dt-center", render: (data, type, row) => {
+        return formatText(data);
+      }
+    });
+    columns.push({
+      title: "Razón Social", data: "cliente_final_nombre", render: (data, type, row) => {
+        return formatText(data);
+      }
+    });
+    if (type != 'FC'){
+      columns.push({
+        title: "Fecha (Factura)", data: "factura_afectada_rel.fecha_emision", className: "dt-center", render: (data, type, row) => {
+          return formatDate(data);
+        }
+      });
+      columns.push({
+        title: "Nro de control (Factura)", data: "factura_afectada_rel.numero_control", className: "dt-center", render: (data, type, row) => {
+          return formatText(data);
+        }
+      });
+      columnDefs = [6, 7, 8, 10, 11, 12];
+    }else{
+      columnDefs = [4, 5, 6, 8, 9, 10];
+    }
+    /*{
+      title: "Tipo de documento",
+      data: "tipo_documento",
+      className: "text-center",
+      orderable: true,
+      searchable: true,
+      render: (data, type, row) => {
+        if (data == 'FC'){
+          return 'FACTURA';
+        }else if (data == 'NC'){
+          return 'NOTA DE CRÉDITO';
+        } else {
+          return 'NOTA DE DÉBITO';
+        }
+
+      }
+    },*/
+    columns.push({
+      title: "Número de control", data: "numero_control", className: "dt-center", render: (data, type, row) => {
+        return formatText(data);
+      }
+    });
+    columns.push({
+      title: "Correlativo", data: "correlativo_interno", className: "dt-center", render: (data, type, row) => {
+        return formatText(data);
+      }
+    });
+    columns.push({
+      title: "Base imponible (Bs.)",
+      data: "total_base",
+      render: (data, type, row) => {
+        return formatDecimal(data);
+      }
+    });
+    columns.push({
+      title: "I.V.A. (Bs.)",
+      data: "total_impuestos",
+      render: (data, type, row) => {
+        return formatDecimal(data);
+      }
+    });
+    columns.push({
+      title: "Total (Bs.)",
+      data: "total_neto",
+      render: (data, type, row) => {
+        return formatDecimal(data);
+      }
+    });
+    columns.push({
+      title: "Pagado en divisas (Bs.)",
+      data: "monto_pagado_divisas",
+      render: (data, type, row) => {
+        return formatDecimal(data);
+      }
+    });
+    columns.push({
+      title: "IGTF (Bs.)",
+      data: "igtf_monto",
+      render: (data, type, row) => {
+        return formatDecimal(data);
+      }
+    });
+    columns.push({
+      title: "Zona",
+      data: "zona",
+      orderable: true,
+      searchable: false,
+      render: (data, type, row) => {
+        return formatText(data);
+      }
+    });
+    columns.push({
+      title: "Estatus",
+      data: "estatus",
+      className: "dt-center",
+      orderable: true,
+      searchable: true,
+      render: (data, type, row) => {
+        if (data == 'anulada'){
+          return '<i class="fas fa-circle text-red-500 mr-2"></i> ' + formatText(data);
+        }else if (data == 'normal'){
+          return '<i class="fas fa-circle text-emerald-500 mr-2"></i> ' + formatText(data);
+        } else {
+          return '<i class="fas fa-circle text-orange-500 mr-2"></i> ' + formatText(data);
+        }
+      }
+    });
+    columns.push({
+      title: "Acciones",
+      data: null,
+      orderable: false,
+      searchable: false,
+      className: 'no-export',
+      render: (data, type, row) => {
+        // const viewBtn = `<button class="btn-view px-2 py-1 text-gray-700" data-id="${row.id}"><i class="fa-solid fa-lg fa-expand"></i></button>`;
+        const viewBtn = tooltipBtn({
+          html: `
+            <button class="btn-view px-2 py-1 text-gray-700" data-id="${row.id}">
+              <i class="fa-solid fa-lg fa-expand"></i>
+            </button>
+          `,
+          text:
+            row.tipo_documento === "FC"
+              ? "Ver factura"
+              : row.tipo_documento === "NC"
+              ? "Ver nota de crédito"
+              : "Ver nota de débito"
+        });
+        if (rol === "admin") {
+          return `<div style="display:flex;justify-content:center;align-items:center;gap:0.25rem;white-space:nowrap;">${viewBtn}</div>`;
+        }
+        const pdfBtn = tooltipBtn({
+          html: `
+            <button class="btn-pdf px-2 py-1 text-gray-700"
+              data-id="${row.id}">
+              <i class="fa-solid fa-file-pdf"></i>
+            </button>
+          `,
+          text: "Generar PDF"
+        });
+        if (rol !== "admin" && row.estatus.toUpperCase() != 'ANULADA' && row.tipo_documento == 'FC'){
+          // const creditNoteBtn = `<button class="btn-credit-note px-2 py-1 text-red-600" data-id="${row.id}"><i class="fa-solid fa-lg fa-file-invoice"></i></button>`;
+          // const debitNoteBtn = `<button class="btn-debit-note px-1 py-1 mx-0 text-green-600" data-id="${row.id}" data-correlativo_interno="${row.correlativo_interno}"><i class="fa-solid fa-file-invoice fa-lg"></i></button>`;
+          const creditNoteBtn = tooltipBtn({
+            html: `
+              <button class="btn-credit-note px-2 py-1 text-red-600"
+                data-id="${row.id}">
+                <i class="fa-solid fa-lg fa-file-invoice"></i>
+              </button>
+            `,
+            text: "Crear nota de crédito"
+          });
+          const debitNoteBtn = tooltipBtn({
+            html: `
+              <button class="btn-debit-note px-1 py-1 mx-0 text-green-600"
+                data-id="${row.id}"
+                data-correlativo_interno="${row.correlativo_interno}">
+                <i class="fa-solid fa-lg fa-file-invoice"></i>
+              </button>
+            `,
+            text: "Crear nota de débito"
+          });
+          return `<div style="display:flex;justify-content:center;align-items:center;gap:0.25rem;white-space:nowrap;">${viewBtn}${pdfBtn}${creditNoteBtn}${debitNoteBtn}</div>`;
+        }else{
+          return `<div style="display:flex;justify-content:center;align-items:center;gap:0.25rem;white-space:nowrap;">${viewBtn}${pdfBtn}</div>`;
+        }
+      }
+    });
   return (
     <div className="mx-auto w-full">
       <ToastContainer />
@@ -274,173 +457,10 @@ function ListInvoices({ title, type }) {
               <DataTable
                 id="ListInvoicesDt"
                 className="table-auto w-full text-left"
-                columns={[
-                  {
-                    title: "Fecha",
-                    data: "fecha_factura",
-                    className: "dt-center",
-                    render: (data, type, row) => {
-                      return formatDate(data);
-                    }
-                  },
-                  { title: "RIF", data: "cliente_final_rif", className: "dt-center", render: (data, type, row) => {
-                      return formatText(data);
-                    }
-                  },
-                  { title: "Razón Social", data: "cliente_final_nombre", render: (data, type, row) => {
-                      return formatText(data);
-                    }
-                  },
-                  /*{
-                    title: "Tipo de documento",
-                    data: "tipo_documento",
-                    className: "text-center",
-                    orderable: true,
-                    searchable: true,
-                    render: (data, type, row) => {
-                      if (data == 'FC'){
-                        return 'FACTURA';
-                      }else if (data == 'NC'){
-                        return 'NOTA DE CRÉDITO';
-                      } else {
-                        return 'NOTA DE DÉBITO';
-                      }
-
-                    }
-                  },*/
-                  { title: "Número de control", data: "numero_control", className: "dt-center", render: (data, type, row) => {
-                      return formatText(data);
-                    }
-                  },
-                  { title: "Correlativo", data: "correlativo_interno", className: "dt-center", render: (data, type, row) => {
-                      return formatText(data);
-                    }
-                  },
-                  {
-                    title: "Base imponible (Bs.)",
-                    data: "total_base",
-                    render: (data, type, row) => {
-                      return formatDecimal(data);
-                    }
-                  },
-                  {
-                    title: "I.V.A. (Bs.)",
-                    data: "total_impuestos",
-                    render: (data, type, row) => {
-                      return formatDecimal(data);
-                    }
-                  },
-                  {
-                    title: "Total (Bs.)",
-                    data: "total_neto",
-                    render: (data, type, row) => {
-                      return formatDecimal(data);
-                    }
-                  },
-                  {
-                    title: "Pagado en divisas (Bs.)",
-                    data: "monto_pagado_divisas",
-                    render: (data, type, row) => {
-                      return formatDecimal(data);
-                    }
-                  },
-                  {
-                    title: "IGTF (Bs.)",
-                    data: "igtf_monto",
-                    render: (data, type, row) => {
-                      return formatDecimal(data);
-                    }
-                  },
-                  {
-                    title: "Zona",
-                    data: "zona",
-                    orderable: true,
-                    searchable: false,
-                    render: (data, type, row) => {
-                      return formatText(data);
-                    }
-                  },
-                  {
-                    title: "Estatus",
-                    data: "estatus",
-                    className: "dt-center",
-                    orderable: true,
-                    searchable: true,
-                    render: (data, type, row) => {
-                      if (data == 'anulada'){
-                        return '<i class="fas fa-circle text-red-500 mr-2"></i> ' + formatText(data);
-                      }else if (data == 'normal'){
-                        return '<i class="fas fa-circle text-emerald-500 mr-2"></i> ' + formatText(data);
-                      } else {
-                        return '<i class="fas fa-circle text-orange-500 mr-2"></i> ' + formatText(data);
-                      }
-                    }
-                  },
-                  {
-                    title: "Acciones",
-                    data: null,
-                    orderable: false,
-                    searchable: false,
-                    className: 'no-export',
-                    render: (data, type, row) => {
-                      // const viewBtn = `<button class="btn-view px-2 py-1 text-gray-700" data-id="${row.id}"><i class="fa-solid fa-lg fa-expand"></i></button>`;
-                      const viewBtn = tooltipBtn({
-                        html: `
-                          <button class="btn-view px-2 py-1 text-gray-700" data-id="${row.id}">
-                            <i class="fa-solid fa-lg fa-expand"></i>
-                          </button>
-                        `,
-                        text:
-                          row.tipo_documento === "FC"
-                            ? "Ver factura"
-                            : row.tipo_documento === "NC"
-                            ? "Ver nota de crédito"
-                            : "Ver nota de débito"
-                      });
-                      if (rol === "admin") {
-                        return `<div style="display:flex;justify-content:center;align-items:center;gap:0.25rem;white-space:nowrap;">${viewBtn}</div>`;
-                      }
-                      const pdfBtn = tooltipBtn({
-                        html: `
-                          <button class="btn-pdf px-2 py-1 text-gray-700"
-                            data-id="${row.id}">
-                            <i class="fa-solid fa-file-pdf"></i>
-                          </button>
-                        `,
-                        text: "Generar PDF"
-                      });
-                      if (rol !== "admin" && row.estatus.toUpperCase() != 'ANULADA' && row.tipo_documento == 'FC'){
-                        // const creditNoteBtn = `<button class="btn-credit-note px-2 py-1 text-red-600" data-id="${row.id}"><i class="fa-solid fa-lg fa-file-invoice"></i></button>`;
-                        // const debitNoteBtn = `<button class="btn-debit-note px-1 py-1 mx-0 text-green-600" data-id="${row.id}" data-correlativo_interno="${row.correlativo_interno}"><i class="fa-solid fa-file-invoice fa-lg"></i></button>`;
-                        const creditNoteBtn = tooltipBtn({
-                          html: `
-                            <button class="btn-credit-note px-2 py-1 text-red-600"
-                              data-id="${row.id}">
-                              <i class="fa-solid fa-lg fa-file-invoice"></i>
-                            </button>
-                          `,
-                          text: "Crear nota de crédito"
-                        });
-                        const debitNoteBtn = tooltipBtn({
-                          html: `
-                            <button class="btn-debit-note px-1 py-1 mx-0 text-green-600"
-                              data-id="${row.id}"
-                              data-correlativo_interno="${row.correlativo_interno}">
-                              <i class="fa-solid fa-lg fa-file-invoice"></i>
-                            </button>
-                          `,
-                          text: "Crear nota de débito"
-                        });
-                        return `<div style="display:flex;justify-content:center;align-items:center;gap:0.25rem;white-space:nowrap;">${viewBtn}${pdfBtn}${creditNoteBtn}${debitNoteBtn}</div>`;
-                      }else{
-                        return `<div style="display:flex;justify-content:center;align-items:center;gap:0.25rem;white-space:nowrap;">${viewBtn}${pdfBtn}</div>`;
-                      }
-                    }
-                  }
-                ]}
+                columns={columns}
                 options={{
                   columnDefs:[{
-                    targets: [4, 5, 6, 8, 9, 10], // índices de columnas a ocultar (ej: RIF, Zona)
+                    targets: columnDefs, // índices de columnas a ocultar (ej: RIF, Zona)
                     visible: false,
                     searchable: true // siguen siendo buscables
                   }],
