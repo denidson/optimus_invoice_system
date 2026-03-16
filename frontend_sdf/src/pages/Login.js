@@ -36,10 +36,9 @@ export default function Login() {
       //console.log('loginRequest-data: ', data);
       login(userData);
       if (data.must_change_password == false){
-        //navigate("/dashboard");
-        navigate("/profile?forceChangePassword=true");
+        navigate("/dashboard");
       }else{
-        navigate("/profile");
+        navigate("/profile?forceChangePassword=true");
       }
     } catch (err) {
       console.error("Login error:", err);
