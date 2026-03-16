@@ -25,62 +25,80 @@ body {
 }
 
 /* ========================
-   Scroll personalizado
+   Scroll moderno reutilizable
    ======================== */
-.sidebar-scroll::-webkit-scrollbar {
-  width: 8px; /* ancho del scroll */
-}
 
-.sidebar-scroll::-webkit-scrollbar-track {
-  background: #eaf1fb; /* twilight-indigo-50 */
-  border-radius: 4px;
-}
-
-.sidebar-scroll::-webkit-scrollbar-thumb {
-  background: #112c55; /* twilight-indigo-800 */
-  border-radius: 4px;
-}
-
-.sidebar-scroll::-webkit-scrollbar-thumb:hover {
-  background: #2a6ed5; /* twilight-indigo-500 */
-}
-
-/* Firefox */
-.sidebar-scroll {
-  scrollbar-width: thin;
-  scrollbar-color: #112c55 #eaf1fb; /* thumb track */
-}
-
-/* ========================
-   Scroll personalizado para DataTable y sidebar
-   ======================== */
-.sidebar-scroll::-webkit-scrollbar,
-.data-scroll::-webkit-scrollbar {
-  width: 8px;
-}
-
-.sidebar-scroll::-webkit-scrollbar-track,
-.data-scroll::-webkit-scrollbar-track {
-  background: #eaf1fb; /* twilight-indigo-50 */
-  border-radius: 4px;
-}
-
-.sidebar-scroll::-webkit-scrollbar-thumb,
-.data-scroll::-webkit-scrollbar-thumb {
-  background: #112c55; /* twilight-indigo-800 */
-  border-radius: 4px;
-}
-
-.sidebar-scroll::-webkit-scrollbar-thumb:hover,
-.data-scroll::-webkit-scrollbar-thumb:hover {
-  background: #2a6ed5; /* twilight-indigo-500 */
-}
-
-/* Firefox */
 .sidebar-scroll,
 .data-scroll {
   scrollbar-width: thin;
-  scrollbar-color: #112c55 #eaf1fb;
+  scrollbar-color: transparent transparent;
+}
+
+/* Chrome / Edge / Safari */
+.sidebar-scroll::-webkit-scrollbar,
+.data-scroll::-webkit-scrollbar {
+  width: 6px;
+}
+
+/* Track */
+.sidebar-scroll::-webkit-scrollbar-track,
+.data-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* Thumb oculto por defecto */
+.sidebar-scroll::-webkit-scrollbar-thumb,
+.data-scroll::-webkit-scrollbar-thumb {
+  background: transparent;
+  border-radius: 6px;
+  transition: background 0.2s ease;
+}
+
+/* Aparece al hacer hover en el contenedor */
+.sidebar-scroll:hover::-webkit-scrollbar-thumb,
+.data-scroll:hover::-webkit-scrollbar-thumb {
+  background: #112c55; /* twilight-indigo-800 */
+}
+
+/* Hover del thumb */
+.sidebar-scroll:hover::-webkit-scrollbar-thumb:hover,
+.data-scroll:hover::-webkit-scrollbar-thumb:hover {
+  background: #2a6ed5; /* twilight-indigo-500 */
+}
+
+/* Firefox */
+.sidebar-scroll:hover,
+.data-scroll:hover {
+  scrollbar-color: #112c55 transparent;
+}
+
+/* ========================
+   Scroll global navegador
+   ======================== */
+
+html,
+body {
+  scrollbar-width: thin;
+  scrollbar-color: #112c55 transparent;
+}
+
+/* Chrome / Edge / Safari */
+body::-webkit-scrollbar {
+  width: 6px;
+}
+
+body::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+body::-webkit-scrollbar-thumb {
+  background: #112c55;
+  border-radius: 6px;
+  transition: background 0.2s ease;
+}
+
+body::-webkit-scrollbar-thumb:hover {
+  background: #2a6ed5;
 }
 
 /* Hover filas DataTable */
