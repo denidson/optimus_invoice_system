@@ -10,6 +10,5 @@ export default function RoleRoute({ children, roles = [] }) {
     toast.error("No tienes permiso para acceder a esta sección");
     return <Navigate to="/dashboard" replace />;
   }
-
   return children;
 }
