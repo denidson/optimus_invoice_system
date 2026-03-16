@@ -84,7 +84,7 @@ export default function ProfileContent({ client: initialClient, profile: initial
       setNewPassword("");
       setConfirmPassword("");
     } catch (error) {
-      toast.error(error.response?.data?.message || "Error al cambiar contraseña");
+      toast.error(error.response?.data?.error || "Error al cambiar contraseña");
     } finally {
       setLoading(false);
     }
@@ -103,7 +103,7 @@ export default function ProfileContent({ client: initialClient, profile: initial
           {isEditing && isClient ? (
             <LogoUploader
               logo={data.logo}
-              size={96}
+              size={32}//24, 32, 48
               mode="edit"
               onChange={(base64) =>
                 setData({ ...data, logo: base64 })

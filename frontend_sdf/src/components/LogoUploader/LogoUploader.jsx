@@ -1,7 +1,7 @@
 import React, { useRef } from "react";
 import { toast } from "react-toastify";
 
-export default function LogoUploader({ logo, onChange, size = 96, mode = "edit" }) {
+export default function LogoUploader({ logo, onChange, size = 24, mode = "edit" }) { //size: 24, 32, 48
   const fileInputRef = useRef();
 
   const handleFileChange = (e) => {

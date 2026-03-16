@@ -29,11 +29,11 @@ function FormClients() {
     const fetchClient = async () => {
       try {
         const datattp = await getTypeTaxpayer();
-        console.log('datattp: ', datattp);
+        //console.log('datattp: ', datattp);
         setTypeTaxpayer(datattp);
         if (clientId != null){
           const data = await showClient(decryptText(clientId)); // Llamamos a showClient con el ID
-          console.log('data: ', data);
+          //console.log('data: ', data);
           setClient(data); // Guardamos los datos del client en el estado
         }else{
           setClient({
@@ -298,7 +298,7 @@ function FormClients() {
                               <LogoUploader
                                 logo={client.logo}
                                 onChange={(base64) => setClient({ ...client, logo: base64 })}
-                                size={96}
+                                size={24} //24, 32, 48
                                 mode="edit"
                               />
                           </div>

@@ -1,4 +1,5 @@
 import api from "./axiosConfig"; // Importa la configuración centralizada de axios
+import { apiRegister } from "./authService";
 
 // Obtener todos los clientes
 export const getClients = async () => {
@@ -84,8 +85,20 @@ export const editClient = async (id, body) => {
 // Crear un cliente
 export const createClient = async (body) => {
   try {
+    //console.log('createClient-body: ', body);
     const response = await api.post(`/api/clients/`, body);
-    console.log('createClient-response: ', response);
+    //console.log('createClient-response: ', response);
+    for (var i = 0; i < body.length; i++){
+        var bodyUser = {
+        "nombre": body[i].nombre_empresa,
+        "email": body[i].email,
+        "password": body[i].rif,
+        "cliente_id": response.data[i].id,
+      }
+      //console.log('createClient-bodyUser: ', bodyUser);
+      var responseUser = await apiRegister(bodyUser);
+      //console.log('createClient-responseUser: ', responseUser);
+    }
     return response.data;
   } catch (error) {
     console.error("Error al crear el cliente:", error);

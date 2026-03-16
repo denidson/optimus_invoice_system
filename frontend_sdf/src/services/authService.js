@@ -21,7 +21,7 @@ export const resetPassword = async (token, newPassword) => {
   return response.data;
 };
 
-export const apiRegister = async () => {
-  const response = await api.post(" /api/register");
+export const apiRegister = async (body) => {
+  const response = await api.post(" /api/register", body);
   return response.data;
 };
