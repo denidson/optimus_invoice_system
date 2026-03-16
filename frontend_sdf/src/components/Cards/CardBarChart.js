@@ -11,8 +11,8 @@ export default function CardBarChart({ data = [], currency = "USD", isLoading })
   const [dropdownOpen, setDropdownOpen] = useState(false);
 
   // Etiquetas consistentes
-  const yAxisLabel = currency ? `Monto (${currency})` : "Monto";
-  const label = currency ? `Monto Neto (${currency})` : "Monto Neto";
+  const yAxisLabel = currency ? `Monto (Bs.)` : "Monto"; //${currency}
+  const label = currency ? `Monto Neto (Bs.)` : "Monto Neto"; //${currency}
 
   // Labels y valores
   const labels = useMemo(() => {

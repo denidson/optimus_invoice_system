@@ -1,5 +1,5 @@
 import CardStats from "../Cards/CardStats";
-import { formatDecimal } from "../../utils/formatters";
+import { formatDecimal, formatMoney } from "../../utils/formatters";
 
 export default function HeaderStats({ summary, isLoading, collapsed }) {
   const currency = summary?.currency || "$";
@@ -11,7 +11,7 @@ export default function HeaderStats({ summary, isLoading, collapsed }) {
         <i className="fas fa-spinner fa-spin text-twilight-indigo-600 text-xl"></i>
       );
     }
-    return `${currency} ${formatDecimal(value)}`;
+    return `${formatMoney(value)}`;
   };
 
   return (

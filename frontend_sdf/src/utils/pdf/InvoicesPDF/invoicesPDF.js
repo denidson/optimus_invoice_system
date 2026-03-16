@@ -556,7 +556,14 @@ export const buildInvoicesPDF = async (data, invoiceId, mode = "download") => {
   );
   const pdfBlob = doc.output("blob");
   if(mode === "download"){
-    doc.save(`FACT_${documento.numero_factura}.pdf`);
+    var baseName = 'FACT_';
+    if (documento.tipo_documento == "NC"){
+      baseName = 'NCRED_';
+    }
+    if (documento.tipo_documento == "ND"){
+      baseName = 'NDEB_';
+    }
+    doc.save(`${baseName + documento.numero_factura}.pdf`);
   } else {
     return URL.createObjectURL(pdfBlob);
   }
