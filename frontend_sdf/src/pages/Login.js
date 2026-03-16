@@ -33,9 +33,14 @@ export default function Login() {
         expires_in: data.expires_in,
         ...data.usuario,
       };
-
+      //console.log('loginRequest-data: ', data);
       login(userData);
-      navigate("/dashboard");
+      if (data.must_change_password == false){
+        //navigate("/dashboard");
+        navigate("/profile?forceChangePassword=true");
+      }else{
+        navigate("/profile");
+      }
     } catch (err) {
       console.error("Login error:", err);
       setError("Credenciales inválidas");

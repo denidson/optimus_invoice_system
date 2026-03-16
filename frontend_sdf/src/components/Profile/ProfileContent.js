@@ -20,6 +20,8 @@ export default function ProfileContent({ client: initialClient, profile: initial
   const [oldPassword, setOldPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const queryParams = new URLSearchParams(location.search);
+  const forceChangePassword = queryParams.get("forceChangePassword") === "true";
 
   // Cargar tipos de contribuyente solo si es cliente
   useEffect(() => {
@@ -34,6 +36,14 @@ export default function ProfileContent({ client: initialClient, profile: initial
       }
     };
     fetchTypeTaxpayer();
+    //console.log('forceChangePassword: ', forceChangePassword);
+    if (forceChangePassword) {
+      setShowPasswordModal(true);
+      const url = new URL(window.location);
+      url.searchParams.delete("forceChangePassword");
+      window.history.replaceState({}, "", url);
+    }
+
   }, [isClient]);
 
   // Guardar cambios del perfil cliente
@@ -245,7 +255,7 @@ export default function ProfileContent({ client: initialClient, profile: initial
 
           {/* Cambiar contraseña solo si NO es cliente */}
           {(
-            <button
+            <button id="btnChangePassword"
               className="bg-red-500 text-white px-4 py-2 rounded"
               onClick={() => setShowPasswordModal(true)}
             >

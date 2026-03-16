@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { getCompanyUsers, editCompanyUsers, createCompanyUsers } from "../../services/apiCompanyUsers";
+import { getCompanyUsers, editCompanyUsers, createCompanyUsers, showCompanyUsers } from "../../services/apiCompanyUsers";
 import { formatDecimal, formatMoney, formatDate, formatDateTime, formatText } from "../../utils/formatters";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import { encryptText } from '../../services/api';
+import ModalCompanyUsers from "./ModalCompanyUsers";
 
 import $ from "jquery";
 import DataTable from "datatables.net-react";
@@ -25,6 +27,8 @@ export default function ListCompanyUsers() {
   const navigate = useNavigate();
   var responseCache = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
+  const [modalOpenCompanyUsers, setModalOpenCompanyUsers] = useState(false);
+  const [companyUsersIdToAction, setCompanyUserIdToAction] = useState(null);
 
   useEffect(() => {
     const table = $("#ListCompanyUsersDt").DataTable();
@@ -35,8 +39,13 @@ export default function ListCompanyUsers() {
       handleEdit(id);
     });
 
+    $("#ListCompanyUsersDt tbody").on("click", "button.btn-view", function () {
+        const id = $(this).data("id");
+        handleOpenModalCompanyUsers(id);
+      });
     return () => {
       $("#ListCompanyUsersDt tbody").off("click", "button.btn-edit");
+      $("#ListCompanyUsersDt tbody").off("click", "button.btn-view");
     };
   }, []);
 
@@ -46,8 +55,22 @@ export default function ListCompanyUsers() {
       navigate(`/company-users/edit/?id=${encodeURIComponent(hash)}`);
     } catch (error) {
       toast.error("Error al cargar usuario de la empresa");
+      console.error(error);
     }
   };
+
+  const handleOpenModalCompanyUsers = async (id) => {
+    try {
+      const data = await showCompanyUsers(id);
+      setCompanyUserIdToAction(data);
+      setModalOpenCompanyUsers(true);
+    } catch {
+      toast.error("Error al obtener detalles del usuario.");
+    }
+  };
+
+  const handleCloseModalCompanyUsers = () => setModalOpenCompanyUsers(false);
+
 
   return (
     <div className="mx-auto w-full">
@@ -110,15 +133,21 @@ export default function ListCompanyUsers() {
                       return formatDateTime(data);
                     }
                   },
-                  // {
-                  //   title: "Acciones",
-                  //   data: null,
-                  //   orderable: false,
-                  //   searchable: false,
-                  //   render: (data, type, row) => `
-                  //    <button class="btn-edit px-2 py-1 text-blue-600" data-id="${row.id}"><i class="fa-solid fa-lg fa-pen-to-square"></i></button>
-                  //   `
-                  // }
+                  {
+                    title: "Acciones",
+                    data: "activo",
+                    orderable: false,
+                    searchable: false,
+                    className: 'no-export',
+                    render: (data, type, row) => {
+                      const viewBtn = `<button class="btn-view px-2 py-1 text-gray-700" data-id="${row.id}"><i class="fa-solid fa-lg fa-expand"></i></button>`;
+                      const editBtn = `<button class="btn-edit px-2 py-1 text-blue-600" data-id="${row.id}"><i class="fa-solid fa-lg fa-pen-to-square"></i></button>`;
+                      /*const toggleBtn = data
+                        ? `<button class="btn-delete px-2 py-1 text-red-600" data-id="${row.id}" data-nombre="${row.nombre}" data-action="delete"><i class="fa-regular fa-rectangle-xmark fa-lg"></i></button>`
+                        : `<button class="btn-delete px-2 py-1 text-green-600" data-id="${row.id}" data-nombre="${row.nombre}" data-action="active"><i class="fa-regular fa-square-check fa-lg"></i></button>`;*/
+                      return `<div style="display:flex;justify-content:center;align-items:center;gap:0.25rem;white-space:nowrap;">${viewBtn}${editBtn}</div>`; //${toggleBtn}
+                    }
+                  }
                 ]}
 
                 options={{
@@ -263,6 +292,11 @@ export default function ListCompanyUsers() {
             </div>
           </div>
         </div>
+        <ModalCompanyUsers
+          isOpen={modalOpenCompanyUsers}
+          onClose={handleCloseModalCompanyUsers}
+          companyUser={companyUsersIdToAction}
+        />
       </div>
     </div>
   );

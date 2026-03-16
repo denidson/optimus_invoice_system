@@ -56,7 +56,7 @@ export const formatDateTime = (value, withSeconds = true) => {
     hour: "2-digit",
     minute: "2-digit",
     ...(withSeconds && { second: "2-digit" }),
-  });
+  }).replace(',', '');
 };
 
 export const formatText = (value) => {
