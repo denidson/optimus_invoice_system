@@ -47,7 +47,7 @@ function ListInvoices({ title, type }) {
   useEffect(() => {
     const $tableBody = $("#ListInvoicesDt tbody");
 
-    // 🔥 Eliminar cualquier evento previo del namespace
+    // Eliminar cualquier evento previo del namespace
     $tableBody.off("click.invoiceEvents");
 
     // Registrar eventos con namespace
