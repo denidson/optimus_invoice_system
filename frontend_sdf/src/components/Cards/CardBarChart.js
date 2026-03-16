@@ -183,7 +183,7 @@ export default function CardBarChart({ data = [], currency = "USD", isLoading })
       </div>
 
       {/* Chart */}
-      <div className="p-4 relative h-56 md:h-64">
+      <div className="p-4 relative h-70 md:h-80">
         {isLoading && (
           <div className="absolute inset-0 flex items-center justify-center bg-white/60 z-10">
             <i className="fas fa-spinner fa-spin text-twilight-indigo-600 text-3xl"></i>

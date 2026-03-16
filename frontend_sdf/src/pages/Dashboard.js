@@ -181,30 +181,30 @@ export default function Dashboard({ collapsed }) {
       />
 
       <div className="px-4 md:px-8 mx-auto w-full">
-        <div className="flex flex-wrap">
-          <div className="w-full xl:w-5/12 px-4 pt-6">
-            <CardBarChart
-              data={salesOverTimeQuery.data.data}
-              currency={salesOverTimeQuery.data.currency}
-              isLoading={salesOverTimeQuery.isFetching}
-            />
-          </div>
-
-          <div className="w-full xl:w-7/12 px-4 pt-6 grid grid-cols-1 xl:grid-cols-2 gap-6">
-            <CardTopClients
-              clients={topClientsQuery.data.slice(0, topClientsLimit)}
-              limit={topClientsLimit}
-              onChangeLimit={setTopClientsLimit}
-            />
-
-            <CardTopProducts
-              products={topProductsQuery.data.slice(0, topProductsLimit)}
-              limit={topProductsLimit}
-              onChangeLimit={setTopProductsLimit}
-            />
-
-          </div>
+        {/* GRAFICO */}
+        <div className="w-full pt-6">
+          <CardBarChart
+            data={salesOverTimeQuery.data.data}
+            currency={salesOverTimeQuery.data.currency}
+            isLoading={salesOverTimeQuery.isFetching}
+          />
         </div>
+
+        {/* RANKINGS */}
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 pt-6">
+          <CardTopClients
+            clients={topClientsQuery.data.slice(0, topClientsLimit)}
+            limit={topClientsLimit}
+            onChangeLimit={setTopClientsLimit}
+          />
+
+          <CardTopProducts
+            products={topProductsQuery.data.slice(0, topProductsLimit)}
+            limit={topProductsLimit}
+            onChangeLimit={setTopProductsLimit}
+          />
+        </div>
+
       </div>
     </AdminLayout>
   );
