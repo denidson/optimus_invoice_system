@@ -33,7 +33,6 @@ function ListInvoices({ title, type }) {
   const navigate = useNavigate();
   const [modalOpenInvoices, setModalOpenInvoices] = useState(false);
   const [Invoices, setInvoices] = useState(false);
-
   const [modalImportOpen, setModalImportOpen] = useState(false);
   const [preInvoicesToImport, setPreInvoicesToImport] = useState([]);
   const [filterType, setFilterType] = useState("");
