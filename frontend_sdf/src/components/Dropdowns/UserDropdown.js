@@ -24,17 +24,25 @@ export default function UserDropdown({ nombreUsuario, onLogout }) {
       <button
         onClick={toggleDropdown}
         className="
-          flex items-center space-x-2 px-2 py-1 rounded-md text-white
-          hover:bg-twilight-indigo-100 hover:text-twilight-indigo-700
+          flex items-center gap-2 px-3 py-2 rounded-md text-white
+          hover:bg-twilight-indigo-500 hover:text-white
           transition-colors duration-200
           focus:outline-none
+          min-w-[44px] md:min-w-[150px]
         "
       >
+        {/* Icono */}
         <span className="w-10 h-10 rounded-full overflow-hidden border-2 border-white flex items-center justify-center bg-slate-400 text-white text-2xl">
           <i className="fas fa-user-circle"></i>
         </span>
-        <span className="hidden md:inline font-medium">{nombreUsuario || "Usuario"}</span>
+
+        {/* Nombre usuario */}
+        <span className="hidden md:inline truncate">{nombreUsuario || "Usuario"}</span>
+
+        {/* Flecha */}
+        <i className={`fas fa-caret-down ml-1 transition-transform ${open ? "rotate-180" : ""}`} />
       </button>
+
       {/* Dropdown */}
       {open && (
         <div className="absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-50">

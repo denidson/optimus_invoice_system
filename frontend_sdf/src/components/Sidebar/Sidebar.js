@@ -6,6 +6,7 @@ import Logo from "../../assets/img/Quantus-Invoice.png";
 import LogoCollapse from "../../assets/img/Quantus-Invoice3.png";
 import { AuthContext } from "../../context/AuthContext";
 
+// Tooltip para desktop colapsado
 function Tooltip({ targetRef, text, visible }) {
   const [coords, setCoords] = useState({ top: 0, left: 0 });
 
@@ -43,12 +44,12 @@ function Tooltip({ targetRef, text, visible }) {
   );
 }
 
-/* ================= SIDEBAR ================= */
-
 export default function Sidebar({ collapsed, setCollapsed }) {
   const location = useLocation();
   const { user } = useContext(AuthContext);
   const rol = user?.rol || "";
+
+  const [mobileOpen, setMobileOpen] = useState(false);
 
   const [tooltip, setTooltip] = useState({
     text: "",
@@ -77,152 +78,122 @@ export default function Sidebar({ collapsed, setCollapsed }) {
         { to: "/salesBook", icon: "fas fa-file-invoice", label: "Libro de ventas" },
       ],
     },
-    {
-      heading: "Configuración",
-      links: [
-        { to: "/clients", icon: "fas fa-users", label: "Clientes", roles: ["admin"] },
-        { to: "/endClients", icon: "fas fa-users", label: "Clientes", roles: ["operador_admin", "operador"] },
-        { to: "/products", icon: "fas fa-cubes", label: "Producto/Servicio", roles: ["admin", "operador_admin", "operador"] },
-        { to: "/taxpayer", icon: "fas fa-tags", label: "Tipos de Contribuyentes", roles: ["admin", "operador_admin"] },
-        { to: "/taxes", icon: "fas fa-percent", label: "Impuestos", roles: ["admin", "operador_admin"] },
-        { to: "/config-withholdings", icon: "fas fa-percent", label: "Retenciones", roles: ["admin", "operador_admin"] },
-        { to: "/auditlogs", icon: "fa-solid fa-list-ul", label: "Registro de auditoria", roles: ["admin"] },
-        { to: "/company-users", icon: "fas fa-users", label: "Usuarios", roles: ["operador_admin"] },
-      ],
-    },
   ];
 
   return (
-    <nav
-      className={`
-        fixed top-0 left-0 h-screen
-        bg-white shadow-xl z-30 py-4
-        transition-[width] duration-300 ease-in-out
-        ${collapsed ? "md:w-20" : "md:w-64"}
-        w-64
-      `}
-    >
-      <div className={`${collapsed ? "px-2" : "px-6"} h-full flex flex-col`}>
+    <>
+      {/* BOTÓN HAMBURGUESA MOBILE */}
+      <button
+        className="fixed top-4 left-4 z-40 md:hidden bg-white shadow p-2 rounded"
+        onClick={() => setMobileOpen(!mobileOpen)}
+      >
+        <i className="fas fa-bars" />
+      </button>
 
-        {/* ================= LOGO ================= */}
-        <div className="flex items-center justify-between">
+      {/* OVERLAY MOBILE */}
+      {mobileOpen && (
+        <div
+          className="fixed inset-0 bg-black/30 z-20 md:hidden"
+          onClick={() => setMobileOpen(false)}
+        />
+      )}
 
-          <Link to="/dashboard" className="block py-4 w-full">
-            <div className="relative flex items-center justify-center h-16">
+      <nav
+        className={`
+          fixed top-0 left-0 h-screen
+          bg-white shadow-xl z-30 py-4
+          transform transition-all duration-300
+          ${mobileOpen ? "translate-x-0" : "-translate-x-full"}
+          md:translate-x-0
+          ${collapsed ? "md:w-20" : "md:w-64"}
+          w-64
+        `}
+      >
+        <div className={`${collapsed ? "px-2" : "px-6"} h-full flex flex-col`}>
+          {/* LOGO */}
+          <div className="flex items-center justify-between">
+            <Link to="/dashboard" className="block py-4 w-full">
+              <div className="relative flex items-center justify-center h-16">
+                <img
+                  src={Logo}
+                  alt="Logo"
+                  className={`absolute transition-opacity duration-300 ${collapsed ? "opacity-0" : "opacity-100"}`}
+                  style={{ width: 160 }}
+                />
+                <img
+                  src={LogoCollapse}
+                  alt="Logo"
+                  className={`absolute transition-opacity duration-300 ${collapsed ? "opacity-100" : "opacity-0"}`}
+                  style={{ width: 40 }}
+                />
+              </div>
+            </Link>
 
-              {/* Logo expandido */}
-              <img
-                src={Logo}
-                alt="Logo"
-                className={`
-                  absolute transition-opacity duration-300 ease-in-out
-                  ${collapsed ? "opacity-0 pointer-events-none" : "opacity-100"}
-                `}
-                style={{ width: 160 }}
-              />
+            {/* Botón colapsar desktop */}
+            <button
+              onClick={() => setCollapsed(!collapsed)}
+              className="hidden md:block text-slate-500 hover:text-twilight-indigo-500 ml-2"
+            >
+              <i className={`fas ${collapsed ? "fa-chevron-right" : "fa-chevron-left"}`} />
+            </button>
+          </div>
 
-              {/* Logo colapsado */}
-              <img
-                src={LogoCollapse}
-                alt="Logo"
-                className={`
-                  absolute transition-opacity duration-300 ease-in-out
-                  ${collapsed ? "opacity-100" : "opacity-0 pointer-events-none"}
-                `}
-                style={{ width: 40 }}
-              />
-
-            </div>
-          </Link>
-
-          <button
-            onClick={() => setCollapsed(!collapsed)}
-            className="hidden md:block text-slate-500 hover:text-twilight-indigo-500 ml-2"
-          >
-            <i className={`fas ${collapsed ? "fa-chevron-right" : "fa-chevron-left"}`} />
-          </button>
-        </div>
-
-        {/* ================= MENU ================= */}
-        <div className="flex-1 mt-4 overflow-y-auto sidebar-scroll">
-
-          {menuSections.map((section) => {
-            const visibleLinks = section.links.filter(
-              (link) => !link.roles || link.roles.includes(rol)
-            );
-            if (!visibleLinks.length) return null;
-
-            return (
+          {/* MENÚ */}
+          <div className="flex-1 mt-4 overflow-y-auto sidebar-scroll">
+            {menuSections.map((section) => (
               <div key={section.heading}>
                 <hr className="my-4 border-slate-200" />
-
-                {!collapsed && (
+                {/* Título de sección */}
+                {(!collapsed || mobileOpen) && (
                   <h6 className="text-slate-500 text-xs uppercase font-bold pb-4">
                     {section.heading}
                   </h6>
                 )}
-
                 <ul className="flex flex-col pb-6">
-                  {visibleLinks.map((link) => {
+                  {section.links.map((link) => {
                     const active = isActive(link.to);
                     const linkRef = useRef(null);
 
                     return (
                       <li key={link.to} className="relative">
-
                         <Link
                           to={link.to}
                           ref={linkRef}
-                          onMouseEnter={() =>
-                            collapsed &&
-                            setTooltip({
-                              text: link.label,
-                              visible: true,
-                              ref: linkRef,
-                            })
-                          }
-                          onMouseLeave={() =>
-                            setTooltip({
-                              text: "",
-                              visible: false,
-                              ref: null,
-                            })
-                          }
+                          onMouseEnter={() => {
+                            if (collapsed && !mobileOpen) {
+                              setTooltip({ text: link.label, visible: true, ref: linkRef });
+                            }
+                          }}
+                          onMouseLeave={() => setTooltip({ text: "", visible: false, ref: null })}
                           className={`
                             flex items-center
-                            ${collapsed ? "justify-center px-2" : "gap-3 px-4"}
+                            ${collapsed && !mobileOpen ? "justify-center px-2" : "gap-3 px-4"}
                             py-3 text-xs uppercase font-bold
                             w-full h-12 mb-1
-                            transition-colors duration-150
                             rounded-lg
-                            ${
-                              active
-                                ? "bg-twilight-indigo-100 text-twilight-indigo-700"
-                                : "text-slate-700 hover:bg-twilight-indigo-50 hover:text-twilight-indigo-700"
+                            ${active
+                              ? "bg-twilight-indigo-100 text-twilight-indigo-700"
+                              : "text-slate-700 hover:bg-twilight-indigo-50 hover:text-twilight-indigo-700"
                             }
                           `}
                         >
                           <i className={`${link.icon} text-sm w-5 text-center`} />
-                          {!collapsed && <span>{link.label}</span>}
+                          {(!collapsed || mobileOpen) && <span>{link.label}</span>}
                         </Link>
 
-                        {tooltip.ref === linkRef && (
-                          <Tooltip
-                            targetRef={linkRef}
-                            text={tooltip.text}
-                            visible={tooltip.visible}
-                          />
+                        {/* Tooltip solo desktop colapsado */}
+                        {collapsed && !mobileOpen && tooltip.ref === linkRef && (
+                          <Tooltip targetRef={linkRef} text={tooltip.text} visible={tooltip.visible} />
                         )}
-
                       </li>
                     );
                   })}
                 </ul>
               </div>
-            );
-          })}
+            ))}
+          </div>
         </div>
-      </div>
-    </nav>
+      </nav>
+    </>
   );
 }
