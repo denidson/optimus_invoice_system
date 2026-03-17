@@ -92,7 +92,7 @@ export const buildDispacheGuidesPDF = async (data, dispacheGuideId, mode = "down
   doc.addImage(
     qrBase64,
     "PNG",
-    colQr.x + 12,
+    colQr.x + 15,
     logoY,
     logoH,
     logoH

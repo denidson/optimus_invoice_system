@@ -520,7 +520,7 @@ function ListProformas() {
                 ]}
                 options={{
                   columnDefs:[{
-                    targets: [4, 5, 6, 8, 9, 10], // índices de columnas a ocultar (ej: RIF, Zona)
+                    targets: [4, 5, 6, 8, 9, 10, 11], // índices de columnas a ocultar (ej: RIF, Zona)
                     visible: false,
                     searchable: true // siguen siendo buscables
                   }],
