@@ -78,6 +78,19 @@ export default function Sidebar({ collapsed, setCollapsed }) {
         { to: "/salesBook", icon: "fas fa-file-invoice", label: "Libro de ventas" },
       ],
     },
+    {
+      heading: "Configuración",
+      links: [
+        { to: "/clients", icon: "fas fa-users", label: "Clientes", roles: ["admin"] },
+        { to: "/endClients", icon: "fas fa-users", label: "Clientes", roles: ["operador_admin", "operador"] },
+        { to: "/products", icon: "fas fa-cubes", label: "Producto/Servicio", roles: ["admin", "operador_admin", "operador"] },
+        { to: "/taxpayer", icon: "fas fa-tags", label: "Tipos de Contribuyentes", roles: ["admin", "operador_admin"] },
+        { to: "/taxes", icon: "fas fa-percent", label: "Impuestos", roles: ["admin", "operador_admin"] },
+        { to: "/config-withholdings", icon: "fas fa-percent", label: "Retenciones", roles: ["admin", "operador_admin"] },
+        { to: "/auditlogs", icon: "fa-solid fa-list-ul", label: "Registro de auditoria", roles: ["admin"] },
+        { to: "/company-users", icon: "fas fa-users", label: "Usuarios", roles: ["operador_admin"] },
+      ],
+    },
   ];
 
   return (

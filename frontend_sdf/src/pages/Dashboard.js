@@ -24,9 +24,6 @@ export default function Dashboard({ collapsed }) {
   const cliente_id = user?.cliente_id;
   const nombreUsuario = user?.nombre || "Usuario";
 
-  /* ========================
-     FILTROS
-  ========================= */
   const [draftStartDate, setDraftStartDate] = useState("");
   const [draftEndDate, setDraftEndDate] = useState("");
 
@@ -37,9 +34,6 @@ export default function Dashboard({ collapsed }) {
     isAdmin ? "" : cliente_id
   );
 
-  /* ========================
-     NUEVO: LIMITE TOP 
-  ========================= */
   const [topClientsLimit, setTopClientsLimit] = useState(5);
   const [topProductsLimit, setTopProductsLimit] = useState(5);
 
@@ -87,10 +81,7 @@ export default function Dashboard({ collapsed }) {
     queryKey: ["sales-over-time", params],
     enabled: isAdmin || !!cliente_id,
     keepPreviousData: true,
-    initialData: {
-      currency: "",
-      data: [],
-    },
+    initialData: { currency: "", data: [] },
     queryFn: async () => {
       const res = await getSalesOverTime(params);
       return {
@@ -122,67 +113,76 @@ export default function Dashboard({ collapsed }) {
 
   return (
     <AdminLayout nombreUsuario={nombreUsuario}>
-      {/* FILTROS */}
-      <div className="px-4 md:px-8 mx-auto w-full bg-twilight-indigo-400">
-        <div className="flex flex-wrap gap-2 items-center p-4">
-          <span className="text-sm text-white font-semibold">
-            Filtrar por:
-          </span>
+      
+      {/* 🔵 BLOQUE AZUL FULL WIDTH */}
+      <div className="w-full bg-twilight-indigo-400 overflow-hidden">
+        
+        <div className="px-4 md:px-8">
+          
+          {/* FILTROS */}
+          <div className="flex flex-wrap gap-2 items-center py-4">
+            <span className="text-sm text-white font-semibold">
+              Filtrar por:
+            </span>
 
-          {isAdmin && (
-            <select
-              value={selectedClientId}
-              onChange={(e) => setSelectedClientId(e.target.value)}
+            {isAdmin && (
+              <select
+                value={selectedClientId}
+                onChange={(e) => setSelectedClientId(e.target.value)}
+                className="border rounded px-2 py-1 text-sm"
+              >
+                <option value="">Todos los clientes</option>
+                {clientsQuery.data.map((client) => (
+                  <option key={client.id} value={client.id}>
+                    {client.nombre_empresa}
+                  </option>
+                ))}
+              </select>
+            )}
+
+            <input
+              type="date"
+              value={draftStartDate}
+              onChange={(e) => setDraftStartDate(e.target.value)}
               className="border rounded px-2 py-1 text-sm"
+            />
+
+            <input
+              type="date"
+              value={draftEndDate}
+              onChange={(e) => setDraftEndDate(e.target.value)}
+              className="border rounded px-2 py-1 text-sm"
+            />
+
+            <button
+              onClick={applyFilter}
+              className="bg-white text-twilight-indigo-600 px-3 py-1 rounded text-sm font-semibold"
             >
-              <option value="">Todos los clientes</option>
-              {clientsQuery.data.map((client) => (
-                <option key={client.id} value={client.id}>
-                  {client.nombre_empresa}
-                </option>
-              ))}
-            </select>
-          )}
+              Aplicar
+            </button>
 
-          <input
-            type="date"
-            value={draftStartDate}
-            onChange={(e) => setDraftStartDate(e.target.value)}
-            className="border rounded px-2 py-1 text-sm"
+            <button
+              onClick={clearFilter}
+              className="text-white text-sm underline"
+            >
+              <i className="fa-solid fa-eraser" />
+            </button>
+          </div>
+
+          {/* STATS */}
+          <HeaderStats
+            summary={summaryQuery.data}
+            isLoading={summaryQuery.isFetching}
+            collapsed={collapsed}
           />
-
-          <input
-            type="date"
-            value={draftEndDate}
-            onChange={(e) => setDraftEndDate(e.target.value)}
-            className="border rounded px-2 py-1 text-sm"
-          />
-
-          <button
-            onClick={applyFilter}
-            className="bg-white text-twilight-indigo-600 px-3 py-1 rounded text-sm font-semibold hover:bg-slate-100"
-          >
-            Aplicar
-          </button>
-
-          <button
-            onClick={clearFilter}
-            className="text-white text-sm underline"
-          >
-            <i className="fa-solid fa-eraser" />
-          </button>
         </div>
       </div>
 
-      <HeaderStats
-        summary={summaryQuery.data}
-        isLoading={summaryQuery.isFetching}
-        collapsed={collapsed}
-      />
-
-      <div className="px-4 md:px-8 mx-auto w-full">
-        {/* GRAFICO */}
-        <div className="w-full pt-6">
+      {/* ⚪ CONTENIDO NORMAL */}
+      <div className="px-4 md:px-8 w-full overflow-hidden">
+        
+        {/* GRÁFICO */}
+        <div className="w-full pt-6 overflow-hidden">
           <CardBarChart
             data={salesOverTimeQuery.data.data}
             currency={salesOverTimeQuery.data.currency}
@@ -204,8 +204,8 @@ export default function Dashboard({ collapsed }) {
             onChangeLimit={setTopProductsLimit}
           />
         </div>
-
       </div>
+
     </AdminLayout>
   );
 }

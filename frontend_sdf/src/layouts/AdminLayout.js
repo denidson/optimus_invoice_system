@@ -7,18 +7,16 @@ export default function AdminLayout({ children }) {
   const { user } = useContext(AuthContext);
   const nombreUsuario = user?.nombre || "Usuario";
 
-  // Estado del sidebar (collapsed / expanded)
   const [collapsed, setCollapsed] = useState(
     JSON.parse(localStorage.getItem("sidebarCollapsed")) ?? true
   );
 
-  // Guardar estado en localStorage
   useEffect(() => {
     localStorage.setItem("sidebarCollapsed", collapsed);
   }, [collapsed]);
 
   return (
-    <div className="flex min-h-screen bg-indigo-50 overflow-hidden">
+    <div className="flex min-h-screen bg-indigo-50 overflow-x-hidden">
       {/* Sidebar */}
       <Sidebar collapsed={collapsed} setCollapsed={setCollapsed} />
 
@@ -26,16 +24,20 @@ export default function AdminLayout({ children }) {
       <div
         className={`
           flex flex-col flex-1 min-w-0
-          transition-[margin] duration-100 ease-in-out
-          ml-0 md:ml-0 md:ml-${collapsed ? "20" : "64"}
+          transition-all duration-300 ease-in-out
+          ${collapsed ? "md:pl-20" : "md:pl-64"}
           min-h-screen
         `}
       >
         {/* Navbar */}
-        <Navbar nombreUsuario={nombreUsuario} />
+        <Navbar
+          nombreUsuario={nombreUsuario}
+          collapsed={collapsed}
+          setCollapsed={setCollapsed}
+        />
 
-        {/* Main content */}
-        <main className="flex-1 w-full p-4 md:p-6 overflow-x-auto overflow-y-auto sidebar-scroll">
+        {/* Main */}
+        <main className="flex-1 w-full overflow-y-auto">
           {React.Children.map(children, (child) =>
             React.isValidElement(child)
               ? React.cloneElement(child, { collapsed })

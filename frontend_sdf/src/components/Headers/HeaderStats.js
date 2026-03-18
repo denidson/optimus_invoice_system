@@ -12,10 +12,8 @@ export default function HeaderStats({ summary, isLoading, collapsed }) {
   };
 
   return (
-    <div className="relative bg-twilight-indigo-400 pt-4 md:pt-8 pb-4">
-      <div className="px-4 md:px-10 mx-auto w-full">
-
-        {/* GRID RESPONSIVE */}
+    <div className="pb-4">
+      <div className="px-4 md:px-8 mx-auto w-full">
         <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
 
           <CardStats
