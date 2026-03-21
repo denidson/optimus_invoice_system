@@ -24,6 +24,8 @@ import { writeFile, utils as XLSXUtils } from "xlsx";
 import Papa from 'papaparse';
 window.JSZip = JSZip;
 import { formatDecimal, formatMoney, formatDate, formatDateTime, formatText } from "../../utils/formatters";
+import { generateExcelDemo } from "../../utils/excelDemoGenerator";
+
 DataTable.use(DT);
 
 function ListClients() {
@@ -59,25 +61,16 @@ function ListClients() {
         estado: "Aragua",
         zona: "Zona 1",
         direccion: "Calle Falsa 123",
-      },
-      {
-        rif: "J-98765432-1",
-        nombre_empresa: "Otra Demo",
-        email: "demo2@empresa.com",
-        telefono: "0424-7654321",
-        tipo_contribuyente_id: "Especial",
-        region: "Capital",
-        estado: "Miranda",
-        zona: "Zona 2",
-        direccion: "Avenida Siempre Viva 742",
-      },
+      }
     ];
 
-    const ws = XLSXUtils.json_to_sheet(demoData);
-    const wb = XLSXUtils.book_new();
-    XLSXUtils.book_append_sheet(wb, ws, "Demo Clientes");
-    writeFile(wb, "Demo_Importacion_Clientes.xlsx");
+    generateExcelDemo(
+      demoData,
+      "Demo Clientes",
+      "Demo_Importacion_Clientes.xlsx"
+    );
   };
+  
   // DataTable listeners
   useEffect(() => {
     const table = $("#ListClientDt").DataTable();

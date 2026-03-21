@@ -26,6 +26,7 @@ import * as XLSX from "xlsx";
 const { read, utils } = XLSX;3
 import Papa from 'papaparse';
 import { formatDecimal, formatDate, formatDateTime, formatText, formatDecimalSpecial } from "../../utils/formatters";
+import { generateExcelDemo } from "../../utils/excelDemoGenerator";
 
 window.JSZip = JSZip;
 DataTable.use(DT);
@@ -43,6 +44,49 @@ function ListProducts() {
   const [previewData, setPreviewData] = useState([]);
   const [clienteAsignado, setClienteAsignado] = useState(null);
 
+  const downloadExcelDemoProducts = () => {
+    const demoData = [
+      {
+        sku: "PROD-001",
+        nombre: "Producto Demo",
+        descripcion: "Descripción de ejemplo",
+        precio_base: 100,
+        iva_categoria: 16,
+        cliente_id: "J-12345678-9"
+      },
+      {
+        sku: "PROD-002",
+        nombre: "Servicio Demo",
+        descripcion: "Servicio de prueba",
+        precio_base: 50,
+        iva_categoria: 8,
+        cliente_id: "Empresa Demo"
+      }
+    ];
+
+    const notes = [
+      "NOTAS IMPORTANTES:",
+      "",
+      "IVA:",
+      "- Puede ser: 16, 8, 0",
+      '- También: "16%" o "IVA 16%"',
+      "",
+      "CLIENTE:",
+      "- Puede ser:",
+      "  • RIF (ej: J-12345678-9)",
+      "  • Nombre (ej: Empresa ABC)",
+      "",
+      "El sistema intentará encontrar coincidencias automáticamente."
+    ];
+
+    generateExcelDemo(
+      demoData,
+      "Demo Productos",
+      "Demo_Importacion_Productos.xlsx",
+      notes
+    );
+  };
+  
   useEffect(() => {
     const fetchCliente = async () => {
       if (rol === "operador" && cliente_id) {
@@ -230,6 +274,21 @@ function ListProducts() {
                   Importar Producto/Servicio Excel/CSV
                   <input type="file" accept=".csv,.xlsx,.xls" className="hidden" onChange={handleFileUpload} />
                 </label>
+                <div className="relative group inline-block">
+                  <button
+                    onClick={downloadExcelDemoProducts}
+                    className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded flex items-center gap-2"
+                  >
+                    <i className="fas fa-download"></i>
+                  </button>
+
+                  <span className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2
+                    px-2 py-1 text-xs text-white bg-gray-800 rounded
+                    opacity-0 group-hover:opacity-100 transition-opacity
+                    whitespace-nowrap pointer-events-none z-50">
+                    Descargar Excel de ejemplo
+                  </span>
+                </div>
               </div>
             </div>
 

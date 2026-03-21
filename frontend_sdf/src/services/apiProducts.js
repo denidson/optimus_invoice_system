@@ -4,7 +4,7 @@ import api from "./axiosConfig";
 export const getProducts = async ({ client_id=false } = {}) => {
   var response;
   if (client_id == false){
-    response = await api.get("/api/products");
+    response = await api.get("/api/products/");
   }else{
     response = await api.get(`/api/products?client_id=${client_id}`);
   }
@@ -19,7 +19,7 @@ export const showProduct = async (id) => {
 
 // Create a product
 export const createProduct = async (body) => {
-  const response = await api.post("/api/products", body);
+  const response = await api.post("/api/products/", body);
   return response.data.data;
 };
 

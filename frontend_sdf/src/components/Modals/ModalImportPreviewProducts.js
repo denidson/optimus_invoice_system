@@ -17,77 +17,93 @@ const ModalImportPreviewProducts = ({
   const [selectOptions, setSelectOptions] = useState({});
   const rowsPerPage = 10;
 
-  // Cargar selects desde API
+  /* =========================
+     🔹 CARGA SELECTS
+  ========================== */
   useEffect(() => {
     const fetchSelects = async () => {
       const results = {};
+
       for (const key in apiSelects) {
         try {
-          results[key] = await apiSelects[key]();
+          const res = await apiSelects[key]();
+          results[key] = Array.isArray(res) ? res : res?.data || [];
         } catch {
           results[key] = [];
         }
       }
+
       setSelectOptions(results);
     };
+
     if (isOpen) fetchSelects();
   }, [isOpen, apiSelects]);
 
-  // Inicializar datos con cliente e IVA
+  /* =========================
+     🔹 INICIALIZAR DATA (FIX)
+  ========================== */
   useEffect(() => {
-    if (!isOpen || !data.length || !selectOptions.iva_categoria) return;
+    if (!isOpen || !data.length) return;
 
-    const initializedData = data.map(row => {
-      // Extraer número de IVA del texto
+    const initialized = data.map(row => {
+      // 🔹 IVA
       let ivaNum = 0;
+
       if (row.iva_categoria) {
         const match = String(row.iva_categoria).match(/(\d+(\.\d+)?)/);
-        ivaNum = match ? parseFloat(match[1]) : 0;
+        ivaNum = match ? Number(match[1]) : 0;
       }
 
-      // Buscar el ID del IVA correspondiente
-      let ivaId = null;
-      if (selectOptions.iva_categoria?.length) {
-        const opt = selectOptions.iva_categoria.find(o => Number(o.tasa_porcentaje) === ivaNum);
-        ivaId = opt?.id || null;
+      const ivaOpt = selectOptions.iva_categoria?.find(o => {
+        const tasa = Number(String(o.tasa_porcentaje).replace("%", ""));
+        return tasa === ivaNum;
+      });
+
+      let ivaId = ivaOpt?.id || null;
+
+      // 🔹 CLIENTE
+      let clienteId = row.cliente_id || "";
+      let clienteNombre = row.cliente_nombre || "";
+
+      if (rol === "operador") {
+        clienteId = cliente_id || "";
+        clienteNombre =
+          clienteAsignado?.nombre_empresa ||
+          clienteAsignado?.nombre ||
+          "";
       }
 
-      const cliId = rol === "operador" ? cliente_id || "" : row.cliente_id || "";
-      const cliNombre = rol === "operador"
-        ? clienteAsignado?.nombre_empresa || clienteAsignado?.nombre || ""
-        : row.cliente_nombre || "";
+      if (rol === "admin") {
+        const valor = String(row.cliente_id || "").toLowerCase().trim();
+
+        const match = selectOptions.cliente_id?.find(c => {
+          const nombre = String(c.nombre_empresa || "").toLowerCase();
+          const rif = String(c.rif || "").toLowerCase();
+
+          return (
+            nombre.includes(valor) ||
+            rif.includes(valor)
+          );
+        });
+
+        if (match) {
+          clienteId = match.id;
+          clienteNombre = match.nombre_empresa || match.nombre;
+        }
+      }
 
       return {
         ...row,
         iva_categoria: ivaNum,
         iva_categoria_id: ivaId,
-        cliente_id: cliId,
-        cliente_nombre: cliNombre
+        cliente_id: clienteId,
+        cliente_nombre: clienteNombre
       };
     });
 
-    setTableData(initializedData);
+    setTableData(initialized);
     setCurrentPage(1);
-  }, [isOpen, data, rol, cliente_id, clienteAsignado, selectOptions.iva_categoria]);
-
-  // Actualizar cliente admin si coincide con Excel
-  useEffect(() => {
-    if (!isOpen || rol !== "admin" || !selectOptions.cliente_id?.length) return;
-
-    setTableData(prev =>
-      prev.map(row => {
-        if (!row.cliente_id) return row;
-        const match = selectOptions.cliente_id.find(
-          c => String(c.id) === String(row.cliente_id)
-            || c.rif?.trim().toLowerCase() === row.cliente_id?.trim().toLowerCase()
-            || c.nombre_empresa?.trim().toLowerCase() === row.cliente_id?.trim().toLowerCase()
-        );
-        return match
-          ? { ...row, cliente_id: match.id, cliente_nombre: match.nombre_empresa || match.nombre }
-          : row;
-      })
-    );
-  }, [isOpen, rol, selectOptions.cliente_id]);
+  }, [isOpen, data, rol, cliente_id, clienteAsignado, selectOptions]);
 
   if (!isOpen) return null;
 
@@ -99,24 +115,37 @@ const ModalImportPreviewProducts = ({
   const startIndex = (currentPage - 1) * rowsPerPage;
   const visibleRows = tableData.slice(startIndex, startIndex + rowsPerPage);
 
+  /* =========================
+     🔹 HANDLE INPUT
+  ========================== */
   const handleInputChange = (index, field, value) => {
     const updated = [...tableData];
 
     if (field === "iva_categoria") {
-      // Extraer número del texto
-      const match = String(value).match(/(\d+(\.\d+)?)/);
-      const ivaNum = match ? parseFloat(match[1]) : 0;
-      updated[index].iva_categoria = ivaNum;
+      const opt = selectOptions.iva_categoria?.find(
+        o => String(o.id) === String(value)
+      );
 
-      if (selectOptions.iva_categoria?.length) {
-        const ivaOpt = selectOptions.iva_categoria.find(o => Number(o.tasa_porcentaje) === ivaNum);
-        updated[index].iva_categoria_id = ivaOpt?.id || null;
-      }
-    } else if (field === "cliente_id" && selectOptions.cliente_id?.length) {
-      updated[index].cliente_id = value;
-      const cliOpt = selectOptions.cliente_id.find(o => String(o.id) === String(value));
-      updated[index].cliente_nombre = cliOpt?.nombre_empresa || cliOpt?.nombre || "";
-    } else {
+      updated[index].iva_categoria_id = value;
+      updated[index].iva_categoria = opt?.tasa_porcentaje || 0;
+    }
+
+    else if (field === "cliente_id") {
+      const valor = String(value || "").toLowerCase();
+
+      const match = selectOptions.cliente_id?.find(c => {
+        const nombre = String(c.nombre_empresa || "").toLowerCase();
+        const rif = String(c.rif || "").toLowerCase();
+
+        return nombre.includes(valor) || rif.includes(valor);
+      });
+
+      updated[index].cliente_id = match?.id || value;
+      updated[index].cliente_nombre =
+        match?.nombre_empresa || match?.nombre || value;
+    }
+
+    else {
       updated[index][field] = value;
     }
 
@@ -132,129 +161,136 @@ const ModalImportPreviewProducts = ({
 
   const validateData = () => {
     let valid = true;
+
     tableData.forEach((row, i) => {
       for (const field in validationRules) {
-        const rule = validationRules[field];
-        const { valid: fieldValid, message } = rule(row[field], row);
-        if (!fieldValid) {
+        const { valid: ok, message } = validationRules[field](row[field], row);
+
+        if (!ok) {
           toast.error(`Fila ${i + 1}: ${message}`);
           valid = false;
           break;
         }
       }
     });
+
     return valid;
   };
 
   const handleConfirm = () => {
     if (!validateData()) return;
-    onConfirm(
-      tableData.map(r => ({
-        ...r,
-        iva_categoria_id: r.iva_categoria_id,
-        cliente_id: r.cliente_id
-      }))
-    );
+
+    onConfirm(tableData);
     toast.success("Datos listos para importar");
     onClose();
   };
 
+  /* =========================
+     🔹 UI (ESTILO RESTAURADO)
+  ========================== */
   return (
     <div className="fixed inset-0 flex items-center justify-center z-50">
       <div className="absolute inset-0 bg-black bg-opacity-50" onClick={onClose}></div>
-      <div className="relative bg-white rounded-lg shadow-lg w-11/12 md:w-5/6 lg:w-4/5 xl:w-3/4 max-h-[95vh] overflow-hidden">
-        {/* Header */}
+
+      <div className="relative bg-white rounded-2xl shadow-2xl w-[95%] xl:w-[85%] max-h-[95vh] overflow-hidden">
+
+        {/* HEADER */}
         <div className="flex justify-between items-center px-6 py-4 border-b">
-          <h2 className="text-lg font-bold text-gray-800">Previsualización de Importación</h2>
-          <button onClick={onClose} className="text-gray-500 hover:text-gray-800 text-xl font-bold">×</button>
+          <h2 className="text-lg font-bold">
+            Previsualización de Importación
+          </h2>
+          <button onClick={onClose} className="text-xl font-bold">×</button>
         </div>
 
-        {/* Tabla */}
-        <div className="overflow-x-auto overflow-y-auto max-h-[75vh] px-4 py-3">
-          <table className="min-w-full border border-gray-200 text-sm">
+        {/* TABLE */}
+        <div className="overflow-x-auto overflow-y-auto max-h-[70vh] px-6 py-4">
+          <table className="table-fixed border text-sm w-max min-w-full">
+
             <thead className="bg-gray-100 sticky top-0">
               <tr>
                 {headers.map(h => (
-                  <th key={h} className="border px-3 py-2 text-left text-gray-600 font-semibold">{h}</th>
+                  <th key={h} className="border px-3 py-2 text-left whitespace-nowrap">
+                    {h}
+                  </th>
                 ))}
-                <th className="border px-3 py-2 text-center text-gray-600 font-semibold w-16">Acción</th>
+                <th className="border px-3 py-2 text-center">Acción</th>
               </tr>
             </thead>
+
             <tbody>
-              {visibleRows.map((row, rowIndex) => {
-                const actualIndex = startIndex + rowIndex;
+              {visibleRows.map((row, i) => {
+                const idx = startIndex + i;
+
                 return (
-                  <tr key={actualIndex} className="hover:bg-gray-50">
+                  <tr key={idx} className="hover:bg-gray-50">
+
                     {headers.map(field => (
                       <td key={field} className="border px-2 py-1">
+
                         {field === "iva_categoria" ? (
                           <select
-                            className="w-full border rounded px-2 py-1 focus:ring-1 focus:ring-blue-400"
-                            value={row[field] || ""}
-                            onChange={(e) => handleInputChange(actualIndex, field, e.target.value)}
+                            className="w-full border rounded px-2 py-1"
+                            value={row.iva_categoria_id || ""}
+                            onChange={(e) =>
+                              handleInputChange(idx, field, e.target.value)
+                            }
                           >
                             {selectOptions.iva_categoria?.map(opt => (
-                              <option key={opt.id} value={opt.tasa_porcentaje}>
+                              <option key={opt.id} value={opt.id}>
                                 {opt.nombre} ({opt.tasa_porcentaje}%)
                               </option>
                             ))}
                           </select>
-                        ) : field === "cliente_nombre" && rol === "operador" ? (
-                          <div>{row.cliente_nombre}</div>
-                        ) : field === "cliente_id" && rol === "admin" ? (
+                        ) : field === "cliente_id" ? (
                           <select
-                            className="w-full border rounded px-2 py-1 focus:ring-1 focus:ring-blue-400"
+                            className="w-full border rounded px-2 py-1"
                             value={row.cliente_id || ""}
-                            onChange={(e) => handleInputChange(actualIndex, "cliente_id", e.target.value)}
+                            onChange={(e) =>
+                              handleInputChange(idx, field, e.target.value)
+                            }
                           >
-                            <option value="">Seleccione un cliente</option>
+                            <option value="">Seleccione</option>
                             {selectOptions.cliente_id?.map(c => (
                               <option key={c.id} value={c.id}>
-                                {c.nombre_empresa || c.nombre} {c.rif ? `(${c.rif})` : ""}
+                                {c.nombre_empresa} ({c.rif})
                               </option>
                             ))}
                           </select>
+                        ) : field === "cliente_nombre" ? (
+                          <div>{row.cliente_nombre}</div>
                         ) : (
                           <input
-                            type="text"
-                            className="w-full border rounded px-2 py-1 focus:ring-1 focus:ring-blue-400"
-                            value={row[field] ?? ""}
-                            onChange={(e) => handleInputChange(actualIndex, field, e.target.value)}
+                            className="w-full border rounded px-2 py-1"
+                            value={row[field] || ""}
+                            onChange={(e) =>
+                              handleInputChange(idx, field, e.target.value)
+                            }
                           />
                         )}
+
                       </td>
                     ))}
+
                     <td className="border text-center">
-                      <button
-                        onClick={() => handleDeleteRow(actualIndex)}
-                        className="text-red-500 hover:text-red-700"
-                        title="Eliminar fila"
-                      >
-                        <i className="fa-regular fa-rectangle-xmark fa-lg"></i>
-                      </button>
+                      <button onClick={() => handleDeleteRow(idx)} className="text-red-500">✕</button>
                     </td>
+
                   </tr>
                 );
               })}
             </tbody>
+
           </table>
         </div>
 
-        {/* Paginación */}
-        <div className="flex justify-between items-center px-6 py-3 border-t bg-gray-50 text-sm">
-          <span>Página {currentPage} de {totalPages}</span>
-          <div className="flex space-x-1">
-            <button onClick={() => setCurrentPage(1)} disabled={currentPage===1} className="px-2 py-1 bg-gray-200 rounded disabled:opacity-50">«</button>
-            <button onClick={() => setCurrentPage(p => Math.max(p-1,1))} disabled={currentPage===1} className="px-2 py-1 bg-gray-200 rounded disabled:opacity-50">‹</button>
-            <button onClick={() => setCurrentPage(p => Math.min(p+1,totalPages))} disabled={currentPage===totalPages} className="px-2 py-1 bg-gray-200 rounded disabled:opacity-50">›</button>
-            <button onClick={() => setCurrentPage(totalPages)} disabled={currentPage===totalPages} className="px-2 py-1 bg-gray-200 rounded disabled:opacity-50">»</button>
-          </div>
-        </div>
-
-        {/* Botones */}
-        <div className="flex justify-end space-x-3 px-6 py-4 border-t bg-white">
-          <button onClick={onClose} className="px-4 py-2 bg-gray-300 text-gray-800 rounded hover:bg-gray-400 transition">Cancelar</button>
-          <button onClick={handleConfirm} className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition">Guardar Importación</button>
+        {/* FOOTER */}
+        <div className="flex justify-end gap-3 px-6 py-4 border-t">
+          <button onClick={onClose} className="px-4 py-2 bg-gray-300 rounded">
+            Cancelar
+          </button>
+          <button onClick={handleConfirm} className="px-4 py-2 bg-blue-600 text-white rounded">
+            Guardar Importación
+          </button>
         </div>
 
       </div>
