@@ -267,7 +267,6 @@ const ModalImportPreviewProducts = ({
                             }
                           />
                         )}
-
                       </td>
                     ))}
 
