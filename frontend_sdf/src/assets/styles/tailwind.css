@@ -8,6 +8,11 @@
     font-size: 80%!important;
 }
 
+.dt-container table.dataTable tbody tr:hover {
+  background-color: rgb(212,226,247);
+  transition: background-color 0.2s ease;
+}
+
 table.dataTable thead th {
   text-align: center !important;
 }
