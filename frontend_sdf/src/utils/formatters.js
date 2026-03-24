@@ -1,3 +1,11 @@
+export const formatMoneySpecial = (value, digits=2) => {
+  return 'Bs. ' + new Intl.NumberFormat("es-ES", {
+    minimumFractionDigits: digits,
+    maximumFractionDigits: digits,
+    useGrouping: true,
+  }).format(Number(value || 0));
+};
+
 export const formatMoney = (value) => {
   return 'Bs. ' + new Intl.NumberFormat("es-ES", {
     minimumFractionDigits: 2,

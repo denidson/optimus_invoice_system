@@ -546,7 +546,12 @@ function ListProformas() {
                       };
 
                       // Añadir filtros según filtro activo
-                      if ($('#filter_type option:selected').val() === "estatus" && $('#filtro_estatus option:selected').val()) query.estatus = $('#filtro_estatus option:selected').val();
+                      console.log('filtro_estatus: ', $('#filtro_estatus option:selected').val());
+                      if ($('#filter_type option:selected').val() === "estatus" && $('#filtro_estatus option:selected').val() != undefined){
+                        query.estatus = $('#filtro_estatus option:selected').val();
+                      }else{
+                        query.estatus = 'borrador';
+                      }
 
                       if ($('#filter_type option:selected').val() === "zona" && $("#filtro_text").val()) query.zona = $("#filtro_text").val();
 

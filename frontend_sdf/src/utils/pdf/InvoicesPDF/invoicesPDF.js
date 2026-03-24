@@ -1,7 +1,7 @@
 import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
 import { box, text, grid, boxCustom, line, textWrap, labelValue } from "../pdfDraw";
-import { formatDate, formatDecimal, formatText, formatMoney } from "../../formatters";
+import { formatDate, formatDecimal, formatText, formatMoney, formatMoneySpecial } from "../../formatters";
 import exampleLogo from "../../../assets/img/react.jpg";
 import QRCode from "qrcode";
 import { encryptText } from '../../../services/api';
@@ -216,7 +216,7 @@ export const buildInvoicesPDF = async (data, invoiceId, mode = "download") => {
 
   currentY += 3;
   text(doc, "Tasa de cambio:", leftX + 20, currentY, 7, "left", true);
-  text(doc, formatMoney(totales.tipo_cambio_bcv), rightX + 3, currentY, 7, "right", false);
+  text(doc, formatMoneySpecial(totales.tipo_cambio_bcv, 4), rightX + 3, currentY, 7, "right", false);
 
   currentY = currentInfoY + 5;
 
@@ -302,7 +302,7 @@ export const buildInvoicesPDF = async (data, invoiceId, mode = "download") => {
   doc.addImage(
     qrBase64,
     "PNG",
-    (pageWidth - margin - qrSize) - 27,
+    (pageWidth - margin - qrSize) - 5,
     y - 18,
     qrSize,
     qrSize
