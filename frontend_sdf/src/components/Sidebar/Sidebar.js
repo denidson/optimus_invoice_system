@@ -1,7 +1,6 @@
 import React, { useContext, useState, useRef, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import ReactDOM from "react-dom";
-
 import Logo from "../../assets/img/Quantus-Invoice.png";
 import LogoCollapse from "../../assets/img/Quantus-Invoice3.png";
 import { AuthContext } from "../../context/AuthContext";
@@ -47,7 +46,7 @@ function Tooltip({ targetRef, text, visible }) {
 export default function Sidebar({ collapsed, setCollapsed }) {
   const location = useLocation();
   const { user } = useContext(AuthContext);
-  const rol = user?.rol || "";
+  const rol = user?.rol?.toLowerCase().trim() || "";
 
   const [mobileOpen, setMobileOpen] = useState(false);
 
@@ -163,7 +162,10 @@ export default function Sidebar({ collapsed, setCollapsed }) {
                   </h6>
                 )}
                 <ul className="flex flex-col pb-6">
-                  {section.links.map((link) => {
+                  {section.links.filter((link) => {
+                      if (!link.roles) return true;
+                      return link.roles.includes(rol);
+                    }).map((link) => {
                     const active = isActive(link.to);
                     const linkRef = useRef(null);
 
