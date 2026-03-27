@@ -4,7 +4,7 @@ import api from "./axiosConfig";
 export const getProducts = async ({ client_id=false } = {}) => {
   var response;
   if (client_id == false){
-    response = await api.get("/api/products/");
+    response = await api.get("/api/products");
   }else{
     response = await api.get(`/api/products?client_id=${client_id}`);
   }
