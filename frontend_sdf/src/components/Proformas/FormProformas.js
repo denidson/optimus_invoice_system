@@ -1060,7 +1060,7 @@ const handleRadioChange = (event) => {
                 <h6 class="text-blueGray-700 text-xl font-bold">{preInvoice.id == '#'? "Crear" : "Actualizar"} Proformas</h6>
               </div>
             </div>
-            <div className="flex-auto px-4 lg:px-10 py-10 pt-0">
+            <div className="flex-auto px-4 lg:px-10 py-10 pt-0 bg-white">
               <div className="w-full flex flex-wrap px-4 pt-4">
                 <div className="w-full lg:w-3/12 px-0">
                   <h6 class="text-blueGray-400 text-sm mt-3 my-6 font-bold uppercase">Informacion de la Proformas</h6>
