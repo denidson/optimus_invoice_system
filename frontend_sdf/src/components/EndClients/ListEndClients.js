@@ -283,6 +283,18 @@ function ListEndClients() {
                     }
                   },
                   {
+                    title: "Tipo de cliente",
+                    data: "es_rif",
+                    className: "dt-center",
+                    render: (data, type, row) => {
+                      if (!data){
+                        return '<i class="fas fa-circle text-red-500 mr-2"></i> ' + formatText('Persona natural');
+                      }else{
+                        return '<i class="fas fa-circle text-emerald-500 mr-2"></i> ' + formatText('Empresa');
+                      }
+                    }
+                  },
+                  {
                     title: "Condición",
                     data: "activo",
                     className: "dt-center",
@@ -317,7 +329,7 @@ function ListEndClients() {
                 ]}
                 options={{
                   columnDefs:[{
-                    targets: [5, 7, 8, 9], // índices de columnas a ocultar (ej: RIF, Zona)
+                    targets: [5, 7, 8, 9, 10], // índices de columnas a ocultar (ej: RIF, Zona)
                     visible: false,
                     searchable: true // siguen siendo buscables
                   }],
@@ -485,6 +497,9 @@ function ListEndClients() {
                                 "Estado": formatText(item.estado),
                                 "Región": formatText(item.region),
                                 "Tipo de contribuyente":formatText(item.tipo_contribuyente?.nombre || ''),
+                                "Tipo de cliente": formatText(item.es_rif
+                                    ? "Empresa"
+                                    : "Persona natural"),
                                 "Condición": formatText(item.activo
                                     ? "Activo"
                                     : "Inactivo")

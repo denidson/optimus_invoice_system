@@ -9,6 +9,7 @@ import { toast, ToastContainer } from "react-toastify"; // Importamos las funcio
 import "react-toastify/dist/ReactToastify.css"; // Importar el CSS de las notificaciones
 import $ from "jquery";
 import { validateFormatEmail, validateFormatPhone, validateFormatRif } from "../../utils/formatters";
+import CustomRadioButton from '../InputsForm/CustomRadioButton'; // Importa el componente
 
 function FormEndClients() {
   const navigate = useNavigate(); // Hook para redirección
@@ -22,7 +23,13 @@ function FormEndClients() {
   const [error, setError] = useState(null);
   const [buttonDisabled, setButtonDisabled] = useState(false);
   const [errors, setErrors] = useState({}); // Estado para errores de validación
+  const [selectedRadio, setSelectedRadio] = useState(true);
 
+  const handleChangeRadio = (value) => {
+    //console.log('handleChangeRadio-value: ', value);
+    setSelectedRadio(value);
+    setClient({ ...client, es_rif: value });
+  };
   // Simulando la carga de datos del client por el ID
   useEffect(() => {
     const fetchClient = async () => {
@@ -34,6 +41,7 @@ function FormEndClients() {
           const data = await showEndClient(decryptText(clientId)); // Llamamos a showClient con el ID
           //console.log('data: ', data);
           setClient(data); // Guardamos los datos del client en el estado
+          setSelectedRadio(data.es_rif);
         }else{
           setClient({
             id: "#",
@@ -43,6 +51,7 @@ function FormEndClients() {
             email: "",
             direccion: "",
             activo: true,
+            es_rif: true,
             //tipo_contribuyente_id: 1,
           })
         }
@@ -291,7 +300,11 @@ function FormEndClients() {
                       {errors.nombre && <p className="text-red-500 text-xs mt-1">{errors.nombre}</p>}
                       </div>
                   </div>
-                  <div className="w-full lg:w-2/12 px-4"></div>
+                  <div className="w-full lg:w-2/12 px-4">
+                    <label className="block text-blueGray-600 text-xs font-bold mb-2">Tipo de cliente</label>
+                    <CustomRadioButton id="es_rif_true" name="es_rif" labelText="Empresa" checked={client.es_rif === true} onChange={handleChangeRadio} value={true}/>
+                    <CustomRadioButton id="es_rif_false" name="es_rif" labelText="Persona natural" checked={client.es_rif === false} onChange={handleChangeRadio} value={false}/>
+                  </div>
                   <div className="w-full lg:w-10/12 px-4">
                     <div className="relative w-full mb-3">
                       <label className="block text-blueGray-600 text-xs font-bold mb-2">Denominación comercial</label>
