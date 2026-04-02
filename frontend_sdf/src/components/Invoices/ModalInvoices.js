@@ -279,7 +279,7 @@ function ModalPreinvoices({ isOpen, onClose, message }) {
               <div className="text-center mt-10">Generando PDF...</div>
             ) : (
               <iframe
-                src={pdfUrl}
+                src={`${pdfUrl}#toolbar=0`} //src={pdfUrl}
                 width="100%"
                 height="100%"
                 style={{ border: "none" }}

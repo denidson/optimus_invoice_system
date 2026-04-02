@@ -50,7 +50,7 @@ const PublicDocument = () => {
       }}
     >
       <iframe
-        src={pdfUrl}
+        src={pdfUrl}//src={`${pdfUrl}#toolbar=0`}
         width="100%"
         height="100%"
         title={title}
