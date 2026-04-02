@@ -92,3 +92,15 @@ export const showDocument = async (id) => {
     throw error;
   }
 }
+
+// Registrar impresión
+export const recordPrintout = async (id) => {
+  try {
+    //console.log('createClient-body: ', body);
+    const response = await api.post(`/api/invoices/${id}/registrar-impresion`, {});
+    return response.data;
+  } catch (error) {
+    console.error("Error al registrar impresion:", error);
+    throw error;
+  }
+};

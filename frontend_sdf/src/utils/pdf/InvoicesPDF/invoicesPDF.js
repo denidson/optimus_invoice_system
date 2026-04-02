@@ -5,10 +5,60 @@ import { formatDate, formatDecimal, formatText, formatMoney, formatMoneySpecial 
 import exampleLogo from "../../../assets/img/react.jpg";
 import QRCode from "qrcode";
 import { encryptText } from '../../../services/api';
+import { recordPrintout } from "../../../services/api_invoices";
+
+const addWatermark = (doc, text = "DOCUMENTO SIN DERECHO A CRÉDITO FISCAL") => {
+  const pageWidth = doc.internal.pageSize.width;
+  const pageHeight = doc.internal.pageSize.height;
+  console.log('addWatermark-text: ', text);
+  doc.saveGraphicsState();
+
+  // Transparencia (requiere jsPDF >= 2.5)
+  doc.setGState(new doc.GState({ opacity: 0.1 }));
+
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(22);
+  doc.setTextColor(150, 150, 150);
+
+  // Centrar + rotar
+  doc.text("DOCUMENTO SIN DERECHO A CRÉDITO FISCAL", pageWidth / 2, 46.57, {
+    align: "center",
+    angle: 0
+  });
+
+  doc.text("DOCUMENTO SIN DERECHO A CRÉDITO FISCAL", pageWidth / 2, 93.14, {
+    align: "center",
+    angle: 0
+  });
+
+  doc.text("DOCUMENTO SIN DERECHO A CRÉDITO FISCAL", pageWidth / 2, 139.7, {
+    align: "center",
+    angle: 0
+  });
+
+  doc.text("DOCUMENTO SIN DERECHO A CRÉDITO FISCAL", pageWidth / 2, 186.28, {
+    align: "center",
+    angle: 0
+  });
+
+  doc.text("DOCUMENTO SIN DERECHO A CRÉDITO FISCAL", pageWidth / 2, 232.85, {
+    align: "center",
+    angle: 0
+  });
+
+  doc.restoreGraphicsState();
+};
 
 export const buildInvoicesPDF = async (data, invoiceId, mode = "download") => {
   const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "letter" });
-
+  /*if (data.documento.es_copia == true){
+    const pageCount = doc.getNumberOfPages();
+    console.log('pageCount: ', pageCount);
+    for (let i = 1; i <= pageCount; i++) {
+      doc.setPage(i);
+      addWatermark(doc); //"BORRADOR"
+    }
+  }*/
   const pageWidth = doc.internal.pageSize.width;
   const pageHeight = doc.internal.pageSize.height;
   const margin = 8;
@@ -384,6 +434,49 @@ export const buildInvoicesPDF = async (data, invoiceId, mode = "download") => {
       4: { halign: "center", cellWidth: 15 },
       5: { halign: "right", cellWidth: 22 },
       6: { halign: "right", cellWidth: 25 }
+    },
+    didDrawPage: function (data) {
+      const pageWidth = doc.internal.pageSize.width;
+      const pageHeight = doc.internal.pageSize.height;
+
+      doc.saveGraphicsState();
+
+      try {
+        doc.setGState(new doc.GState({ opacity: 0.08 }));
+      } catch (e) {
+        // fallback por si GState no aplica
+      }
+
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(22);
+      doc.setTextColor(180, 180, 180);
+      //console.log('pageHeight: ', pageHeight);
+      doc.text("DOCUMENTO SIN DERECHO A CRÉDITO FISCAL", pageWidth / 2, 46.57, {
+        align: "center",
+        angle: 0
+      });
+
+      doc.text("DOCUMENTO SIN DERECHO A CRÉDITO FISCAL", pageWidth / 2, 93.14, {
+        align: "center",
+        angle: 0
+      });
+
+      doc.text("DOCUMENTO SIN DERECHO A CRÉDITO FISCAL", pageWidth / 2, 139.7, {
+        align: "center",
+        angle: 0
+      });
+
+      doc.text("DOCUMENTO SIN DERECHO A CRÉDITO FISCAL", pageWidth / 2, 186.28, {
+        align: "center",
+        angle: 0
+      });
+
+      doc.text("DOCUMENTO SIN DERECHO A CRÉDITO FISCAL", pageWidth / 2, 232.85, {
+        align: "center",
+        angle: 0
+      });
+
+      doc.restoreGraphicsState();
     }
   });
 
@@ -563,6 +656,7 @@ export const buildInvoicesPDF = async (data, invoiceId, mode = "download") => {
     if (documento.tipo_documento == "ND"){
       baseName = 'NDEB_';
     }
+    var response_recordPrintout = recordPrintout(invoiceId);
     doc.save(`${baseName + documento.numero_factura}.pdf`);
   } else {
     return URL.createObjectURL(pdfBlob);

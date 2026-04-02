@@ -152,8 +152,13 @@ function FormEndClients() {
       var message = '';
       if (client.id == '#'){
         delete client.id;
-        client.tipo_documento_identidad = client.rif.substr(0, 1);
-        client.numero_documento = client.rif.toString().replaceAll('-','').substr(1, client.rif.toString().replaceAll('-','').length);
+        if (client.es_rif == true){
+          client.tipo_documento_identidad = client.rif.substr(0, 1);
+          client.numero_documento = client.rif.toString().replaceAll('-','').substr(1, client.rif.toString().replaceAll('-','').length);
+        }else{
+          client.tipo_documento_identidad = "V";
+          client.numero_documento = client.rif;
+        }
         console.log("Client(F): ", client);
         data = await createEndClient(client);
         //var clientList = [client];
@@ -162,8 +167,13 @@ function FormEndClients() {
         //console.log("Client(F)-data: ", data);
         message = '!Creación de cliente realizada correctamente!';
       }else{
-        client.tipo_documento_identidad = client.rif.substr(0, 1);
-        client.numero_documento = client.rif.toString().replaceAll('-','').substr(1, client.rif.toString().replaceAll('-','').length);
+        if (client.es_rif == true){
+          client.tipo_documento_identidad = client.rif.substr(0, 1);
+          client.numero_documento = client.rif.toString().replaceAll('-','').substr(1, client.rif.toString().replaceAll('-','').length);
+        }else{
+          client.tipo_documento_identidad = "V";
+          client.numero_documento = client.rif;
+        }
         data = await editEndClient(decryptText(clientId), client); // Llamamos a editClient con el ID
         //console.log("Client(F)-editClient-data: ", data);
         //console.log("Client(F)-editClient-client: ", client);
@@ -190,7 +200,7 @@ function FormEndClients() {
   };
 
   const redirectToList = () => {
-    navigate(`/clients`);
+    navigate(`/endClients`);
   };
 
   const reduceRif = (rif) => {
@@ -239,9 +249,67 @@ function FormEndClients() {
 
                           // Elimina caracteres no válidos (solo letras, números y guiones)
                           value = value.replace(/[^A-Z0-9-]/g, "");
+                          if (client.es_rif){
+                            if (value.length === 1) {
+                              // Primera posición → solo letras válidas
+                              if (!/[VJEPG]/.test(value)) value = ""; //123456789
+                            } else if (value.length === 2) {
+                              // Solo agregar guion si comienza con letra válida
+                              if (/[VJEPG]/.test(value[0]) && /[1234567890]/.test(value[1]) && !value.includes("-")) {
+                                if (/[VJEPG1234567890-]/.test(value[1])){
+                                  value = value[0] + "-" + value[1];
+                                }else{
+                                  value = value[0];
+                                }
+                              }else if (!/[1234567890]/.test(value)) {
+                                value = value[0];
+                              }
+                            } else if (value.length > 2) {
+                              // Nuevo: permitir solo números (hasta 8)
+                              const matchSoloNumeros = value.match(/^\d{0,8}$/);
 
+                              if (matchSoloNumeros) {
+                                value = matchSoloNumeros[0];
+                              } else {
+                                // Caso RIF tradicional
+                                const match = value.match(/^([VJEPG])-(\d{0,8})-?(\d{0,1})?$/);
+                                if (match) {
+                                  const [, letra, numeros, verificador] = match;
+                                  value = `${letra}-${numeros}${numeros.length === 8 ? "-" : ""}${verificador || ""}`;
+                                } else {
+                                  value = client.rif;
+                                }
+                              }
+                            }
+                          }else{
+                            if (value.length === 1) {
+                              // Primera posición → solo letras válidas
+                              if (!/[123456789]/.test(value)) value = "";
+                            } else if (value.length === 2) {
+                              // Solo agregar guion si comienza con letra válida
+                              if (!/[1234567890]/.test(value)) {
+                                value = value[0];
+                              }
+                            } else if (value.length > 2) {
+                              // Nuevo: permitir solo números (hasta 8)
+                              const matchSoloNumeros = value.match(/^\d{0,8}$/);
+
+                              if (matchSoloNumeros) {
+                                value = matchSoloNumeros[0];
+                              } else {
+                              // Caso RIF tradicional
+                                const match = value.match(/^([VJEPG])-(\d{0,8})-?(\d{0,1})?$/);
+                                if (match) {
+                                  const [, letra, numeros, verificador] = match;
+                                  value = `${letra}-${numeros}${numeros.length === 8 ? "-" : ""}${verificador || ""}`;
+                                } else {
+                                  value = client.rif;
+                                }
+                              }
+                            }
+                          }
                           // Forzar el patrón paso a paso
-                          if (value.length === 1) {
+                          /*if (value.length === 1) {
                             // Primera posición → solo letras válidas
                             if (!/[VJEPG123456789]/.test(value)) value = "";
                           } else if (value.length === 2) {
@@ -271,7 +339,7 @@ function FormEndClients() {
                                 value = client.rif;
                               }
                             }
-                          }
+                          }*/
 
                           setClient({ ...client, rif: value });
                         }}
