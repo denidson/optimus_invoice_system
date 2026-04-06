@@ -269,11 +269,9 @@ const ModalImportPreviewProducts = ({
                         )}
                       </td>
                     ))}
-
                     <td className="border text-center">
                       <button onClick={() => handleDeleteRow(idx)} className="text-red-500">✕</button>
                     </td>
-
                   </tr>
                 );
               })}
