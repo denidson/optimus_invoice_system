@@ -10,7 +10,7 @@ import { recordPrintout } from "../../../services/api_invoices";
 const addWatermark = (doc, text = "DOCUMENTO SIN DERECHO A CRÉDITO FISCAL") => {
   const pageWidth = doc.internal.pageSize.width;
   const pageHeight = doc.internal.pageSize.height;
-  console.log('addWatermark-text: ', text);
+  //console.log('addWatermark-text: ', text);
   doc.saveGraphicsState();
 
   // Transparencia (requiere jsPDF >= 2.5)
@@ -436,47 +436,49 @@ export const buildInvoicesPDF = async (data, invoiceId, mode = "download") => {
       6: { halign: "right", cellWidth: 25 }
     },
     didDrawPage: function (data) {
-      const pageWidth = doc.internal.pageSize.width;
-      const pageHeight = doc.internal.pageSize.height;
+      if (documento.es_copia == true){
+        const pageWidth = doc.internal.pageSize.width;
+        const pageHeight = doc.internal.pageSize.height;
 
-      doc.saveGraphicsState();
+        doc.saveGraphicsState();
 
-      try {
-        doc.setGState(new doc.GState({ opacity: 0.08 }));
-      } catch (e) {
-        // fallback por si GState no aplica
+        try {
+          doc.setGState(new doc.GState({ opacity: 0.08 }));
+        } catch (e) {
+          // fallback por si GState no aplica
+        }
+
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(22);
+        doc.setTextColor(180, 180, 180);
+        //console.log('pageHeight: ', pageHeight);
+        doc.text("DOCUMENTO SIN DERECHO A CRÉDITO FISCAL", pageWidth / 2, 46.57, {
+          align: "center",
+          angle: 0
+        });
+
+        doc.text("DOCUMENTO SIN DERECHO A CRÉDITO FISCAL", pageWidth / 2, 93.14, {
+          align: "center",
+          angle: 0
+        });
+
+        doc.text("DOCUMENTO SIN DERECHO A CRÉDITO FISCAL", pageWidth / 2, 139.7, {
+          align: "center",
+          angle: 0
+        });
+
+        doc.text("DOCUMENTO SIN DERECHO A CRÉDITO FISCAL", pageWidth / 2, 186.28, {
+          align: "center",
+          angle: 0
+        });
+
+        doc.text("DOCUMENTO SIN DERECHO A CRÉDITO FISCAL", pageWidth / 2, 232.85, {
+          align: "center",
+          angle: 0
+        });
+
+        doc.restoreGraphicsState();
       }
-
-      doc.setFont("helvetica", "bold");
-      doc.setFontSize(22);
-      doc.setTextColor(180, 180, 180);
-      //console.log('pageHeight: ', pageHeight);
-      doc.text("DOCUMENTO SIN DERECHO A CRÉDITO FISCAL", pageWidth / 2, 46.57, {
-        align: "center",
-        angle: 0
-      });
-
-      doc.text("DOCUMENTO SIN DERECHO A CRÉDITO FISCAL", pageWidth / 2, 93.14, {
-        align: "center",
-        angle: 0
-      });
-
-      doc.text("DOCUMENTO SIN DERECHO A CRÉDITO FISCAL", pageWidth / 2, 139.7, {
-        align: "center",
-        angle: 0
-      });
-
-      doc.text("DOCUMENTO SIN DERECHO A CRÉDITO FISCAL", pageWidth / 2, 186.28, {
-        align: "center",
-        angle: 0
-      });
-
-      doc.text("DOCUMENTO SIN DERECHO A CRÉDITO FISCAL", pageWidth / 2, 232.85, {
-        align: "center",
-        angle: 0
-      });
-
-      doc.restoreGraphicsState();
     }
   });
 

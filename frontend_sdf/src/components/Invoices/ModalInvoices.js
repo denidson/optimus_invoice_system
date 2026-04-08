@@ -1,11 +1,15 @@
 import React, { useState, useEffect, useMemo, useRef } from "react";
 import { formatDecimal, formatMoney, formatDateTime, formatText, formatDate } from "../../utils/formatters";
 import { generateInvoicesPDF } from "../../utils/pdf/InvoicesPDF/generateInvoicesPDF";
+import { Tabs, Tab, Box } from "@mui/material";
+import InvoiceDetailView from "./InvoiceDetailView";
 
 function ModalPreinvoices({ isOpen, onClose, message }) {
   const [viewMode, setViewMode] = useState("detalle");
   const [pdfUrl, setPdfUrl] = useState(null);
   const [loadingPdf, setLoadingPdf] = useState(false);
+  const [tab, setTab] = useState("FC");
+  const [tabDv, setTabDv] = useState(false);
 
   useEffect(() => {
     if (!isOpen) {
@@ -43,18 +47,16 @@ function ModalPreinvoices({ isOpen, onClose, message }) {
   }else{
     itemsList = message.items;
   }
-
-  //console.log('itemsList: ', itemsList);
+  //console.log('message: ', message);
   return (
     <div className="fixed inset-0 z-50 flex justify-center items-center bg-black/50 p-4 overflow-y-auto">
       <div className="bg-white rounded-lg shadow-lg w-full max-w-[1200px] max-h-[90vh] overflow-y-auto relative p-6">
         {/* Header */}
-        <div className="text-center mb-6">
+        <div className="text-center mb-0">
           <div className="flex justify-between items-center mb-4">
             <h6 className="text-xl font-bold">
               Detalles de la {(message.tipo_documento == 'FC' ? 'Factura' : (message.tipo_documento == 'ND' ? 'Nota de Débito' : 'Nota de Crédito') )}
             </h6>
-
             <div className="flex gap-2">
               <button
                 className="bg-blue-600 text-white px-4 py-1 rounded"
@@ -73,204 +75,57 @@ function ModalPreinvoices({ isOpen, onClose, message }) {
               )}
             </div>
           </div>
+          {message.tipo_documento == 'FC' && viewMode === "detalle" && (
+            <div className="w-full lg:w-12/12 m-0 p-0 text-center">
+              <hr class="my-0 border-b-1 border-blueGray-300"/>
+              <Tabs value={tab} textColor="primary" indicatorColor="primary" centered onChange={(e, v) => {
+                setTab(v);
+                if (tabDv == false){
+                  if (v == 'DV' && message.documentos_vinculados && message.documentos_vinculados.length > 0){
+                    setTabDv(message.documentos_vinculados[0].id);
+                  }
+                }
+              }}>
+                <Tab value="FC" label="Factura" />
+                <Tab value="DV" label="Documentos vinculados" />
+              </Tabs>
+            </div>
+          )}
           <hr className="my-4 border-b border-blueGray-300"/>
         </div>
-        {viewMode === "detalle" && (
-          <>
-            {/* Información general */}
-            <div className="flex flex-wrap justify-between px-2 mb-4">
-              <div className="w-1/5 text-start">
-                <label className="font-bold text-blueGray-700">Fecha de {(message.tipo_documento == 'FC' ? 'Factura' : (message.tipo_documento == 'ND' ? 'Nota de Débito' : 'Nota de Crédito') )}:</label>
-                <div>{message.fecha_factura ? formatDate(message.fecha_factura):''}</div>
-              </div>
-              <div className="w-1/5 text-start">
-                <label className="font-bold text-blueGray-700">Número de control:</label>
-                <div>{message.numero_control}</div>
-              </div>
-              <div className="w-1/5 text-start">
-                <label className="font-bold text-blueGray-700">Número de factura:</label>
-                <div>{message.numero_factura ? message.numero_factura.toUpperCase() : ''}</div>
-              </div>
-              <div className="w-1/5 text-start">
-                <label className="font-bold text-blueGray-700">Correlativo:</label>
-                <div>{message.correlativo_interno}</div>
-              </div>
-              <div className="w-1/5 text-start">
-                <label className="font-bold text-blueGray-700">Serial:</label>
-                <div>{message.serial ? message.serial.toUpperCase() : ''}</div>
-              </div>
-            </div>
+        {tab === "FC" && viewMode === "detalle" && (
+          <InvoiceDetailView message={message} />
+        )}
 
-            <hr className="my-4 border-b border-blueGray-300"/>
-
-            {/* Cliente */}
-            <div className="flex flex-wrap justify-between px-2 mb-4">
-              <div className="w-1/5 text-start">
-                <label className="font-bold text-blueGray-700">RIF:</label>
-                <div>{message.cliente_final_rif}</div>
+        {tab === "DV" && viewMode === "detalle" && (
+          message.documentos_vinculados?.length > 0 ? (
+            <>
+              <div className="w-full lg:w-12/12 mb-3 p-0 text-center">
+                <Tabs class="mb-3" value={tabDv} onChange={(e, v) => setTabDv(v)} centered>
+                  {message.documentos_vinculados.map(item => (
+                    <Tab
+                      key={item.id}
+                      value={item.id}
+                      label={`${item.tipo_documento === 'NC' ? 'NOTA DE CREDITO' : 'NOTA DE DEBITO'} - ${item.numero_control}`}
+                    />
+                  ))}
+                </Tabs>
               </div>
-              <div className="w-2/5 text-start">
-                <label className="font-bold text-blueGray-700">Razón Social:</label>
-                <div>{message.cliente_final_nombre}</div>
-              </div>
-              <div className="w-2/5 text-start">
-                <label className="font-bold text-blueGray-700">Dirección:</label>
-                <div>{message.cliente_final_direccion ? message.cliente_final_direccion.toUpperCase() : ''}</div>
-              </div>
-              <div className="w-1/5 text-start">
-                <label className="font-bold text-blueGray-700">Teléfono:</label>
-                <div>{message.cliente_final_telefono || ''}</div>
-              </div>
-            </div>
 
-            <hr className="my-4 border-b border-blueGray-300"/>
-
-            {/* Documento y Estado */}
-            <div className="flex flex-wrap justify-between px-2 mb-4">
-              <div className="w-1/2 text-start">
-                <label className="font-bold text-blueGray-700">Tipo de documento:</label>
-                <div>
-                  {message.tipo_documento === 'FC'
-                    ? 'FACTURA'
-                    : message.tipo_documento === 'NC'
-                    ? 'NOTA DE CREDITO'
-                    : 'NOTA DE DEBITO'}
-                </div>
-              </div>
-              <div className="w-1/2 text-start">
-                <label className="font-bold text-blueGray-700">Estado:</label>
-                <div>{message.estatus.toUpperCase()}</div>
-              </div>
-            </div>
-
-            {(message.tipo_documento === 'ND' || message.tipo_documento === 'NC') && message.factura_afectada_rel && (
-              <hr className="my-4 border-b border-blueGray-300"/>
-            )}
-
-            {(message.tipo_documento === 'ND' || message.tipo_documento === 'NC') && message.factura_afectada_rel && (
-              <div className="mb-4 px-2">
-                {/* Título principal */}
-                <label className="font-bold text-blueGray-700 mb-2">Factura afectada:</label>
-
-                {/* Datos de la factura afectada */}
-                <div className="flex flex-wrap justify-between mt-3">
-                  <div className="w-1/5 text-start">
-                    <label className="font-bold text-blueGray-700">Número de control:</label>
-                    <div>{formatText(message.factura_afectada_rel.numero_control)}</div>
-                  </div>
-                  <div className="w-1/5 text-center">
-                    <label className="font-bold text-blueGray-700">Fecha de emisión:</label>
-                    <div>{formatDateTime(message.factura_afectada_rel.fecha_emision)}</div>
-                  </div>
-                  <div className="w-1/5 text-end">
-                    <label className="font-bold text-blueGray-700">Total:</label>
-                    <div>{formatMoney(message.factura_afectada_rel.total_neto)}</div>
-                  </div>
-                </div>
-                <hr className="my-4 border-b border-blueGray-300"/>
-              </div>
-            )}
-
-            <hr className="my-4 border-b border-blueGray-300"/>
-
-            {/* Tabla de Items */}
-            {!hasNotaDebitoItems && (
-            <div className="overflow-x-auto mb-4">
-
-                <div className="flex bg-gray-100 border-b-2 border-gray-300 font-bold text-center">
-                  <div className="w-1/4 px-2 py-1">Producto</div>
-                  <div className="w-1/6 px-2 py-1">Cantidad</div>
-                  <div className="w-1/12 px-2 py-1">Impuesto</div>
-                  <div className="w-1/6 px-2 py-1">Precio Unitario</div>
-                  <div className="w-1/12 px-2 py-1">Desc %</div>
-                  <div className="w-1/4 px-2 py-1">Total</div>
-                </div>
-              {!hasNotaDebitoItems && itemsList && itemsList.length > 0 ? (
-                itemsList.map((item) => (
-                  <div key={item.id} className="flex border-b border-gray-300 text-center">
-                    <div className="w-1/4 px-2 py-1 text-left">{item.producto ? item.producto.sku + '-' + item.producto.nombre : 'N/A'}</div>
-                    <div className="w-1/6 px-2 py-1">{formatDecimal(item.cantidad)}</div>
-                    <div className="w-1/12 px-2 py-1">{item.iva_categoria_id ? formatDecimal(item.iva_categoria.tasa_porcentaje) : '0,00'}</div>
-                    <div className="w-1/6 px-2 py-1 text-right">{formatDecimal(message.tipo_documento == 'FC' ? item.precio_unitario : item.monto_unitario)}</div>
-                    <div className="w-1/12 px-2 py-1">{item.descuento_porcentaje ? formatDecimal(item.descuento_porcentaje) : '0,00'}</div>
-                    <div className="w-1/4 px-2 py-1 text-right">
-                      {formatDecimal(item.cantidad * ((message.tipo_documento == 'FC' ? item.precio_unitario : item.monto_unitario) - ((message.tipo_documento == 'FC' ? item.precio_unitario : item.monto_unitario) * (item.descuento_porcentaje || 0)/100)))}
-                    </div>
-                  </div>
-                ))
-              ) : (
-                <div className="flex text-center border-b border-gray-300" >
-                  <div className="w-full px-2 py-2">No hay líneas asociadas</div>
-                </div>
+              {/* 🔥 Aquí reutilizas el mismo componente */}
+              {tabDv && (
+                <InvoiceDetailView
+                  message={
+                    message.documentos_vinculados.find(doc => doc.id === tabDv)
+                  }
+                />
               )}
+            </>
+          ) : (
+            <div className="text-center py-2">
+              No presenta documentos vinculados
             </div>
-            )}
-            {hasNotaDebitoItems && (
-              <div className="px-5 flex justify-between border-4 border-double p-2 mb-2">
-                <span className="lg:w-8/12 text-center font-bold">Concepto</span>
-                <span className="lg:w-4/12 text-center font-bold">Monto</span>
-              </div>
-            )}
-            {hasNotaDebitoItems && (
-              itemsList.map(item => (
-                <div key={item.id} className="px-5 flex justify-between border-b py-1">
-                  <span className="lg:w-8/12 text-start">
-                    {formatText(item.concepto)}
-                  </span>
-                  <span className="lg:w-4/12 text-right">
-                    {formatDecimal(item.monto)}
-                  </span>
-                </div>
-              ))
-            )}
-
-            {/* Totales */}
-            <div className="flex flex-wrap justify-between px-2 text-right font-bold mb-4">
-              {message.monto_pagado_divisas > 0 && (
-                <div className="w-1/2 text-left">
-                  Monto pagado en divisas: {formatMoney(message.monto_pagado_divisas)}
-                </div>
-              )}
-              {message.monto_pagado_divisas == 0 && (
-                <div className="w-1/2 text-left">
-
-                </div>
-              )}
-              <div className="w-1/2">
-                Base imponible: {formatMoney(message.total_base)}
-              </div>
-            </div>
-            <div className="flex flex-wrap justify-between px-2 text-right font-bold mb-4">
-              {message.igtf_monto > 0 && (
-                <div className="w-1/2 text-left">
-                  IGTF ({formatDecimal(message.igtf_porcentaje)}%):{formatMoney(message.igtf_monto)}
-                </div>
-              )}
-              {message.igtf_monto == 0 && (
-                <div className="w-1/2 text-left">
-
-                </div>
-              )}
-              <div className="w-1/2">
-                I.V.A: {formatMoney(message.total_impuestos)}
-              </div>
-            </div>
-            <div className="flex flex-wrap justify-between px-2 text-right font-bold mb-4">
-              <div className="w-1/2"></div>
-              <div className="w-1/2">
-                Total: {formatMoney(message.total_neto ? message.total_neto - message.igtf_monto : message.total - message.igtf_monto)}
-              </div>
-            </div>
-            {message.igtf_monto > 0 && (
-              <div className="flex flex-wrap justify-between px-2 text-right font-bold mb-4">
-                <div className="w-1/2"></div>
-                <div className="w-1/2">
-                  Total + IGTF: {formatMoney(message.total_neto ? message.total_neto : message.total)}
-                </div>
-              </div>
-            )}
-
-          </>
+          )
         )}
 
         {viewMode === "pdf" && (
