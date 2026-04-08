@@ -98,7 +98,6 @@ function ListProformas() {
   };
 
   const redirectToCreate = () => navigate(`/proformas/create`);
-
   const actionSearch = () => {
     const table = $("#ListPreInvoicesDt").DataTable();
     table.clear();
