@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useContext } from "react";
 import { toast } from "react-toastify";
+import { AuthContext } from "../../context/AuthContext";
 
 const ModalImportPreviewProducts = ({
   isOpen,
@@ -16,6 +17,9 @@ const ModalImportPreviewProducts = ({
   const [currentPage, setCurrentPage] = useState(1);
   const [selectOptions, setSelectOptions] = useState({});
   const rowsPerPage = 10;
+  const { user } = useContext(AuthContext);
+  const cliente = user?.cliente_id;
+  const cliente_nombre = user?.cliente_nombre;
 
   /* =========================
      🔹 CARGA SELECTS
@@ -40,13 +44,16 @@ const ModalImportPreviewProducts = ({
   }, [isOpen, apiSelects]);
 
   /* =========================
-     🔹 INICIALIZAR DATA (FIX)
+     🔹 INICIALIZAR DATA
   ========================== */
   useEffect(() => {
     if (!isOpen || !data.length) return;
 
+    const isOperador = ["operador", "operador_admin"].includes(rol);
+    const isAdmin = rol === "admin";
+
     const initialized = data.map(row => {
-      // 🔹 IVA
+      /* ================= IVA ================= */
       let ivaNum = 0;
 
       if (row.iva_categoria) {
@@ -54,41 +61,51 @@ const ModalImportPreviewProducts = ({
         ivaNum = match ? Number(match[1]) : 0;
       }
 
-      const ivaOpt = selectOptions.iva_categoria?.find(o => {
-        const tasa = Number(String(o.tasa_porcentaje).replace("%", ""));
-        return tasa === ivaNum;
-      });
+      const ivaOpt = selectOptions.iva_categoria?.find(
+        o => Number(o.tasa_porcentaje) === ivaNum
+      );
 
-      let ivaId = ivaOpt?.id || null;
+      const ivaId = ivaOpt?.id || null;
 
-      // 🔹 CLIENTE
-      let clienteId = row.cliente_id || "";
-      let clienteNombre = row.cliente_nombre || "";
+      /* ================= CLIENTE ================= */
+      let clienteId = "";
+      let clienteNombre = "";
 
-      if (rol === "operador") {
-        clienteId = cliente_id || "";
-        clienteNombre =
-          clienteAsignado?.nombre_empresa ||
-          clienteAsignado?.nombre ||
-          "";
+      // 👷 OPERADOR / OPERADOR_ADMIN
+      if (isOperador) {
+        clienteId = cliente|| "";
+
+        // 1. intentar desde clienteAsignado
+        clienteNombre = cliente_nombre || clienteAsignado || "";
+
+        // 2. fallback: buscar en selectOptions (MUY IMPORTANTE)
+        if (!clienteNombre && cliente_id && selectOptions.cliente_id?.length) {
+          const match = selectOptions.cliente_id.find(c =>
+            String(c.id) === String(cliente_id)
+          );
+
+          if (match) {
+            clienteNombre = match.nombre_empresa || match.nombre;
+          }
+        }
       }
 
-      if (rol === "admin") {
+      // 👑 ADMIN
+      if (isAdmin) {
         const valor = String(row.cliente_id || "").toLowerCase().trim();
 
-        const match = selectOptions.cliente_id?.find(c => {
-          const nombre = String(c.nombre_empresa || "").toLowerCase();
-          const rif = String(c.rif || "").toLowerCase();
+        if (valor) {
+          const match = selectOptions.cliente_id?.find(c => {
+            const nombre = String(c.nombre_empresa || "").toLowerCase();
+            const rif = String(c.rif || "").toLowerCase();
 
-          return (
-            nombre.includes(valor) ||
-            rif.includes(valor)
-          );
-        });
+            return nombre.includes(valor) || rif.includes(valor);
+          });
 
-        if (match) {
-          clienteId = match.id;
-          clienteNombre = match.nombre_empresa || match.nombre;
+          if (match) {
+            clienteId = match.id;
+            clienteNombre = match.nombre_empresa || match.nombre;
+          }
         }
       }
 
@@ -103,13 +120,32 @@ const ModalImportPreviewProducts = ({
 
     setTableData(initialized);
     setCurrentPage(1);
+
   }, [isOpen, data, rol, cliente_id, clienteAsignado, selectOptions]);
 
   if (!isOpen) return null;
 
-  const headers = ["sku", "nombre", "descripcion", "precio_base", "iva_categoria"];
-  if (rol === "operador") headers.push("cliente_nombre");
-  if (rol === "admin") headers.push("cliente_id");
+  /* =========================
+     🔹 HEADERS DINÁMICOS
+  ========================== */
+  const headers = [
+    "sku",
+    "nombre",
+    "descripcion",
+    "precio_base",
+    "peso_kg",
+    "volumen_m3",
+    "iva_categoria",
+    "iva_categoria_id",
+  ];
+
+  if (["operador", "operador_admin"].includes(rol)) {
+    headers.push("cliente_nombre");
+  }
+
+  if (rol === "admin") {
+    headers.push("cliente_id");
+  }
 
   const totalPages = Math.ceil(tableData.length / rowsPerPage);
   const startIndex = (currentPage - 1) * rowsPerPage;
@@ -131,18 +167,13 @@ const ModalImportPreviewProducts = ({
     }
 
     else if (field === "cliente_id") {
-      const valor = String(value || "").toLowerCase();
-
-      const match = selectOptions.cliente_id?.find(c => {
-        const nombre = String(c.nombre_empresa || "").toLowerCase();
-        const rif = String(c.rif || "").toLowerCase();
-
-        return nombre.includes(valor) || rif.includes(valor);
-      });
+      const match = selectOptions.cliente_id?.find(
+        c => String(c.id) === String(value)
+      );
 
       updated[index].cliente_id = match?.id || value;
       updated[index].cliente_nombre =
-        match?.nombre_empresa || match?.nombre || value;
+        match?.nombre_empresa || match?.nombre || "";
     }
 
     else {
@@ -179,14 +210,13 @@ const ModalImportPreviewProducts = ({
 
   const handleConfirm = () => {
     if (!validateData()) return;
-
     onConfirm(tableData);
     toast.success("Datos listos para importar");
     onClose();
   };
 
   /* =========================
-     🔹 UI (ESTILO RESTAURADO)
+     🔹 UI
   ========================== */
   return (
     <div className="fixed inset-0 flex items-center justify-center z-50">
@@ -235,13 +265,15 @@ const ModalImportPreviewProducts = ({
                               handleInputChange(idx, field, e.target.value)
                             }
                           >
+                            <option value="">Seleccione</option>
                             {selectOptions.iva_categoria?.map(opt => (
                               <option key={opt.id} value={opt.id}>
                                 {opt.nombre} ({opt.tasa_porcentaje}%)
                               </option>
                             ))}
                           </select>
-                        ) : field === "cliente_id" ? (
+
+                        ) : field === "cliente_id" && rol === "admin" ? (
                           <select
                             className="w-full border rounded px-2 py-1"
                             value={row.cliente_id || ""}
@@ -249,15 +281,19 @@ const ModalImportPreviewProducts = ({
                               handleInputChange(idx, field, e.target.value)
                             }
                           >
-                            <option value="">Seleccione</option>
+                            <option value="">Seleccione cliente</option>
                             {selectOptions.cliente_id?.map(c => (
                               <option key={c.id} value={c.id}>
                                 {c.nombre_empresa} ({c.rif})
                               </option>
                             ))}
                           </select>
+
                         ) : field === "cliente_nombre" ? (
-                          <div>{row.cliente_nombre}</div>
+                          <div className="text-gray-700">
+                            {row.cliente_nombre}
+                          </div>
+
                         ) : (
                           <input
                             className="w-full border rounded px-2 py-1"
@@ -269,8 +305,14 @@ const ModalImportPreviewProducts = ({
                         )}
                       </td>
                     ))}
+
                     <td className="border text-center">
-                      <button onClick={() => handleDeleteRow(idx)} className="text-red-500">✕</button>
+                      <button
+                        onClick={() => handleDeleteRow(idx)}
+                        className="text-red-500"
+                      >
+                        ✕
+                      </button>
                     </td>
                   </tr>
                 );

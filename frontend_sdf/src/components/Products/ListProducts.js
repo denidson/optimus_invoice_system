@@ -23,9 +23,9 @@ import JSZip from "jszip";
 import pdfMake from "pdfmake/build/pdfmake";
 import pdfFonts from "pdfmake/build/vfs_fonts";
 import * as XLSX from "xlsx";
-const { read, utils } = XLSX;3
+const { read, utils } = XLSX;
 import Papa from 'papaparse';
-import { formatDecimal, formatDate, formatDateTime, formatText, formatDecimalSpecial } from "../../utils/formatters";
+import { formatDecimal, formatText, formatDecimalSpecial } from "../../utils/formatters";
 import { generateExcelDemo } from "../../utils/excelDemoGenerator";
 
 window.JSZip = JSZip;
@@ -51,6 +51,8 @@ function ListProducts() {
         nombre: "Producto Demo",
         descripcion: "Descripción de ejemplo",
         precio_base: 100,
+        peso_kg: 1.5,
+        volumen_m3: 0.02,
         iva_categoria: 16,
         cliente_id: "J-12345678-9"
       },
@@ -59,6 +61,8 @@ function ListProducts() {
         nombre: "Servicio Demo",
         descripcion: "Servicio de prueba",
         precio_base: 50,
+        peso_kg: 0.5,
+        volumen_m3: 0.01,
         iva_categoria: 8,
         cliente_id: "Empresa Demo"
       }
@@ -76,17 +80,16 @@ function ListProducts() {
       "  • RIF (ej: J-12345678-9)",
       "  • Nombre (ej: Empresa ABC)",
       "",
+      "PESO Y VOLUMEN:",
+      "- peso_kg: obligatorio",
+      "- volumen_m3: obligatorio",
+      "",
       "El sistema intentará encontrar coincidencias automáticamente."
     ];
 
-    generateExcelDemo(
-      demoData,
-      "Demo Productos",
-      "Demo_Importacion_Productos.xlsx",
-      notes
-    );
+    generateExcelDemo(demoData, "Demo Productos", "Demo_Importacion_Productos.xlsx", notes);
   };
-  
+
   useEffect(() => {
     const fetchCliente = async () => {
       if (rol === "operador" && cliente_id) {
@@ -201,46 +204,80 @@ function ListProducts() {
     e.target.value = "";
   };
 
+  const mapProductToApi = (product, ivaList, clientList) => {
+    let clienteFinal = product.cliente_id;
+
+    // Buscar cliente por RIF o nombre
+    if (typeof clienteFinal === "string") {
+      const match = clientList.find(c => {
+        const rif = String(c.rif || "").toLowerCase();
+        const nombre = String(c.nombre_empresa || c.nombre || "").toLowerCase();
+        return rif === clienteFinal.toLowerCase().trim() || nombre === clienteFinal.toLowerCase().trim();
+      });
+      clienteFinal = match?.id || clienteFinal;
+    }
+
+    // Buscar IVA por tasa
+    const ivaId = ivaList.find(i => 
+      Number(i.tasa_porcentaje) === Number(product.iva_categoria)
+    )?.id || null;
+    
+    return {
+      nombre: product.nombre,
+      sku: product.sku,
+      precio_base: Number(product.precio_base) || 0,
+      descripcion: product.descripcion || "",
+      iva_categoria_id: ivaId,
+      aplica_iva: true,
+      peso_kg: Number(product.peso_kg) || 0,
+      volumen_m3: Number(product.volumen_m3) || 0,
+      cliente_id: clienteFinal
+    };
+  };
+
   const handleConfirmImport = async (cleanedData) => {
     try {
       const ivaList = await getTaxCategories();
       const clientList = rol === "admin" ? await getClients() : clienteAsignado ? [clienteAsignado] : [];
+      
+      const results = await Promise.allSettled(
+        cleanedData.map((product, index) => {
+          // Asignar cliente si operador
+          if (!product.cliente_id && rol === "operador" && clienteAsignado) {
+            product.cliente_id = clienteAsignado.id;
+          }
+          const body = mapProductToApi(product, ivaList, clientList);
+          return createProduct(body);
+        })
+      );
 
-      for (let product of cleanedData) {
-        const ivaCategoria = product.iva_categoria
-          ? ivaList.find(
-              i => i.nombre.toLowerCase() === String(product.iva_categoria).toLowerCase() ||
-              i.tasa_porcentaje === Number(product.iva_categoria)
-            )
-          : null;
+      const success = results.filter(r => r.status === "fulfilled");
+      const failed = results
+        .map((r, i) => ({ ...r, index: i }))
+        .filter(r => r.status === "rejected");
 
-        let clienteFinal = product.cliente_id;
-        if (!clienteFinal && rol === "operador" && clienteAsignado) clienteFinal = clienteAsignado.id;
-
-        await createProduct({ ...product, iva_categoria_id: ivaCategoria?.id || null, cliente_id: clienteFinal });
+      if (success.length > 0) {
+        toast.success(`Se importaron ${success.length} producto(s) correctamente`);
       }
 
-      const count = cleanedData.length;
-      toast.success(`Se importó ${count} ${count > 1 ? "productos" : "producto"} exitosamente`);
+      if (failed.length > 0) {
+        const errorMsg = failed
+          .map(f => {
+            const err = f.reason;
+            const msg =
+              err?.response?.data?.message ||
+              err?.response?.data?.error ||
+              err?.message ||
+              "Error desconocido";
+            return `Fila ${f.index + 1}: ${msg}`;
+          })
+          .join("\n");
+        toast.error(errorMsg, { autoClose: 5000, style: { whiteSpace: "pre-line" } });
+      }
       await refreshProducts();
     } catch (err) {
-        console.error("Error al importar productos:", err);
-        let backendMsg =
-          err?.response?.data?.message ||
-          err?.response?.data?.error ||
-          err?.message ||
-          "Error desconocido al importar productos";
-
-        if (Array.isArray(err?.response?.data)) {
-          backendMsg = err.response.data
-            .map((e, i) => `Fila ${i + 1}: ${e.message || e.error || JSON.stringify(e)}`)
-            .join("\n");
-        }
-
-        toast.error(backendMsg, {
-          autoClose: 3000,
-          style: { whiteSpace: "pre-line" },
-        });
+      console.error("Error general en importación:", err);
+      toast.error("Error general al importar productos");
     }
   };
 
@@ -298,36 +335,14 @@ function ListProducts() {
                 id="ListProductDt"
                 className="table-auto w-full text-left items-center bg-transparent border-collapse"
                 columns={[
-                  { title: "SKU", data: "sku", className: "dt-center", render: (data, type, row) => {
-                      return formatText(data);
-                    }
-                  },
+                  { title: "SKU", data: "sku", className: "dt-center", render: (data) => formatText(data) },
                   { title: "Nombre", data: "nombre" },
                   { title: "Descripción", data: "descripcion" },
-                  { title: "IVA (%)", data: "iva_categoria", className: "dt-center", render: (data, type, row) => {
-                      return data ? formatDecimal(data.tasa_porcentaje) : '';
-                    }
-                  },
-                  { title: "Precio Base (Bs.)", data: "precio_base", render: (data, type, row) => {
-                      return formatDecimal(data);
-                    }
-                  },
-                  { title: "Peso (Kg)", data: "peso_kg", render: (data, type, row) => {
-                      return formatDecimalSpecial(data, 3);
-                    }
-                  },
-                  { title: "Volumen (M³)", data: "volumen_m3", render: (data, type, row) => {
-                      return formatDecimalSpecial(data, 4);
-                    }
-                  },
-                  { title: "Condición", data: "activo", className: "dt-center", render: (data, type, row) => {
-                      if (!data){
-                        return '<i class="fas fa-circle text-red-500 mr-2"></i> ' + formatText('Inactivo');
-                      }else{
-                        return '<i class="fas fa-circle text-emerald-500 mr-2"></i> ' + formatText('Activo');
-                      }
-                    }
-                  },
+                  { title: "IVA (%)", data: "iva_categoria", className: "dt-center", render: (data) => data ? formatDecimal(data.tasa_porcentaje) : '' },
+                  { title: "Precio Base (Bs.)", data: "precio_base", render: (data) => formatDecimal(data) },
+                  { title: "Peso (Kg)", data: "peso_kg", render: (data) => formatDecimalSpecial(data, 3) },
+                  { title: "Volumen (M³)", data: "volumen_m3", render: (data) => formatDecimalSpecial(data, 4) },
+                  { title: "Condición", data: "activo", className: "dt-center", render: (data) => data ? '<i class="fas fa-circle text-emerald-500 mr-2"></i> Activo' : '<i class="fas fa-circle text-red-500 mr-2"></i> Inactivo' },
                   {
                     title: "Acciones",
                     data: "activo",
@@ -345,120 +360,19 @@ function ListProducts() {
                   }
                 ]}
                 options={{
-                  columnDefs:[{
-                    targets: [5, 6], // índices de columnas a ocultar (ej: RIF, Zona)
-                    visible: false,
-                    searchable: true // siguen siendo buscables
-                  }],
-                  dom: //B = Buttons, l = LengthMenu (mostrar X registros), f = Filtro (search), t = Tabla, i = Info (mostrando de X a Y de Z), p = Paginación
-                    "<'row'<'col-sm-12 text-start'B>>" +                // Fila 2: botones ocupando todo el ancho
-                    "<'row'<'col-sm-6 text-end'l><'col-sm-6'f>>" +    // Fila 1: lengthMenu izquierda, filtro derecha
-                    "<'row'<'col-sm-12'tr>>" +               // Fila 3: tabla
-                    "<'row'<'col-sm-5 text-start'i><'col-sm-7 text-end'p>>",     // Fila 4: info izquierda, paginación derecha
                   serverSide: false,
                   processing: true,
                   ajax: async (dataTablesParams, callback) => {
-                    try {
-                      const response = await getProducts();
-                      callback({
-                        draw: dataTablesParams.draw,
-                        recordsTotal: response.length,
-                        recordsFiltered: response.length,
-                        data: response
-                      });
-                    } catch (err) { console.error(err); }
+                    const response = await getProducts();
+                    callback({ draw: dataTablesParams.draw, recordsTotal: response.length, recordsFiltered: response.length, data: response });
                   },
-                  createdRow: function (row) {
-                    // Reducir tamaño de fuente y forzar nowrap en todas las celdas
-                    $(row).find("td").css({
-                      "font-size": "0.85rem",
-                      "white-space": "nowrap",
-                      "overflow": "hidden",
-                      "text-overflow": "ellipsis"
-                    });
-                  },
-                  headerCallback: function(thead) {
-                    $(thead).find("th").css({
-                      "font-size": "0.85rem", 
-                      "text-align": "center",
-                      "font-weight": "bold"
-                    });
-                  },
+                  dom: "<'row'<'col-sm-12 text-start'B>><'row'<'col-sm-6 text-end'l><'col-sm-6'f>><'row'<'col-sm-12'tr>><'row'<'col-sm-5 text-start'i><'col-sm-7 text-end'p>>",
                   paging: true,
                   searching: true,
                   ordering: true,
                   info: true,
                   responsive: true,
-                  pageLength: 20,         // cantidad inicial por página
-                  lengthMenu: [20, 50, 100], // opciones en el desplegable, false para oculta el selector
-                  buttons: [
-                    {
-                      extend: "collection",
-                      text: "Exportar",
-                      className: "bg-slate-700 hover:bg-slate-600 text-white font-bold py-2 px-4 rounded",
-                      buttons: [
-                        {
-                          extend: "copyHtml5",
-                          text: "Copiar",
-                          title: "Lista de productos"   // nombre del documento en el portapapeles
-                        },
-                        {
-                          extend: "excelHtml5",
-                          text: "Excel",
-                          title: "Lista de productos",  // título dentro del archivo
-                          filename: "Lista_productos",   // nombre del archivo generado (sin extensión)
-                          exportOptions: {
-                            columns: ':not(.no-export)'
-                          }
-                        },
-                        {
-                          extend: "csvHtml5",
-                          text: "CSV",
-                          title: "Lista de productos",
-                          filename: "Lista_productos",
-                          exportOptions: {
-                            columns: ':not(.no-export)'
-                          }
-                        },
-                        {
-                          extend: "pdfHtml5",
-                          text: "PDF",
-                          title: "Lista de productos",
-                          filename: "Lista_productos",
-                          exportOptions: {
-                            columns: ':not(.no-export)'
-                          },
-                          orientation: "landscape",
-                          //orientation: "landscape",   // opcional
-                          //pageSize: "A4"              // opcional
-                        },
-                        {
-                          extend: "print",
-                          text: "Imprimir",
-                          title: "Lista de productos",
-                          exportOptions: {
-                            columns: ':not(.no-export)'
-                          }
-                        },
-                      ]
-                    }
-                  ],
-                  language: {
-                    decimal: ",",
-                    thousands: ".",
-                    lengthMenu: "Mostrar _MENU_ registros por página",
-                    zeroRecords: "No se encontraron resultados",
-                    info: "Mostrando de _START_ a _END_ de _TOTAL_ registros",
-                    infoEmpty: "No hay registros disponibles",
-                    infoFiltered: "(filtrado de _MAX_ registros totales)",
-                    search: "Buscar:",
-                    paginate: {
-                      first: "Primero",
-                      last: "Último",
-                      next: "Siguiente",
-                      previous: "Anterior"
-                    }
-                  },
+                  pageLength: 20
                 }}
               />
 
@@ -496,7 +410,10 @@ function ListProducts() {
                   sku: v => ({ valid: !!v, message:"Debe ingresar un SKU" }),
                   precio_base: v => ({ valid: !isNaN(v) && v !== "", message:"Precio Base inválido" }),
                   iva_categoria: v => ({ valid: !!v, message:"Debe seleccionar una categoría de IVA" }),
-                  cliente_id: v => ({ valid: !!v, message:"Debe seleccionar un cliente" })
+                  cliente_id: v => ({ valid: !!v, message:"Debe seleccionar un cliente" }),
+                  descripcion: v => ({ valid: !!v, message:"Debe ingresar descripción" }),
+                  peso_kg: v => ({ valid: !isNaN(v) && v !== "", message:"Peso inválido" }),
+                  volumen_m3: v => ({ valid: !isNaN(v) && v !== "", message:"Volumen inválido" })
                 }}
               />
             </div>
