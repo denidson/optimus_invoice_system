@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { toast } from "react-toastify";
 import ModalPreInvoiceItems from "./ModalPreInvoiceItems";
 import { searchEndClient } from "../../services/api_end_clients";
@@ -13,213 +13,111 @@ const ModalImportPreviewPreInvoice = ({
   const [tableData, setTableData] = useState([]);
   const [selectedPrefIndex, setSelectedPrefIndex] = useState(null);
 
-  const authData = localStorage.getItem("authData");
-  const authClientId = authData ? JSON.parse(authData)?.cliente_id : null;
+  // =========================
+  // AUTH (OPTIMIZADO)
+  // =========================
+  const authClientId = useMemo(() => {
+    const authData = localStorage.getItem("authData");
+    return authData ? JSON.parse(authData)?.cliente_id : null;
+  }, []);
 
-  // =====================================================
-  // Procesar entradas del Excel
-  // =====================================================
+  // =========================
+  // IGTF CALC
+  // =========================
+  const calcIGTF = (monto, porcentaje) =>
+    parseFloat(((monto * porcentaje) / 100).toFixed(2));
+
+  // =========================
+  // CLIENTE SEARCH
+  // =========================
+  const findClientByRif = useCallback(async (rif) => {
+    if (!rif) return null;
+    try {
+      const res = await searchEndClient(rif.toUpperCase());
+      return res || null;
+    } catch (e) {
+      console.error("Error buscando cliente:", e);
+      return null;
+    }
+  }, []);
+
+  // =========================
+  // PROCESAR EXCEL
+  // =========================
   useEffect(() => {
     if (!isOpen || !data.length) return;
 
     const process = async () => {
-      const processedData = [];
+      const processedData = await Promise.all(
+        data.map(async (d) => {
+          const p = d.prefactura || {};
 
-      for (const d of data) {
-        const p = d.prefactura || {};
+          let pref = {
+            id: p.id || null,
+            correlativo_interno: p.correlativo_interno || "",
+            cliente_final_id: p.cliente_final_id || null,
+            cliente_final_nombre: p.cliente_final_nombre || "",
+            cliente_final_rif: p.cliente_final_rif || "",
+            cliente_final_telefono: p.cliente_final_telefono || "",
+            cliente_final_email: p.cliente_final_email || "",
+            cliente_final_direccion: p.cliente_final_direccion || "",
+            cliente_id: authClientId,
+            zona: p.zona || p.direccion || "",
+            aplica_igtf:
+              p.aplica_igtf === "Si" ||
+              p.aplica_igtf === "SI" ||
+              p.aplica_igtf === true,
+            fecha_factura: p.fecha_factura || "",
+            tipo_documento: p.tipo_documento || "FC",
+            serial: p.serial || "",
+            monto_pagado_divisas: Number(p.monto_pagado_divisas) || 0,
+            igtf_porcentaje: Number(p.igtf_porcentaje) || 0,
+            igtf_monto: Number(p.igtf_monto) || 0,
+            items: d.items || [],
+          };
 
-        // Datos base desde Excel
-        let pref = {
-          id: p.id || null,
-          correlativo_interno: p.correlativo_interno || "",
-          cliente_final_id: p.cliente_final_id || null,
-          cliente_final_nombre: p.cliente_final_nombre || "",
-          cliente_final_rif: p.cliente_final_rif || "",
-          cliente_final_telefono: p.cliente_final_telefono || "",
-          cliente_final_email: p.cliente_final_email || "",
-          cliente_final_direccion: p.cliente_final_direccion || "",
-          cliente_id: authClientId,
-          zona: p.zona || p.direccion || "",
-          aplica_igtf:
-            p.aplica_igtf === "Si" ||
-            p.aplica_igtf === "SI" ||
-            p.aplica_igtf === true,
-          fecha_factura: p.fecha_factura || "",
-          tipo_documento: p.tipo_documento || "FC",
-          serial: p.serial || "",
-          monto_pagado_divisas: Number(p.monto_pagado_divisas) || 0,
-          igtf_porcentaje: Number(p.igtf_porcentaje) || 0,
-          igtf_monto: Number(p.igtf_monto) || 0,
-          items: d.items || [],
-        };
+          if (pref.cliente_final_rif) {
+            const apiClient = await findClientByRif(pref.cliente_final_rif);
 
-        // Buscar cliente por RIF — solo si existe un RIF en los datos
-        if (pref.cliente_final_rif) {
-          const apiClient = await findClientByRif(pref.cliente_final_rif);
-
-          if (apiClient) {
-            pref = {
-              ...pref,
-              cliente_final_id: apiClient.id,
-              // Solo completar los campos que el Excel NO trae
-              cliente_final_nombre:
-                pref.cliente_final_nombre || apiClient.nombre,
-              cliente_final_telefono:
-                pref.cliente_final_telefono || apiClient.telefono,
-              cliente_final_email:
-                pref.cliente_final_email || apiClient.email,
-              cliente_final_direccion:
-                pref.cliente_final_direccion || apiClient.direccion,
-              zona: pref.zona || apiClient.zona,
-            };
+            if (apiClient) {
+              pref = {
+                ...pref,
+                cliente_final_id: apiClient.id,
+                cliente_final_nombre: pref.cliente_final_nombre || apiClient.nombre,
+                cliente_final_telefono: pref.cliente_final_telefono || apiClient.telefono,
+                cliente_final_email: pref.cliente_final_email || apiClient.email,
+                cliente_final_direccion: pref.cliente_final_direccion || apiClient.direccion,
+                zona: pref.zona || apiClient.zona,
+              };
+            }
           }
-        }
 
-        processedData.push(pref);
-      }
+          return pref;
+        })
+      );
 
       setTableData(processedData);
       setSelectedPrefIndex(null);
     };
 
     process();
-  }, [isOpen, data, authClientId]);
-
+  }, [isOpen, data, authClientId, findClientByRif]);
 
   if (!isOpen) return null;
 
-  // =====================================================
-  // FUNCIONES DE EDICIÓN
-  // =====================================================
-  const handleDeletePreInvoice = (index) => {
-    const updated = [...tableData];
-    updated.splice(index, 1);
-    setTableData(updated);
-    toast.info("Prefactura/factura eliminada");
-  };
-
-  const handlePrefacturaChange = (index, field, value) => {
-    const updated = [...tableData];
-    updated[index][field] = value;
-    setTableData(updated);
-  };
-
-  const handleItemChangeFromModal = (items) => {
-    if (selectedPrefIndex === null) return;
-    const updated = [...tableData];
-    updated[selectedPrefIndex].items = items;
-    setTableData(updated);
-  };
-  
-  // =====================================================
-  // Buscar cliente por RIF
-  // =====================================================
-  const findClientByRif = async (rif) => {
-    if (!rif) return null;
-    try {
-      const cleanRif = rif.toUpperCase();
-      const res = await searchEndClient(cleanRif);
-      return res || null;
-    } catch (e) {
-      console.error("Error buscando cliente:", e);
-      return null;
-    }
-  };
-
-  // =====================================================
-  // Manejo seguro de inputs numéricos + cálculo IGTF
-  // =====================================================
-  const handlePrefacturaNumericChange = (index, field, rawValue) => {
-    const value = parseFloat(rawValue) || 0;
-
-    // Evita error si el índice no existe
-    setTableData((prev) => {
-      const updated = [...prev];
-      if (!updated[index]) return prev;
-
-      updated[index][field] = value;
-
-      // Recalcular IGTF si aplica
-      if (updated[index].aplica_igtf) {
-        const monto = parseFloat(updated[index].monto_pagado_divisas) || 0;
-        const porcentaje = parseFloat(updated[index].igtf_porcentaje) || 0;
-        updated[index].igtf_monto = parseFloat(((monto * porcentaje) / 100).toFixed(2));
-      }
-
-      return updated;
-    });
-  };
-
-
-  // =====================================================
-  // Función para fusionar datos Excel vs API (OPCIÓN B)
-  // =====================================================
-  const mergeClientData = (prefData, apiData) => {
-    if (!apiData) return prefData;
-
-    return {
-      ...prefData,
-      cliente_final_id: apiData.id,
-
-      cliente_final_nombre: prefData.cliente_final_nombre || apiData.nombre,
-      cliente_final_telefono: prefData.cliente_final_telefono || apiData.telefono,
-      cliente_final_email: prefData.cliente_final_email || apiData.email,
-      cliente_final_direccion: prefData.cliente_final_direccion || apiData.direccion,
-      zona: prefData.zona || apiData.zona,
-    };
-  };
-
-  // =====================================================
-  // Confirmar importación
-  // =====================================================
-  const handleConfirm = async () => {
-    if (!validateData()) return;
-
-    const updated = [...tableData];
-
-    for (let i = 0; i < updated.length; i++) {
-      const pref = updated[i];
-
-      // Buscar cliente por RIF
-      const apiClient = await findClientByRif(pref.cliente_final_rif);
-
-      if (apiClient) {
-        updated[i] = mergeClientData(pref, apiClient);
-      } else {
-        updated[i].cliente_final_id = null;
-      }
-
-      updated[i].cliente_id = authClientId;
-
-      // IGTF
-      if (!updated[i].aplica_igtf) {
-        updated[i].monto_pagado_divisas = 0;
-        updated[i].igtf_porcentaje = 0;
-        updated[i].igtf_monto = 0;
-      } else {
-        updated[i].igtf_monto = parseFloat(
-          ((updated[i].monto_pagado_divisas * updated[i].igtf_porcentaje) / 100).toFixed(2)
-        );
-      }
-    }
-
-    console.log("Final pre-invoices to import:", updated);
-
-    onConfirm(updated);
-    toast.success("Prefacturas/Facturas listas para importar");
-    onClose();
-  };
-
-  // =====================================================
-  // Validación
-  // =====================================================
+  // =========================
+  // VALIDACIÓN (FIX CRÍTICO)
+  // =========================
   const validateData = () => {
     let valid = true;
+
     tableData.forEach((pref, i) => {
       for (const field in validationRules) {
         const rule = validationRules[field];
         const value = field === "items" ? pref.items : pref[field];
+
         const { valid: fieldValid, message } = rule(value);
+
         if (!fieldValid) {
           toast.error(`Prefactura ${i + 1}: ${message}`);
           valid = false;
@@ -227,26 +125,126 @@ const ModalImportPreviewPreInvoice = ({
         }
       }
     });
+
     return valid;
   };
 
-  // =====================================================
-  // Render
-  // =====================================================
+  // =========================
+  // DELETE
+  // =========================
+  const handleDeletePreInvoice = (index) => {
+    setTableData((prev) => prev.filter((_, i) => i !== index));
+    toast.info("Prefactura/factura eliminada");
+  };
+
+  // =========================
+  // UPDATE FIELD
+  // =========================
+  const handlePrefacturaChange = (index, field, value) => {
+    setTableData((prev) => {
+      const updated = [...prev];
+      updated[index][field] = value;
+      return updated;
+    });
+  };
+
+  const handleItemChangeFromModal = (items) => {
+    if (selectedPrefIndex === null) return;
+
+    setTableData((prev) => {
+      const updated = [...prev];
+      updated[selectedPrefIndex].items = items;
+      return updated;
+    });
+  };
+
+  // =========================
+  // NUMERIC IGTF SAFE
+  // =========================
+  const handlePrefacturaNumericChange = (index, field, rawValue) => {
+    const value = parseFloat(rawValue) || 0;
+
+    setTableData((prev) => {
+      const updated = [...prev];
+      if (!updated[index]) return prev;
+
+      updated[index][field] = value;
+
+      if (updated[index].aplica_igtf) {
+        updated[index].igtf_monto = calcIGTF(
+          updated[index].monto_pagado_divisas,
+          updated[index].igtf_porcentaje
+        );
+      }
+
+      return updated;
+    });
+  };
+
+  // =========================
+  // CONFIRM
+  // =========================
+  const handleConfirm = async () => {
+    if (!validateData()) return;
+
+    const updated = await Promise.all(
+      tableData.map(async (pref) => {
+        const apiClient = await findClientByRif(pref.cliente_final_rif);
+
+        const merged = apiClient
+          ? {
+              ...pref,
+              cliente_final_id: apiClient.id,
+              cliente_final_nombre: pref.cliente_final_nombre || apiClient.nombre,
+              cliente_final_telefono: pref.cliente_final_telefono || apiClient.telefono,
+              cliente_final_email: pref.cliente_final_email || apiClient.email,
+              cliente_final_direccion: pref.cliente_final_direccion || apiClient.direccion,
+              zona: pref.zona || apiClient.zona,
+            }
+          : { ...pref, cliente_final_id: null };
+
+        merged.cliente_id = authClientId;
+
+        if (!merged.aplica_igtf) {
+          merged.monto_pagado_divisas = 0;
+          merged.igtf_porcentaje = 0;
+          merged.igtf_monto = 0;
+        } else {
+          merged.igtf_monto = calcIGTF(
+            merged.monto_pagado_divisas,
+            merged.igtf_porcentaje
+          );
+        }
+
+        return merged;
+      })
+    );
+
+    onConfirm(updated);
+    toast.success("Prefacturas/Facturas listas para importar");
+    onClose();
+  };
+
+  // =========================
+  // RENDER (SIN CAMBIOS VISUALES)
+  // =========================
   return (
     <>
       {/* === Modal Principal === */}
       <div className="fixed inset-0 flex items-center justify-center z-50">
         <div className="absolute inset-0 bg-black bg-opacity-50" onClick={onClose}></div>
+
         <div className="relative bg-white rounded-2xl shadow-2xl w-[95%] max-h-[90vh] overflow-auto">
 
-          {/* Header */}
           <div className="flex justify-between items-center px-6 py-4 border-b">
-            <h2 className="text-lg font-bold text-gray-800">Previsualización de Prefacturas</h2>
-            <button onClick={onClose} className="text-gray-500 hover:text-gray-800 text-xl font-bold">×</button>
+            <h2 className="text-lg font-bold text-gray-800">
+              Previsualización de Prefacturas
+            </h2>
+            <button onClick={onClose} className="text-gray-500 hover:text-gray-800 text-xl font-bold">
+              ×
+            </button>
           </div>
 
-          {/* Tabla */}
           <div className="overflow-x-auto overflow-y-auto max-h-[60vh] px-6 py-4">
             <table className="min-w-full border border-gray-300 text-sm">
               <thead className="bg-gray-100 sticky top-0">
@@ -272,8 +270,6 @@ const ModalImportPreviewPreInvoice = ({
               <tbody>
                 {tableData.map((pref, idx) => (
                   <tr key={idx} className="hover:bg-gray-50">
-
-                    {/* --- Correlativo */}
                     <td className="border px-2 py-1">
                       <input
                         value={pref.correlativo_interno}
@@ -284,7 +280,6 @@ const ModalImportPreviewPreInvoice = ({
                       />
                     </td>
 
-                    {/* --- Cliente */}
                     <td className="border px-2 py-1">
                       <input
                         value={pref.cliente_final_nombre}
@@ -295,7 +290,6 @@ const ModalImportPreviewPreInvoice = ({
                       />
                     </td>
 
-                    {/* --- RIF */}
                     <td className="border px-2 py-1">
                       <input
                         value={pref.cliente_final_rif}
@@ -305,7 +299,7 @@ const ModalImportPreviewPreInvoice = ({
                         className="w-full border rounded px-1 py-0.5"
                       />
                     </td>
-                    {/* --- Telefono */}
+
                     <td className="border px-2 py-1">
                       <input
                         value={pref.cliente_final_telefono}
@@ -315,7 +309,7 @@ const ModalImportPreviewPreInvoice = ({
                         className="w-full border rounded px-1 py-0.5"
                       />
                     </td>
-                    {/* --- Correo electronico */}
+
                     <td className="border px-2 py-1">
                       <input
                         value={pref.cliente_final_email}
@@ -325,7 +319,7 @@ const ModalImportPreviewPreInvoice = ({
                         className="w-full border rounded px-1 py-0.5"
                       />
                     </td>
-                    {/* --- Fecha */}
+
                     <td className="border px-2 py-1">
                       <input
                         type="date"
@@ -337,7 +331,6 @@ const ModalImportPreviewPreInvoice = ({
                       />
                     </td>
 
-                    {/* --- Tipo Doc */}
                     <td className="border px-2 py-1">
                       <select
                         value={pref.tipo_documento}
@@ -347,12 +340,11 @@ const ModalImportPreviewPreInvoice = ({
                         className="w-full border rounded px-1 py-0.5"
                       >
                         <option value="FC">Factura</option>
-                        <option value="NC">Nota de crédito</option>
-                        <option value="ND">Nota de débito</option>
+                        <option value="NC">Nota crédito</option>
+                        <option value="ND">Nota débito</option>
                       </select>
                     </td>
 
-                    {/* --- Serial */}
                     <td className="border px-2 py-1">
                       <input
                         value={pref.serial}
@@ -363,7 +355,6 @@ const ModalImportPreviewPreInvoice = ({
                       />
                     </td>
 
-                    {/* --- Dirección */}
                     <td className="border px-2 py-1">
                       <input
                         value={pref.cliente_final_direccion}
@@ -374,16 +365,16 @@ const ModalImportPreviewPreInvoice = ({
                       />
                     </td>
 
-                    {/* --- Zona */}
                     <td className="border px-2 py-1">
                       <input
                         value={pref.zona}
-                        onChange={(e) => handlePrefacturaChange(idx, "zona", e.target.value)}
+                        onChange={(e) =>
+                          handlePrefacturaChange(idx, "zona", e.target.value)
+                        }
                         className="w-full border rounded px-1 py-0.5"
                       />
                     </td>
 
-                    {/* --- IGTF */}
                     <td className="border px-2 py-1 text-center">
                       <input
                         type="checkbox"
@@ -394,41 +385,30 @@ const ModalImportPreviewPreInvoice = ({
                       />
                     </td>
 
-                    {/* --- Monto pagado en divisas */}
                     <td className="border px-2 py-1">
                       <input
                         type="number"
                         value={pref.monto_pagado_divisas}
                         onChange={(e) =>
-                          handlePrefacturaNumericChange(
-                            idx,
-                            "monto_pagado_divisas",
-                            e.target.value
-                          )
+                          handlePrefacturaNumericChange(idx, "monto_pagado_divisas", e.target.value)
                         }
                         disabled={!pref.aplica_igtf}
                         className="w-full border rounded px-1 py-0.5"
                       />
                     </td>
 
-                    {/* --- IGTF % */}
                     <td className="border px-2 py-1">
                       <input
                         type="number"
                         value={pref.igtf_porcentaje}
                         onChange={(e) =>
-                          handlePrefacturaNumericChange(
-                            idx,
-                            "igtf_porcentaje",
-                            e.target.value
-                          )
+                          handlePrefacturaNumericChange(idx, "igtf_porcentaje", e.target.value)
                         }
                         disabled={!pref.aplica_igtf}
                         className="w-full border rounded px-1 py-0.5"
                       />
                     </td>
 
-                    {/* --- IGTF monto */}
                     <td className="border px-2 py-1">
                       <input
                         type="number"
@@ -438,7 +418,6 @@ const ModalImportPreviewPreInvoice = ({
                       />
                     </td>
 
-                    {/* --- Acciones */}
                     <td className="border px-2 py-1 text-center">
                       <button
                         onClick={() => setSelectedPrefIndex(idx)}
@@ -454,32 +433,23 @@ const ModalImportPreviewPreInvoice = ({
                         <i className="fa-regular fa-rectangle-xmark fa-lg"></i>
                       </button>
                     </td>
-
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
 
-          {/* Botones */}
           <div className="flex justify-end space-x-3 px-6 py-4 border-t">
-            <button
-              onClick={onClose}
-              className="px-4 py-2 bg-gray-300 hover:bg-gray-400 rounded"
-            >
+            <button onClick={onClose} className="px-4 py-2 bg-gray-300 hover:bg-gray-400 rounded">
               Cancelar
             </button>
-            <button
-              onClick={handleConfirm}
-              className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-            >
+            <button onClick={handleConfirm} className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
               Guardar Importación
             </button>
           </div>
         </div>
       </div>
 
-      {/* Modal Items */}
       {selectedPrefIndex !== null && tableData[selectedPrefIndex] && (
         <ModalPreInvoiceItems
           isOpen={true}

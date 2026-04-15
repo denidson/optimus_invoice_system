@@ -25,6 +25,7 @@ import { formatDecimal, formatDate, formatDateTime, formatText } from "../../uti
 import Papa from 'papaparse';
 import { tooltipBtn } from "../../utils/datatableTooltip";
 import { generateInvoicesPDF } from "../../utils/pdf/InvoicesPDF/generateInvoicesPDF";
+import { generateExcelDemo } from "../../utils/excelDemoGenerator";
 
 window.JSZip = JSZip;
 DataTable.use(DT);
@@ -42,6 +43,56 @@ function ListInvoices({ title, type }) {
   const authclientId = authData ? JSON.parse(authData).cliente_id : null;
   const formattedDate = new Date().toISOString().split("T")[0];
   const rol = authData ? JSON.parse(authData)['rol'] : null;
+
+  const downloadExcelDemoInvoices = () => {
+    const demoData = [
+      {
+        correlativo_interno: "PREF-0002",
+        cliente_final_nombre: "Ferretería El Tornillo Feliz",
+        cliente_final_rif: "V-12312312-3",
+        cliente_final_email: "",
+        cliente_final_telefono: "",
+        fecha_factura: "2025-11-20",
+        tipo_documento: type,
+        serial: "S001",
+        cliente_final_direccion: "",
+        zona: "CCS",
+        aplica_igtf: "Si",
+        monto_pagado_divisas: 100,
+        igtf_porcentaje: 3,
+        igtf_monto: "",
+        producto_sku: "CONS-001",
+        cantidad: 4,
+        precio_unitario: 120.5,
+        descuento_porcentaje: 0
+      }
+    ];
+    const notes = [
+      "NOTAS IMPORTANTES:",
+      "",
+      "TIPO DOCUMENTO:",
+      "- FC: Factura",
+      "- NC: Nota de Crédito",
+      "- ND: Nota de Débito",
+      "",
+      "IGTF:",
+      "- aplica_igtf: Si o No",
+      "- igtf_porcentaje: normalmente 3",
+      "",
+      "FECHA:",
+      "- Formato: YYYY-MM-DD",
+      "",
+      "AGRUPACIÓN:",
+      "- correlativo_interno agrupa productos en una misma factura"
+    ];
+
+    generateExcelDemo(
+      demoData,
+      `Demo ${type}`,
+      `Demo_Importacion_${type}.xlsx`,
+      notes
+    );
+  };
 
   useEffect(() => {
     const $tableBody = $("#ListInvoicesDt tbody");
@@ -144,6 +195,7 @@ function ListInvoices({ title, type }) {
                 tipo_documento: row.tipo_documento || "FC",
                 fecha_factura: row.fecha_factura || formattedDate,
                 serial: row.serial || "",
+                force_final: true,
               },
               items: [],
             };
@@ -410,8 +462,8 @@ function ListInvoices({ title, type }) {
             <div className="rounded-t bg-white mb-0 px-6 py-6 flex justify-between items-center border-b">
               <h6 className="text-blueGray-700 text-xl font-bold">{title}</h6>
               <div className="flex items-center space-x-3">
-                <div className="flex space-x-2 mb-3">
-                  <h3 class="text-blueGray-700 font-bold me-3 my-3">Buscar por:</h3><br/>
+                <div className="flex items-center flex-wrap gap-2">
+                  <h3 className="text-blueGray-700 font-bold mr-3 whitespace-nowrap">Buscar por:</h3><br/>
                   {/* SELECT PRINCIPAL */}
                   <select id="filter_type" className="border p-2 rounded" value={filterType} onChange={(e) => setFilterType(e.target.value)}>
                     <option value=""> - </option>
@@ -447,6 +499,22 @@ function ListInvoices({ title, type }) {
                     Importar Excel/CSV
                     <input type="file" accept=".csv,.xlsx,.xls" className="hidden" onChange={handleFileUpload} />
                   </label>
+                  {/* BOTÓN DESCARGAR DEMO */}
+                  <div className="relative group inline-block">
+                    <button
+                      onClick={downloadExcelDemoInvoices}
+                      className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded flex items-center gap-2"
+                    >
+                      <i className="fas fa-download"></i>
+                    </button>
+
+                    <span className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2
+                      px-2 py-1 text-xs text-white bg-gray-800 rounded
+                      opacity-0 group-hover:opacity-100 transition-opacity
+                      whitespace-nowrap pointer-events-none z-50">
+                      Descargar Excel de ejemplo
+                    </span>
+                  </div>
                 </div>
               </div>
             </div>

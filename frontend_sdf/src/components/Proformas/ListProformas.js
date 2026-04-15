@@ -22,12 +22,12 @@ import "datatables.net-buttons-dt/css/buttons.dataTables.css";
 import "datatables.net-buttons/js/buttons.html5";
 import "datatables.net-buttons/js/buttons.print";
 import JSZip from "jszip";
-//import { read, utils } from "xlsx";
 import * as XLSX from "xlsx";
-const { utils } = XLSX;
+const { utils, read } = XLSX;
 import Papa from "papaparse";
 import { formatDecimal, formatDate, formatDateTime, formatText } from "../../utils/formatters";
 import { tooltipBtn } from "../../utils/datatableTooltip";
+import { generateExcelDemo } from "../../utils/excelDemoGenerator";
 
 window.JSZip = JSZip;
 DataTable.use(DT);
@@ -50,6 +50,57 @@ function ListProformas() {
   if (authData) {
     authclientId = JSON.parse(authData)['cliente_id'];
   }
+
+  const downloadExcelDemoPreInvoices = () => {
+    const demoData = [
+      {
+        correlativo_interno: "PREF-0002",
+        cliente_final_nombre: "Ferretería El Tornillo Feliz",
+        cliente_final_rif: "V-12312312-3",
+        cliente_final_email: "",
+        cliente_final_telefono: "",
+        fecha_factura: "2025-11-20",
+        tipo_documento: "FC",
+        serial: "S001",
+        cliente_final_direccion: "",
+        zona: "CCS",
+        aplica_igtf: "Si",
+        monto_pagado_divisas: 100,
+        igtf_porcentaje: 3,
+        igtf_monto: "",
+        producto_sku: "CONS-001",
+        cantidad: 4,
+        precio_unitario: 120.5,
+        descuento_porcentaje: 0
+      }
+    ];
+
+    const notes = [
+      "NOTAS IMPORTANTES:",
+      "",
+      "TIPO DOCUMENTO:",
+      "- FC: Factura",
+      "- NC: Nota de Crédito",
+      "- ND: Nota de Débito",
+      "",
+      "IGTF:",
+      "- aplica_igtf: Si o No",
+      "- igtf_porcentaje: normalmente 3",
+      "",
+      "FECHA:",
+      "- Formato: YYYY-MM-DD",
+      "",
+      "AGRUPACIÓN:",
+      "- correlativo_interno agrupa productos en una misma factura"
+    ];
+
+    generateExcelDemo(
+      demoData,
+      "Demo Proformas",
+      "Demo_Importacion_Proformas.xlsx",
+      notes
+    );
+  };
 
   // ----------------------
   // DataTable event listeners
@@ -243,7 +294,9 @@ function ListProformas() {
       reader.onload = (evt) => {
         const workbook = read(evt.target.result, { type: "binary" });
         const sheet = workbook.Sheets[workbook.SheetNames[0]];
-        processData(utils.sheet_to_json(sheet));
+        const jsonData = utils.sheet_to_json(sheet, { defval: "" });
+
+        processData(jsonData);
       };
       reader.readAsBinaryString(file);
     } else {
@@ -303,8 +356,8 @@ function ListProformas() {
               <h6 className="text-blueGray-700 text-xl font-bold">Lista de Proformas</h6>
 
                 <div className="flex items-center space-x-3">
-                  <div className="flex space-x-2 mb-3">
-                    <h3 class="text-blueGray-700 font-bold me-3 my-3">Buscar por:</h3><br/>
+                  <div className="flex items-center flex-wrap gap-2">
+                    <h3 className="text-blueGray-700 font-bold mr-3 whitespace-nowrap">Buscar por:</h3><br/>
                     {/* SELECT PRINCIPAL */}
                     <select id="filter_type" className="border p-2 rounded" value={filterType} onChange={(e) => setFilterType(e.target.value)}>
                       <option value=""> - </option>
@@ -341,15 +394,34 @@ function ListProformas() {
                       Crear Proformas
                     </button>
                     {rol != "admin" && (
-                      <label className="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded cursor-pointer">
-                        Importar Excel/CSV
-                        <input
-                          type="file"
-                          accept=".csv,.xlsx,.xls"
-                          className="hidden"
-                          onChange={handleFileUpload}
-                        />
-                      </label>
+                      <>
+                        <label className="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded cursor-pointer">
+                          Importar Excel/CSV
+                          <input
+                            type="file"
+                            accept=".csv,.xlsx,.xls"
+                            className="hidden"
+                            onChange={handleFileUpload}
+                          />
+                        </label>
+
+                        {/* BOTÓN DESCARGAR DEMO */}
+                        <div className="relative group inline-block">
+                          <button
+                            onClick={downloadExcelDemoPreInvoices}
+                            className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded flex items-center gap-2"
+                          >
+                            <i className="fas fa-download"></i>
+                          </button>
+
+                          <span className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2
+                            px-2 py-1 text-xs text-white bg-gray-800 rounded
+                            opacity-0 group-hover:opacity-100 transition-opacity
+                            whitespace-nowrap pointer-events-none z-50">
+                            Descargar Excel de ejemplo
+                          </span>
+                        </div>
+                      </>
                     )}
                   </div>
                 </div>

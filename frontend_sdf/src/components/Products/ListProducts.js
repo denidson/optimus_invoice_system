@@ -55,16 +55,6 @@ function ListProducts() {
         volumen_m3: 0.02,
         iva_categoria: 16,
         cliente_id: "J-12345678-9"
-      },
-      {
-        sku: "PROD-002",
-        nombre: "Servicio Demo",
-        descripcion: "Servicio de prueba",
-        precio_base: 50,
-        peso_kg: 0.5,
-        volumen_m3: 0.01,
-        iva_categoria: 8,
-        cliente_id: "Empresa Demo"
       }
     ];
 
@@ -78,8 +68,6 @@ function ListProducts() {
       "CLIENTE:",
       "- Puede ser:",
       "  • RIF (ej: J-12345678-9)",
-      "  • Nombre (ej: Empresa ABC)",
-      "",
       "PESO Y VOLUMEN:",
       "- peso_kg: obligatorio",
       "- volumen_m3: obligatorio",

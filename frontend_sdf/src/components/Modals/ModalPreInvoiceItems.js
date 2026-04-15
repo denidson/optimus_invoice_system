@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import Modal from "react-modal";
 import Select from "react-select";
 import { toast } from "react-toastify";
@@ -18,154 +18,148 @@ export default function ModalPreInvoiceItems({
   const [products, setProducts] = useState([]);
   const [taxCategories, setTaxCategories] = useState([]);
 
-  // ---------------------------------------
-  // 🔹 Normaliza valores vacíos a null
-  // ---------------------------------------
-  const normalize = (val) => {
-    return val === "" || val === undefined ? null : val;
-  };
-
-  // ---------------------------------------
-  // 🔹 Cargar productos
-  // ---------------------------------------
+  // =====================
+  // PRODUCTS
+  // =====================
   useEffect(() => {
-    async function fetchProducts() {
-      try {
-        const res = await getProducts();
-        setProducts(
-          res.map((p) => ({
-            value: p.id,
-            label: `${p.sku} - ${p.nombre}`,
-            sku: p.sku,
-            iva_categoria_id: normalize(p.iva_categoria_id),
-            precio_base: parseFloat(p.precio_base) || 0,
-          }))
-        );
-      } catch (err) {
-        console.error(err);
-      }
-    }
-    fetchProducts();
-  }, []);
-
-  // ---------------------------------------
-  // 🔹 Cargar categorías IVA
-  // ---------------------------------------
-  useEffect(() => {
-    async function fetchTaxCategories() {
-      try {
-        const res = await getTaxCategories();
-        setTaxCategories(res);
-      } catch (err) {
-        console.error(err);
-      }
-    }
-    fetchTaxCategories();
-  }, []);
-
-  // ---------------------------------------
-  // 🔹 Cargar items del Excel al abrir modal
-  // ---------------------------------------
-  useEffect(() => {
-    if (preInvoice?.items) {
-      setItems(
-        preInvoice.items.map((i) => ({
-          ...i,
-          iva_categoria_id: normalize(i.iva_categoria_id),
+    const fetch = async () => {
+      const res = await getProducts();
+      setProducts(
+        res.map((p) => ({
+          value: p.id,
+          label: `${p.sku} - ${p.nombre}`,
+          sku: p.sku,
+          iva_categoria_id: p.iva_categoria_id || null,
+          precio_base: parseFloat(p.precio_base) || 0,
         }))
       );
-    }
+    };
+
+    fetch();
+  }, []);
+
+  // =====================
+  // TAX
+  // =====================
+  useEffect(() => {
+    const fetch = async () => {
+      const res = await getTaxCategories();
+      setTaxCategories(res);
+    };
+
+    fetch();
+  }, []);
+
+  // =====================
+  // LOAD ITEMS
+  // =====================
+  useEffect(() => {
+    if (!preInvoice?.items) return;
+
+    setItems(
+      preInvoice.items.map((i) => ({
+        ...i,
+        iva_categoria_id: i.iva_categoria_id || null,
+      }))
+    );
   }, [preInvoice]);
 
-  // ---------------------------------------
-  // 🔹 Mapear items cuando ya tenemos productos & IVA
-  // ---------------------------------------
+  // =====================
+  // MAP PRODUCTS (OPTIMIZADO)
+  // =====================
   useEffect(() => {
     if (!items.length || !products.length) return;
 
-    const mapped = items.map((item) => {
-      const match = products.find((p) => p.sku === item.producto_sku);
+    setItems((prev) =>
+      prev.map((item) => {
+        const match = products.find((p) => p.sku === item.producto_sku);
 
-      return {
-        ...item,
-        productOption: match || item.productOption || null,
-        producto_id: match?.value || item.producto_id || null,
+        return {
+          ...item,
+          productOption: match || null,
+          producto_id: match?.value || null,
+          iva_categoria_id:
+            match?.iva_categoria_id ||
+            item.iva_categoria_id ||
+            taxCategories?.[0]?.id ||
+            null,
+          precio_unitario: item.precio_unitario || match?.precio_base || 0,
+        };
+      })
+    );
+  }, [products, taxCategories]);
 
-        // 🔹 Regla importante: el IVA del producto siempre manda
-        iva_categoria_id:
-          match?.iva_categoria_id ??
-          normalize(item.iva_categoria_id) ??
-          null,
-
-        precio_unitario: item.precio_unitario || match?.precio_base || 0,
-      };
-    });
-
-    setItems(mapped);
-  }, [products]);
-
-  // ---------------------------------------
-  // 🔹 Cambios en los campos
-  // ---------------------------------------
+  // =====================
+  // CHANGE
+  // =====================
   const handleChange = (idx, field, value) => {
-    const newItems = [...items];
+    setItems((prev) => {
+      const updated = [...prev];
 
-    if (field === "productOption") {
-      newItems[idx].productOption = value;
-      newItems[idx].producto_sku = value?.sku || "";
-      newItems[idx].producto_id = value?.value || null;
-      newItems[idx].precio_unitario = value?.precio_base || 0;
+      if (field === "productOption") {
+        updated[idx].productOption = value;
+        updated[idx].producto_sku = value?.sku || "";
+        updated[idx].producto_id = value?.value || null;
+        updated[idx].precio_unitario = value?.precio_base || 0;
+        updated[idx].iva_categoria_id =
+          value?.iva_categoria_id || taxCategories?.[0]?.id || null;
+      } else {
+        updated[idx][field] = value;
+      }
 
-      // 🔥 Aquí estaba el problema: ahora garantizado
-      newItems[idx].iva_categoria_id = normalize(value?.iva_categoria_id);
-    } else {
-      newItems[idx][field] = value;
-    }
-
-    setItems(newItems);
+      return updated;
+    });
   };
 
-  // ---------------------------------------
-  // 🔹 Agregar item
-  // ---------------------------------------
+  // =====================
+  // ADD
+  // =====================
   const handleAddItem = () => {
-    setItems([
-      ...items,
+    setItems((prev) => [
+      ...prev,
       {
         producto_sku: "",
         producto_id: null,
         cantidad: 1,
         precio_unitario: 0,
         descuento_porcentaje: 0,
-        iva_categoria_id: null,
+        iva_categoria_id: taxCategories?.[0]?.id || null,
         productOption: null,
       },
     ]);
   };
 
-  // ---------------------------------------
-  // 🔹 Eliminar item
-  // ---------------------------------------
+  // =====================
+  // DELETE
+  // =====================
   const handleDeleteItem = (idx) => {
-    const newItems = [...items];
-    newItems.splice(idx, 1);
-    setItems(newItems);
+    setItems((prev) => prev.filter((_, i) => i !== idx));
     toast.info("Item eliminado");
   };
 
-  // ---------------------------------------
-  // 🔹 Validar antes de guardar
-  // ---------------------------------------
+  // =====================
+  // VALIDATION
+  // =====================
   const validateItems = () => {
+    for (const item of items) {
+      if (!item.iva_categoria_id) {
+        toast.error("Hay items sin IVA asignado");
+        return false;
+      }
+    }
+
     if (!validationRules.items) return true;
+
     const { valid, message } = validationRules.items(items);
+
     if (!valid) toast.error(message);
+
     return valid;
   };
 
-  // ---------------------------------------
-  // 🔹 Guardar
-  // ---------------------------------------
+  // =====================
+  // SAVE
+  // =====================
   const handleSave = () => {
     if (!validateItems()) return;
 
@@ -176,7 +170,7 @@ export default function ModalPreInvoiceItems({
       cantidad: item.cantidad,
       precio_unitario: item.precio_unitario,
       aplica_iva: true,
-      iva_categoria_id: normalize(item.iva_categoria_id),
+      iva_categoria_id: item.iva_categoria_id || null,
       activo: true,
       descuento_porcentaje: item.descuento_porcentaje || 0,
     }));
@@ -189,7 +183,6 @@ export default function ModalPreInvoiceItems({
     <Modal
       isOpen={isOpen}
       onRequestClose={onClose}
-      contentLabel="Detalle de Items"
       className="bg-white p-6 rounded-2xl max-w-6xl mx-auto mt-10 shadow-2xl overflow-visible"
       overlayClassName="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-start z-50 overflow-auto"
     >
@@ -206,9 +199,11 @@ export default function ModalPreInvoiceItems({
               <th className="border px-2 py-1 text-right">Precio Unitario</th>
               <th className="border px-2 py-1 text-center">Descuento %</th>
               <th className="border px-2 py-1 text-center">IVA</th>
+              {/* <th className="border px-2 py-1 text-center">IVA ID</th> */}
               <th className="border px-2 py-1 text-center w-16">Acción</th>
             </tr>
           </thead>
+
           <tbody>
             {items.map((item, idx) => {
               const ivaLabel =
@@ -221,13 +216,9 @@ export default function ModalPreInvoiceItems({
                     <Select
                       options={products}
                       value={item.productOption}
-                      onChange={(option) =>
-                        handleChange(idx, "productOption", option)
-                      }
+                      onChange={(opt) => handleChange(idx, "productOption", opt)}
                       menuPortalTarget={document.body}
-                      styles={{
-                        menuPortal: (base) => ({ ...base, zIndex: 9999 }),
-                      }}
+                      styles={{ menuPortal: (base) => ({ ...base, zIndex: 9999 }) }}
                     />
                   </td>
 
@@ -259,23 +250,18 @@ export default function ModalPreInvoiceItems({
                       className="w-full border rounded px-2 py-1 text-center"
                       value={item.descuento_porcentaje || 0}
                       onChange={(e) =>
-                        handleChange(
-                          idx,
-                          "descuento_porcentaje",
-                          Number(e.target.value)
-                        )
+                        handleChange(idx, "descuento_porcentaje", Number(e.target.value))
                       }
                     />
                   </td>
 
-                  <td className="border px-2 py-1 text-center">
-                    <input
-                      type="text"
-                      className="w-full border rounded px-2 py-1 text-center bg-gray-100 cursor-not-allowed"
-                      value={ivaLabel}
-                      readOnly
-                    />
+                  <td className="border px-2 py-1 text-center bg-gray-100">
+                    {ivaLabel}
                   </td>
+
+                  {/* <td className="border px-2 py-1 text-center bg-gray-100">
+                    {item.iva_categoria_id || "N/A"}
+                  </td> */}
 
                   <td className="border px-2 py-1 text-center">
                     <button
