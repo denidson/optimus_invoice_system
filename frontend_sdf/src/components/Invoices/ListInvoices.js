@@ -494,27 +494,35 @@ function ListInvoices({ title, type }) {
                     onClick={actionSearch}>
                     Buscar
                   </button>
-                  
-                  <label className="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded cursor-pointer">
-                    Importar Excel/CSV
-                    <input type="file" accept=".csv,.xlsx,.xls" className="hidden" onChange={handleFileUpload} />
-                  </label>
-                  {/* BOTÓN DESCARGAR DEMO */}
-                  <div className="relative group inline-block">
-                    <button
-                      onClick={downloadExcelDemoInvoices}
-                      className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded flex items-center gap-2"
-                    >
-                      <i className="fas fa-download"></i>
-                    </button>
+                  {type === "FC" && (
+                    <>
+                      <label className="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded cursor-pointer">
+                        Importar Excel/CSV
+                        <input
+                          type="file"
+                          accept=".csv,.xlsx,.xls"
+                          className="hidden"
+                          onChange={handleFileUpload}
+                        />
+                      </label>
 
-                    <span className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2
-                      px-2 py-1 text-xs text-white bg-gray-800 rounded
-                      opacity-0 group-hover:opacity-100 transition-opacity
-                      whitespace-nowrap pointer-events-none z-50">
-                      Descargar Excel de ejemplo
-                    </span>
-                  </div>
+                      <div className="relative group inline-block">
+                        <button
+                          onClick={downloadExcelDemoInvoices}
+                          className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded flex items-center gap-2"
+                        >
+                          <i className="fas fa-download"></i>
+                        </button>
+
+                        <span className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2
+                          px-2 py-1 text-xs text-white bg-gray-800 rounded
+                          opacity-0 group-hover:opacity-100 transition-opacity
+                          whitespace-nowrap pointer-events-none z-50">
+                          Descargar Excel de ejemplo
+                        </span>
+                      </div>
+                    </>
+                  )}
                 </div>
               </div>
             </div>

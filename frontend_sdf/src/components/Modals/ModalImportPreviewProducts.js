@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useContext } from "react";
 import { toast } from "react-toastify";
 import { AuthContext } from "../../context/AuthContext";
+import { validateProduct } from "../../utils/validateProduct";
 
 const ModalImportPreviewProducts = ({
   isOpen,
@@ -10,13 +11,13 @@ const ModalImportPreviewProducts = ({
   rol,
   cliente_id,
   apiSelects = {},
-  validationRules = {},
   clienteAsignado
 }) => {
   const [tableData, setTableData] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [selectOptions, setSelectOptions] = useState({});
   const rowsPerPage = 10;
+
   const { user } = useContext(AuthContext);
   const cliente = user?.cliente_id;
   const cliente_nombre = user?.cliente_nombre;
@@ -53,7 +54,6 @@ const ModalImportPreviewProducts = ({
     const isAdmin = rol === "admin";
 
     const initialized = data.map(row => {
-      /* ================= IVA ================= */
       let ivaNum = 0;
 
       if (row.iva_categoria) {
@@ -67,18 +67,13 @@ const ModalImportPreviewProducts = ({
 
       const ivaId = ivaOpt?.id || null;
 
-      /* ================= CLIENTE ================= */
       let clienteId = "";
       let clienteNombre = "";
 
-      // 👷 OPERADOR / OPERADOR_ADMIN
       if (isOperador) {
-        clienteId = cliente|| "";
-
-        // 1. intentar desde clienteAsignado
+        clienteId = cliente || "";
         clienteNombre = cliente_nombre || clienteAsignado || "";
 
-        // 2. fallback: buscar en selectOptions (MUY IMPORTANTE)
         if (!clienteNombre && cliente_id && selectOptions.cliente_id?.length) {
           const match = selectOptions.cliente_id.find(c =>
             String(c.id) === String(cliente_id)
@@ -90,7 +85,6 @@ const ModalImportPreviewProducts = ({
         }
       }
 
-      // 👑 ADMIN
       if (isAdmin) {
         const valor = String(row.cliente_id || "").toLowerCase().trim();
 
@@ -126,7 +120,7 @@ const ModalImportPreviewProducts = ({
   if (!isOpen) return null;
 
   /* =========================
-     🔹 HEADERS DINÁMICOS
+     🔹 HEADERS
   ========================== */
   const headers = [
     "sku",
@@ -147,9 +141,18 @@ const ModalImportPreviewProducts = ({
     headers.push("cliente_id");
   }
 
-  const totalPages = Math.ceil(tableData.length / rowsPerPage);
   const startIndex = (currentPage - 1) * rowsPerPage;
   const visibleRows = tableData.slice(startIndex, startIndex + rowsPerPage);
+
+  /* =========================
+     🔹 NORMALIZADOR
+  ========================== */
+  const normalizeRow = (row) => ({
+    ...row,
+    precio_base: Number(row.precio_base),
+    peso_kg: Number(row.peso_kg),
+    volumen_m3: Number(row.volumen_m3),
+  });
 
   /* =========================
      🔹 HANDLE INPUT
@@ -177,7 +180,10 @@ const ModalImportPreviewProducts = ({
     }
 
     else {
-      updated[index][field] = value;
+      updated[index][field] =
+        ["sku", "nombre", "descripcion"].includes(field)
+          ? value.toUpperCase()
+          : value;
     }
 
     setTableData(updated);
@@ -190,20 +196,34 @@ const ModalImportPreviewProducts = ({
     toast.info("Fila eliminada");
   };
 
+  /* =========================
+     🔹 VALIDACIÓN
+  ========================== */
   const validateData = () => {
     let valid = true;
+    const allErrors = [];
 
     tableData.forEach((row, i) => {
-      for (const field in validationRules) {
-        const { valid: ok, message } = validationRules[field](row[field], row);
+      const cleanRow = normalizeRow(row);
+      const { isValid, errors } = validateProduct(cleanRow, rol);
 
-        if (!ok) {
-          toast.error(`Fila ${i + 1}: ${message}`);
-          valid = false;
-          break;
-        }
+      if (!isValid) {
+        errors.forEach(err => {
+          allErrors.push(`Fila ${i + 1}: ${err}`);
+        });
+        valid = false;
       }
     });
+
+    if (!valid) {
+      toast.error(
+        <div>
+          {allErrors.map((e, i) => (
+            <div key={i}>{e}</div>
+          ))}
+        </div>
+      );
+    }
 
     return valid;
   };
@@ -224,7 +244,6 @@ const ModalImportPreviewProducts = ({
 
       <div className="relative bg-white rounded-2xl shadow-2xl w-[95%] xl:w-[85%] max-h-[95vh] overflow-hidden">
 
-        {/* HEADER */}
         <div className="flex justify-between items-center px-6 py-4 border-b">
           <h2 className="text-lg font-bold">
             Previsualización de Importación
@@ -232,8 +251,7 @@ const ModalImportPreviewProducts = ({
           <button onClick={onClose} className="text-xl font-bold">×</button>
         </div>
 
-        {/* TABLE */}
-        <div className="overflow-x-auto overflow-y-auto max-h-[70vh] px-6 py-4">
+        <div className="overflow-auto max-h-[70vh] px-6 py-4">
           <table className="table-fixed border text-sm w-max min-w-full">
 
             <thead className="bg-gray-100 sticky top-0">
@@ -290,9 +308,7 @@ const ModalImportPreviewProducts = ({
                           </select>
 
                         ) : field === "cliente_nombre" ? (
-                          <div className="text-gray-700">
-                            {row.cliente_nombre}
-                          </div>
+                          <div>{row.cliente_nombre}</div>
 
                         ) : (
                           <input
@@ -322,7 +338,6 @@ const ModalImportPreviewProducts = ({
           </table>
         </div>
 
-        {/* FOOTER */}
         <div className="flex justify-end gap-3 px-6 py-4 border-t">
           <button onClick={onClose} className="px-4 py-2 bg-gray-300 rounded">
             Cancelar
