@@ -11,7 +11,7 @@ import { encryptText } from '../../../services/api';
 /* ================================================= */
 export const buildISLRPDF = async (comprobante_id, withholdingId, mode = "download") => {
 
-  const data = await getRetencionISLR(comprobante_id);
+  const data = await getRetencionISLR(withholdingId);
   if (!data) return;
 
   if (data.empresa.logo_url){

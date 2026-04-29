@@ -170,8 +170,13 @@ function ListDispatchGuide() {
           `,
           text: "Generar PDF"
         });
+        if (rol === "visor"){
+          return `<div style="display:flex;justify-content:center;align-items:center;gap:0.25rem;white-space:nowrap;">${viewBtn}</div>`;
+        }else{
+          return `<div style="display:flex;justify-content:center;align-items:center;gap:0.25rem;white-space:nowrap;">${viewBtn}${pdfBtn}</div>`;
+        }
         // const viewBtn = `<button class="btn-view px-2 py-1 text-gray-700" data-id="${row.id}"><i class="fa-solid fa-lg fa-expand"></i></button>`;
-        return `<div style="display:flex;justify-content:center;align-items:center;gap:0.25rem;white-space:nowrap;">${viewBtn}${pdfBtn}</div>`;
+
       }
     });
   // ----------------------
@@ -235,12 +240,13 @@ function ListDispatchGuide() {
                     Buscar
                   </button>
                   {/* Botón Crear Guias de despacho */}
-                  <button
-                    className="bg-twilight-indigo-600 hover:bg-twilight-indigo-500 text-white font-bold py-2 px-4 rounded"
-                    onClick={redirectToCreate}
-                  >
-                    Crear Guías
-                  </button>
+                  {rol != 'visor' && (
+                    <button
+                      className="bg-twilight-indigo-600 hover:bg-twilight-indigo-500 text-white font-bold py-2 px-4 rounded"
+                      onClick={redirectToCreate}>
+                      Crear Guías
+                    </button>
+                  )}
                 </div>
                 )}
                 {/* <label className="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded cursor-pointer">

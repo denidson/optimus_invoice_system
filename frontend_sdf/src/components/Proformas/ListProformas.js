@@ -388,12 +388,14 @@ function ListProformas() {
                       onClick={actionSearch}>
                       Buscar
                     </button>
-                    <button
-                      className="bg-twilight-indigo-600 hover:bg-twilight-indigo-500 text-white font-bold py-2 px-4 rounded"
-                      onClick={redirectToCreate}>
-                      Crear Proformas
-                    </button>
-                    {rol != "admin" && (
+                    {rol != "visor" && (
+                      <button
+                        className="bg-twilight-indigo-600 hover:bg-twilight-indigo-500 text-white font-bold py-2 px-4 rounded"
+                        onClick={redirectToCreate}>
+                        Crear Proformas
+                      </button>
+                    )}
+                    {(rol != "admin" && rol != "visor") && (
                       <>
                         <label className="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded cursor-pointer">
                           Importar Excel/CSV
@@ -551,7 +553,7 @@ function ListProformas() {
                         text: "Ver proformas"
                       });
 
-                      if (rol === "admin") {
+                      if (rol === "admin" || rol === 'visor') {
                         return `<div style="display:flex;justify-content:center;align-items:center;gap:0.25rem;white-space:nowrap;">${viewBtn}</div>`;
                       }
                       if (row.estatus.toUpperCase() != 'FACTURADA'){

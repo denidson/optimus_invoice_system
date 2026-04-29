@@ -9,6 +9,7 @@ import { showWithholding } from "../../../services/apiWithholdings";
  */
 export const generateWithholdingPDF = async (withholdingId, mode = "download", type_ret = false) => {
   try {
+    //console.log('generateWithholdingPDF-withholdingId: ', withholdingId)
     if (type_ret == 'ISLR'){
       return await buildISLRPDF(withholdingId, withholdingId, mode);
     }else if (type_ret == 'IVA'){

@@ -412,7 +412,7 @@ function ListInvoices({ title, type }) {
               ? "Ver nota de crédito"
               : "Ver nota de débito"
         });
-        if (rol === "admin") {
+        if (rol === "admin" || rol === 'visor') {
           return `<div style="display:flex;justify-content:center;align-items:center;gap:0.25rem;white-space:nowrap;">${viewBtn}</div>`;
         }
         const pdfBtn = tooltipBtn({
@@ -494,7 +494,7 @@ function ListInvoices({ title, type }) {
                     onClick={actionSearch}>
                     Buscar
                   </button>
-                  {type === "FC" && (
+                  {(type === "FC" && rol != "visor") && (
                     <>
                       <label className="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded cursor-pointer">
                         Importar Excel/CSV

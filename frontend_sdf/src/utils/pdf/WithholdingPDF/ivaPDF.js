@@ -11,7 +11,7 @@ import { encryptText } from '../../../services/api';
 /* ================= BUILD PDF ================= */
 export const buildIVAPDF = async (comprobante_id, withholdingId, mode = "download") => {
   // Obtener datos desde la API
-  const data = await getRetencionIVA(comprobante_id);
+  const data = await getRetencionIVA(withholdingId);
   if (!data) return;
 
   if (data.agente_retencion.logo_url){

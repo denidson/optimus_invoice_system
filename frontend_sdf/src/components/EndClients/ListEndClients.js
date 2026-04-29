@@ -213,13 +213,13 @@ function ListEndClients() {
               <h6 className="text-blueGray-700 text-xl font-bold">Lista de Clientes</h6>
 
               <div className="flex items-center space-x-3">
-                <button
-                  className="bg-twilight-indigo-600 hover:bg-twilight-indigo-500 text-white font-bold py-2 px-4 rounded"
-                  onClick={redirectToCreate}
-                >
-                  Crear Cliente
-                </button>
-
+                {rol != "visor" && (
+                  <button
+                    className="bg-twilight-indigo-600 hover:bg-twilight-indigo-500 text-white font-bold py-2 px-4 rounded"
+                    onClick={redirectToCreate}>
+                    Crear Cliente
+                  </button>
+                )}
                 {/* botón de importación */}
                 {rol === "admin" && (
                   <label className="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded cursor-pointer">
@@ -310,21 +310,19 @@ function ListEndClients() {
                     title: "Acciones",
                     className: 'no-export',
                     data: "activo",
-                    render: (data, type, row) => `
-                      <div class="flex justify-center items-center space-x-2">
-                        <button class="btn-view text-gray-700 hover:text-gray-900" data-id="${row.id}" title="Ver">
-                          <i class="fa-solid fa-lg fa-expand"></i>
-                        </button>
-                        <button class="btn-edit text-blue-600 hover:text-blue-800" data-id="${row.id}" title="Editar">
-                          <i class="fa-solid fa-lg fa-pen-to-square"></i>
-                        </button>
-                        <button class="btn-delete ${data ? "text-red-600 hover:text-red-800" : "text-green-600 hover:text-green-800"}"
-                          data-id="${row.id}" data-nombre="${row.nombre}" data-action="${data ? "delete" : "active"}"
-                          title="${data ? "Desactivar" : "Activar"}">
-                          <i class="fa-regular fa-rectangle-xmark fa-lg"></i>
-                        </button>
-                      </div>
-                    `,
+                    className: 'no-export',
+                    render: (data, type, row) => {
+                      const viewBtn = `<button class="btn-view px-2 py-1 text-gray-700" data-id="${row.id}"><i class="fa-solid fa-lg fa-expand"></i></button>`;
+                      const editBtn = `<button class="btn-edit px-2 py-1 text-blue-600" data-id="${row.id}"><i class="fa-solid fa-lg fa-pen-to-square"></i></button>`;
+                      const toggleBtn = data
+                        ? `<button class="btn-delete px-2 py-1 text-red-600" data-id="${row.id}" data-nombre="${row.nombre}" data-action="delete"><i class="fa-regular fa-rectangle-xmark fa-lg"></i></button>`
+                        : `<button class="btn-delete px-2 py-1 text-green-600" data-id="${row.id}" data-nombre="${row.nombre}" data-action="active"><i class="fa-regular fa-square-check fa-lg"></i></button>`;
+                      if (rol == 'visor'){
+                        return `<div style="display:flex;justify-content:center;align-items:center;gap:0.25rem;white-space:nowrap;">${viewBtn}</div>`;
+                      }else{
+                        return `<div style="display:flex;justify-content:center;align-items:center;gap:0.25rem;white-space:nowrap;">${viewBtn}${editBtn}${toggleBtn}</div>`;
+                      }
+                    },
                   },
                 ]}
                 options={{

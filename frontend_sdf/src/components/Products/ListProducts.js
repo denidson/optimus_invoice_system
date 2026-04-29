@@ -292,28 +292,32 @@ function ListProducts() {
             <div className="rounded-t bg-white mb-0 px-6 py-6 flex justify-between items-center border-b">
               <h6 className="text-blueGray-700 text-xl font-bold">Lista de Producto/Servicio</h6>
               <div className="flex items-center space-x-3">
-                <button className="bg-twilight-indigo-600 hover:bg-twilight-indigo-500 text-white font-bold py-2 px-4 rounded" onClick={redirectToCreate}>
-                  Crear Producto/Servicio
-                </button>
-                <label className="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded cursor-pointer">
-                  Importar Producto/Servicio Excel/CSV
-                  <input type="file" accept=".csv,.xlsx,.xls" className="hidden" onChange={handleFileUpload} />
-                </label>
-                <div className="relative group inline-block">
-                  <button
-                    onClick={downloadExcelDemoProducts}
-                    className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded flex items-center gap-2"
-                  >
-                    <i className="fas fa-download"></i>
-                  </button>
+                {rol != "visor" && (
+                  <>
+                    <button className="bg-twilight-indigo-600 hover:bg-twilight-indigo-500 text-white font-bold py-2 px-4 rounded" onClick={redirectToCreate}>
+                      Crear Producto/Servicio
+                    </button>
+                    <label className="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded cursor-pointer">
+                      Importar Producto/Servicio Excel/CSV
+                      <input type="file" accept=".csv,.xlsx,.xls" className="hidden" onChange={handleFileUpload} />
+                    </label>
+                    <div className="relative group inline-block">
+                      <button
+                        onClick={downloadExcelDemoProducts}
+                        className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded flex items-center gap-2"
+                      >
+                        <i className="fas fa-download"></i>
+                      </button>
 
-                  <span className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2
-                    px-2 py-1 text-xs text-white bg-gray-800 rounded
-                    opacity-0 group-hover:opacity-100 transition-opacity
-                    whitespace-nowrap pointer-events-none z-50">
-                    Descargar Excel de ejemplo
-                  </span>
-                </div>
+                      <span className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2
+                        px-2 py-1 text-xs text-white bg-gray-800 rounded
+                        opacity-0 group-hover:opacity-100 transition-opacity
+                        whitespace-nowrap pointer-events-none z-50">
+                        Descargar Excel de ejemplo
+                      </span>
+                    </div>
+                  </>
+                )}
               </div>
             </div>
 
@@ -343,7 +347,11 @@ function ListProducts() {
                       const toggleBtn = data
                         ? `<button class="btn-delete px-2 py-1 text-red-600" data-id="${row.id}" data-nombre="${row.nombre}" data-action="delete"><i class="fa-regular fa-rectangle-xmark fa-lg"></i></button>`
                         : `<button class="btn-delete px-2 py-1 text-green-600" data-id="${row.id}" data-nombre="${row.nombre}" data-action="active"><i class="fa-regular fa-square-check fa-lg"></i></button>`;
-                      return `<div style="display:flex;justify-content:center;align-items:center;gap:0.25rem;white-space:nowrap;">${viewBtn}${editBtn}${toggleBtn}</div>`;
+                      if (rol == 'visor'){
+                        return `<div style="display:flex;justify-content:center;align-items:center;gap:0.25rem;white-space:nowrap;">${viewBtn}</div>`;
+                      }else{
+                        return `<div style="display:flex;justify-content:center;align-items:center;gap:0.25rem;white-space:nowrap;">${viewBtn}${editBtn}${toggleBtn}</div>`;
+                      }
                     }
                   }
                 ]}

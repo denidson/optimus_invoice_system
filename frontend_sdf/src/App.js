@@ -156,7 +156,7 @@ function App() {
             path="/endClients"
             element={
               <PrivateRoute>
-                <RoleRoute roles={["operador_admin", "operador"]}>
+                <RoleRoute roles={["operador_admin", "operador", "visor"]}>
                   <ListEndClients />
                 </RoleRoute>
               </PrivateRoute>
@@ -188,7 +188,7 @@ function App() {
             path="/products"
             element={
               <PrivateRoute>
-                <RoleRoute roles={["operador_admin", "operador", "admin"]}>
+                <RoleRoute roles={["operador_admin", "operador", "admin", "visor"]}>
                   <ListProducts />
                 </RoleRoute>
               </PrivateRoute>
@@ -220,7 +220,7 @@ function App() {
             path="/taxes"
             element={
               <PrivateRoute>
-                <RoleRoute roles={["admin", "operador_admin"]}>
+                <RoleRoute roles={["admin", "operador_admin", "visor"]}>
                   <ListTaxes />
                 </RoleRoute>
               </PrivateRoute>
@@ -230,7 +230,7 @@ function App() {
             path="/taxpayer"
             element={
               <PrivateRoute>
-                <RoleRoute roles={["admin", "operador_admin", "operador"]}>
+                <RoleRoute roles={["admin", "operador_admin", "operador", "visor"]}>
                   <ListTypeTaxpayer />
                 </RoleRoute>
               </PrivateRoute>
@@ -240,7 +240,7 @@ function App() {
             path="/config-withholdings"
             element={
               <PrivateRoute>
-                <RoleRoute roles={["admin", "operador_admin", "operador"]}>
+                <RoleRoute roles={["admin", "operador_admin", "operador", "visor"]}>
                   <ListConfigWithholdings />
                 </RoleRoute>
               </PrivateRoute>
@@ -261,7 +261,7 @@ function App() {
             path="/credit-note"
             element={
               <PrivateRoute>
-                <RoleRoute roles={["admin", "operador_admin", "operador"]}>
+                <RoleRoute roles={["admin", "operador_admin", "operador", "visor"]}>
                   <ListCreditNote />
                 </RoleRoute>
               </PrivateRoute>
@@ -272,7 +272,7 @@ function App() {
             path="/debit-note"
             element={
               <PrivateRoute>
-                <RoleRoute roles={["admin", "operador_admin", "operador"]}>
+                <RoleRoute roles={["admin", "operador_admin", "operador", "visor"]}>
                   <ListCreditDebit />
                 </RoleRoute>
               </PrivateRoute>
@@ -283,7 +283,7 @@ function App() {
             path="/withholdings"
             element={
               <PrivateRoute>
-                <RoleRoute roles={["admin", "operador_admin", "operador"]}>
+                <RoleRoute roles={["admin", "operador_admin", "operador", "visor"]}>
                   <ListWithholdings />
                 </RoleRoute>
               </PrivateRoute>
@@ -302,7 +302,7 @@ function App() {
             path="/dispatch-guide"
             element={
               <PrivateRoute>
-                <RoleRoute roles={["admin", "operador_admin", "operador"]}>
+                <RoleRoute roles={["admin", "operador_admin", "operador", "visor"]}>
                   <ListDispatchGuide />
                 </RoleRoute>
               </PrivateRoute>
@@ -334,7 +334,7 @@ function App() {
             path="/company-users"
             element={
               <PrivateRoute>
-                <RoleRoute roles={["operador_admin"]}>
+                <RoleRoute roles={["operador_admin", "visor"]}>
                   <ListCompanyUsers />
                 </RoleRoute>
               </PrivateRoute>
