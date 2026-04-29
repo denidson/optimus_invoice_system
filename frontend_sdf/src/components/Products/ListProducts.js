@@ -27,7 +27,6 @@ const { read, utils } = XLSX;
 import Papa from 'papaparse';
 import { formatDecimal, formatText, formatDecimalSpecial } from "../../utils/formatters";
 import { generateExcelDemo } from "../../utils/excelDemoGenerator";
-
 window.JSZip = JSZip;
 DataTable.use(DT);
 
