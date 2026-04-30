@@ -1,6 +1,6 @@
 import { jsPDF } from "jspdf"; 
 import autoTable from "jspdf-autotable"; // npm i jspdf jspdf-autotable
-import { box, text, grid } from "../pdfDraw";
+import { box, text, grid, boxCustom, line, textWrap, labelValue } from "../pdfDraw";
 import { formatDate, formatDecimal } from "../../formatters";
 import { getRetencionIVA } from "../../../services/apiWithholdings";
 import { getClientLogo } from "../../../services/api_clients";
@@ -56,17 +56,29 @@ export const buildIVAPDF = async (comprobante_id, withholdingId, mode = "downloa
 
   const baseUrl = window.location.origin;
 
-  const qrUrl = `${baseUrl}/document/RETIVA/${encodeURIComponent(encryptText(withholdingId.toString()))}/`;
+  const qrUrl = `${baseUrl}/document/RETIVA/${encodeURIComponent(encryptText(cabecera.qr_token.toString()))}/`;
 
   const qrBase64 = await QRCode.toDataURL(qrUrl, {
     width: 120,
     margin: 1
   });
   const qrSize = 23;
+  /*
+   * @param {object} doc - Instancia de jsPDF
+   * @param {number} x - Posición X inicial
+   * @param {number} y - Posición Y inicial
+   * @param {number} w - Ancho de la caja
+   * @param {number} h - Alto de la caja
+   * @param {string|array} fillColor - Color de fondo (hex o RGB) (default "#FFFFFF")
+   * @param {number} borderRadius - Radio de los bordes (default 0)
+   * @param {number} borderWidth - Grosor del borde en mm (default 0, sin borde)
+   * @param {string|array} borderColor - Color del borde (hex o RGB) (default "#000000")
+  */
+  boxCustom(doc, (col12.w - 15), (y - 6), qrSize + 2, qrSize + 2, "#ffffff", 2, 0.5, "#4a4a4a");
   doc.addImage(
     qrBase64,
     "PNG",
-    col12.w - 13,
+    col12.w - 14,
     y - 5,
     qrSize,
     qrSize

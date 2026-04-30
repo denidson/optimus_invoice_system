@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from "react-router-dom";
 import { encryptText } from '../../services/api';
-import { getTypeTaxpayer } from '../../services/api_type_taxpayer';
+import { getPaymentMethods } from '../../services/api_payment_methods';
 
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -27,11 +27,11 @@ import { formatDecimal, formatMoney, formatDate, formatDateTime, formatText } fr
 window.JSZip = JSZip;
 DataTable.use(DT);
 
-function ListTypeTaxpayer() {
+function ListPaymentMethods() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const table = $("#ListTypeTaxpayerDt").DataTable();
+    const table = $("#ListPaymentMethodsDt").DataTable();
 
   }, []);
 
@@ -43,15 +43,19 @@ function ListTypeTaxpayer() {
           <div className="relative bg-white flex flex-col min-w-0 break-words w-full mb-6 shadow-lg rounded-lg bg-blueGray-100 border-0">
             {/* Header */}
             <div className="rounded-t bg-white mb-0 px-6 py-6 flex justify-between items-center border-b">
-              <h6 className="text-blueGray-700 text-xl font-bold">Lista de Tipos de Contribuyente</h6>
+              <h6 className="text-blueGray-700 text-xl font-bold">Lista de Métodos de Pago</h6>
             </div>
 
             {/* DataTable */}
             <div className="block w-full overflow-x-auto px-4 py-4">
               <DataTable
-                id="ListTypeTaxpayerDt"
+                id="ListPaymentMethodsDt"
                 className="table-auto w-full text-left items-center w-full bg-transparent border-collapse"
                 columns={[
+                  { title: "Código", data: "codigo", className: "dt-center", render: (data, type, row) => {
+                      return formatText(data);
+                    }
+                  },
                   { title: "Nombre", data: "nombre", render: (data, type, row) => {
                       return formatText(data);
                     }
@@ -60,6 +64,27 @@ function ListTypeTaxpayer() {
                       return formatText(data);
                     }
                   },
+                  { title: "¿Aplica IGTF?", data: "aplica_igtf", className: "dt-center", orderable: true, searchable: true,
+                    render: (data, type, row) => {
+                      if (data == true){
+                        return '<i class="fas fa-circle text-emerald-500 mr-2"></i> ' + formatText('Si');
+                      } else {
+                        return '<i class="fas fa-circle text-red-500 mr-2"></i> ' + formatText('No');
+                      }
+
+                    }
+                  },
+                  {
+                    title: "Estado", data: "activo", className: "dt-center", orderable: true, searchable: true,
+                    render: (data, type, row) => {
+                      if (data == true){
+                        return '<i class="fas fa-circle text-emerald-500 mr-2"></i> ' + formatText('Activo');
+                      } else {
+                        return '<i class="fas fa-circle text-red-500 mr-2"></i> ' + formatText('Inactivo');
+                      }
+
+                    }
+                  }
                 ]}
                 options={{
                   dom: //B = Buttons, l = LengthMenu (mostrar X registros), f = Filtro (search), t = Tabla, i = Info (mostrando de X a Y de Z), p = Paginación
@@ -71,7 +96,7 @@ function ListTypeTaxpayer() {
                   processing: true,
                   ajax: async (dataTablesParams, callback) => {
                     try {
-                      const response = await getTypeTaxpayer();
+                      const response = await getPaymentMethods();
                       callback({
                         draw: dataTablesParams.draw,
                         recordsTotal: response.length,
@@ -98,13 +123,13 @@ function ListTypeTaxpayer() {
                         {
                           extend: "copyHtml5",
                           text: "Copiar",
-                          title: "Lista de Tipos de Contribuyente"   // nombre del documento en el portapapeles
+                          title: "Lista de métodos de pago"   // nombre del documento en el portapapeles
                         },
                         {
                           extend: "excelHtml5",
                           text: "Excel",
-                          title: "Lista de Tipos de Contribuyente",  // título dentro del archivo
-                          filename: "Lista_tipos_de_Contribuyente",   // nombre del archivo generado (sin extensión)
+                          title: "Lista de métodos de pago",  // título dentro del archivo
+                          filename: "Lista_de_métodos_de_pago",   // nombre del archivo generado (sin extensión)
                           exportOptions: {
                             columns: ':not(.no-export)'
                           }
@@ -112,8 +137,8 @@ function ListTypeTaxpayer() {
                         {
                           extend: "csvHtml5",
                           text: "CSV",
-                          title: "Lista de Tipos de Contribuyente",
-                          filename: "Lista_tipos_de_Contribuyente",
+                          title: "Lista de métodos de pago",
+                          filename: "Lista_de_métodos_de_pago",
                           exportOptions: {
                             columns: ':not(.no-export)'
                           }
@@ -121,8 +146,8 @@ function ListTypeTaxpayer() {
                         {
                           extend: "pdfHtml5",
                           text: "PDF",
-                          title: "Lista de Tipos de Contribuyente",
-                          filename: "Lista_tipos_de_Contribuyente",
+                          title: "Lista de métodos de pago",
+                          filename: "Lista_de_métodos_de_pago",
                           exportOptions: {
                             columns: ':not(.no-export)'
                           },
@@ -133,7 +158,7 @@ function ListTypeTaxpayer() {
                         {
                           extend: "print",
                           text: "Imprimir",
-                          title: "Lista de Tipos de Contribuyente",
+                          title: "Lista de métodos de pago",
                           exportOptions: {
                             columns: ':not(.no-export)'
                           }
@@ -167,4 +192,4 @@ function ListTypeTaxpayer() {
   );
 }
 
-export default ListTypeTaxpayer;
+export default ListPaymentMethods;

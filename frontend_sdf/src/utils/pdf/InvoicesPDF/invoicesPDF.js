@@ -342,13 +342,25 @@ export const buildInvoicesPDF = async (data, invoiceId, mode = "download") => {
 
   const baseUrl = window.location.origin;
 
-  const qrUrl = `${baseUrl}/document/INV/${encodeURIComponent(encryptText(invoiceId.toString()))}/`;
+  const qrUrl = `${baseUrl}/document/INV/${encodeURIComponent(encryptText(documento.qr_token.toString()))}/`;
 
   const qrBase64 = await QRCode.toDataURL(qrUrl, {
     width: 120,
     margin: 1
   });
   const qrSize = 17 + addressLenY;
+  /*
+   * @param {object} doc - Instancia de jsPDF
+   * @param {number} x - Posición X inicial
+   * @param {number} y - Posición Y inicial
+   * @param {number} w - Ancho de la caja
+   * @param {number} h - Alto de la caja
+   * @param {string|array} fillColor - Color de fondo (hex o RGB) (default "#FFFFFF")
+   * @param {number} borderRadius - Radio de los bordes (default 0)
+   * @param {number} borderWidth - Grosor del borde en mm (default 0, sin borde)
+   * @param {string|array} borderColor - Color del borde (hex o RGB) (default "#000000")
+  */
+  boxCustom(doc, (pageWidth - margin - qrSize) - 6, (y - 18) - 1, qrSize + 2, qrSize + 2, "#ffffff", 2, 0.5, "#4a4a4a");
   doc.addImage(
     qrBase64,
     "PNG",

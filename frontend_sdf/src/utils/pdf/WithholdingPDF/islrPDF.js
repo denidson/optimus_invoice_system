@@ -1,6 +1,6 @@
 import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
-import { box, text, grid, labelValue, textWrap } from "../pdfDraw";
+import { box, text, grid, boxCustom, line, textWrap, labelValue } from "../pdfDraw";
 import { formatDate, formatDecimal, formatText } from "../../formatters";
 import { getRetencionISLR } from "../../../services/apiWithholdings";
 import { getClientLogo } from "../../../services/api_clients";
@@ -85,13 +85,25 @@ export const buildISLRPDF = async (comprobante_id, withholdingId, mode = "downlo
 
   const baseUrl = window.location.origin;
 
-  const qrUrl = `${baseUrl}/document/RETISLR/${encodeURIComponent(encryptText(withholdingId.toString()))}/`;
+  const qrUrl = `${baseUrl}/document/RETISLR/${encodeURIComponent(encryptText(cabecera.qr_token.toString()))}/`;
 
   const qrBase64 = await QRCode.toDataURL(qrUrl, {
     width: 120,
     margin: 1
   });
   const qrSize = 25;
+  /*
+   * @param {object} doc - Instancia de jsPDF
+   * @param {number} x - Posición X inicial
+   * @param {number} y - Posición Y inicial
+   * @param {number} w - Ancho de la caja
+   * @param {number} h - Alto de la caja
+   * @param {string|array} fillColor - Color de fondo (hex o RGB) (default "#FFFFFF")
+   * @param {number} borderRadius - Radio de los bordes (default 0)
+   * @param {number} borderWidth - Grosor del borde en mm (default 0, sin borde)
+   * @param {string|array} borderColor - Color del borde (hex o RGB) (default "#000000")
+  */
+  boxCustom(doc, (colRight.x + colRight.w - 29), (y + 1.5), qrSize + 2, qrSize + 2, "#ffffff", 2, 0.5, "#4a4a4a");
   doc.addImage(
     qrBase64,
     "PNG",
@@ -184,8 +196,8 @@ export const buildISLRPDF = async (comprobante_id, withholdingId, mode = "downlo
     yLn = (yEmp / 2);
     hInfo = hInfo - 5 + yEmp;
   }
-  console.log('yPro: ', yPro);
-  console.log('yEmp: ', yEmp);
+  //console.log('yPro: ', yPro);
+  //console.log('yEmp: ', yEmp);
 
   // Proveedor
   box(doc, colLeft.x, y, colLeft.w, hInfo);

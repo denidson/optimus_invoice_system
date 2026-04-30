@@ -82,13 +82,25 @@ export const buildDispacheGuidesPDF = async (data, dispacheGuideId, mode = "down
 
   const baseUrl = window.location.origin;
 
-  const qrUrl = `${baseUrl}/document/DG/${encodeURIComponent(encryptText(dispacheGuideId.toString()))}/`;
+  const qrUrl = `${baseUrl}/document/DG/${encodeURIComponent(encryptText(documento.qr_token.toString()))}/`;
 
   const qrBase64 = await QRCode.toDataURL(qrUrl, {
     width: 120,
     margin: 1
   });
-  const qrSize = 17 + 3;
+  /*
+   * @param {object} doc - Instancia de jsPDF
+   * @param {number} x - Posición X inicial
+   * @param {number} y - Posición Y inicial
+   * @param {number} w - Ancho de la caja
+   * @param {number} h - Alto de la caja
+   * @param {string|array} fillColor - Color de fondo (hex o RGB) (default "#FFFFFF")
+   * @param {number} borderRadius - Radio de los bordes (default 0)
+   * @param {number} borderWidth - Grosor del borde en mm (default 0, sin borde)
+   * @param {string|array} borderColor - Color del borde (hex o RGB) (default "#000000")
+  */
+  boxCustom(doc, colQr.x + 14, logoY - 1, logoH + 2, logoH + 2, "#ffffff", 2, 0.5, "#4a4a4a");
+  //const qrSize = 17 + 3;
   doc.addImage(
     qrBase64,
     "PNG",
@@ -330,10 +342,10 @@ export const buildDispacheGuidesPDF = async (data, dispacheGuideId, mode = "down
     body: tableData,
     foot: [[
       "", "", "", "", "", "", "",
-      formatDecimal(totales.monto_objeto_retencion),
+      "",//formatDecimal(totales.monto_objeto_retencion),
       "",
       "",
-      formatDecimal(totales.impuesto_retenido)
+      "",//formatDecimal(totales.impuesto_retenido)
     ]],
     theme: "grid",
     styles: { fontSize: 8 },

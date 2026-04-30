@@ -2,11 +2,19 @@ import api from "./axiosConfig";
 
 // Get all products
 export const getProducts = async ({ client_id=false } = {}) => {
-  var response;
-  if (client_id == false){
-    response = await api.get("/api/products");
-  }else{
-    response = await api.get(`/api/products?client_id=${client_id}`);
+  const authData = localStorage.getItem("authData");
+  if (authData) {
+    const { rol } = JSON.parse(authData);
+    var response;
+    if (client_id == false){
+      if (rol == 'admin'){
+        response = await api.get(`/admin/products`);
+      }else{
+        response = await api.get("/api/products");
+      }
+    }else{
+      response = await api.get(`/api/products?client_id=${client_id}`);
+    }
   }
   return response.data.data;
 };
@@ -38,7 +46,7 @@ export const deleteProduct = async (id) => {
 export const activateProduct = async (id) => {
   try {
     const response = await api.put(`/api/products/${id}/activar`);
-    console.log('activateProduct-response: ', response);
+    //console.log('activateProduct-response: ', response);
     return response.data;
   } catch (error) {
     console.error("Error al activar el producto:", error);
