@@ -7,7 +7,7 @@ export const getProducts = async ({ client_id=false } = {}) => {
     const { rol } = JSON.parse(authData);
     var response;
     if (client_id == false){
-      if (rol == 'admin'){
+      if (rol == 'admin' || rol == 'auditor'){
         response = await api.get(`/admin/products`);
       }else{
         response = await api.get("/api/products");

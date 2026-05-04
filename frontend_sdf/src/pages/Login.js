@@ -24,16 +24,13 @@ export default function Login() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError(null);
-
     try {
       const data = await loginRequest(email, password);
-
       const userData = {
         token: data.token,
         expires_in: data.expires_in,
         ...data.usuario,
       };
-      //console.log('loginRequest-data: ', data);
       login(userData);
       if (data.must_change_password == false){
         navigate("/dashboard");
@@ -41,8 +38,8 @@ export default function Login() {
         navigate("/profile?forceChangePassword=true");
       }
     } catch (err) {
-      console.error("Login error:", err);
-      setError("Credenciales inválidas");
+      //console.error("Login error:", err);
+      setError(err.status == 401 ? err.response.data.error : (err.status == 429 ? err.response.data.mensaje : "Credenciales inválidas"));
     }
   };
 

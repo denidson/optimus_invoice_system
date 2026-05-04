@@ -90,7 +90,7 @@ function ListDispatchGuide() {
         return formatDate(data);
       }
     });
-    if (rol == 'admin'){
+    if (rol == 'admin' || rol == 'auditor'){
       targets = [8, 9, 10];
       columns.push({ title: "RIF (Afiliada)", data: "cliente.rif", className: "dt-center", render: (data, type, row) => {
           return formatText(data);
@@ -240,7 +240,7 @@ function ListDispatchGuide() {
                     Buscar
                   </button>
                   {/* Botón Crear Guias de despacho */}
-                  {rol != 'visor' && (
+                  {(rol != 'visor' && rol != "auditor") && (
                     <button
                       className="bg-twilight-indigo-600 hover:bg-twilight-indigo-500 text-white font-bold py-2 px-4 rounded"
                       onClick={redirectToCreate}>
@@ -415,7 +415,7 @@ function ListDispatchGuide() {
 
                               const wb = utils.book_new();
                               var ws;
-                              if (rol == 'admin'){
+                              if (rol == 'admin' || rol == 'auditor'){
                                 ws = utils.json_to_sheet(
                                   allData.map((r) => ({
                                     "Fecha de salida": formatDate(r.fecha_salida),

@@ -8,7 +8,7 @@ export const getInvoices = async (params = {}) => {
     const { rol } = JSON.parse(authData);
 
     // Determinar endpoint según rol
-    const endpoint = rol === "admin" ? "/admin/invoices" : "/api/invoices";
+    const endpoint = (rol === "admin" || rol == "auditor") ? "/admin/invoices" : "/api/invoices";
 
     const query = new URLSearchParams();
 
@@ -39,7 +39,7 @@ export const showInvoice = async (id) => {
     if (authData) {
       const { rol } = JSON.parse(authData);
       var response;
-      if (rol == 'admin'){
+      if (rol == 'admin' || rol == "auditor"){
         response = await api.get(`/admin/invoices/${id}`);
         //response = await api.get(`/pre-invoices/${id}`);
       }else{
@@ -62,7 +62,7 @@ export const getSalesBook = async (params = {}) => {
     const { rol } = JSON.parse(authData);
 
     // Determinar endpoint según rol
-    const endpoint = rol === "admin" ? "/api/reports/libro-ventas" : "/api/reports/libro-ventas";
+    const endpoint = (rol === "admin" || rol == "auditor") ? "/api/reports/libro-ventas" : "/api/reports/libro-ventas";
 
     const query = new URLSearchParams();
 

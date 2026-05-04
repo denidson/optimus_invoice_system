@@ -90,7 +90,7 @@ function ListWithholdings() {
       return formatDate(data);
     }
   });
-  if (rol == 'admin'){
+  if (rol == 'admin' || rol == 'auditor'){
     targets = [3, 7];
     columns.push({ title: "RIF (Afiliada)", data: "cliente.rif", className: "dt-center", render: (data, type, row) => {
         return formatText(data);
@@ -187,7 +187,7 @@ function ListWithholdings() {
         text: "Generar PDF"
       });
       // const viewBtn = `<button class="btn-view px-2 py-1 text-gray-700" data-id="${row.id}"><i class="fa-solid fa-lg fa-expand"></i></button>`;
-      if (rol === "visor"){
+      if (rol === "visor" || rol == 'auditor'){
         return `<div style="display:flex;justify-content:center;align-items:center;gap:0.25rem;white-space:nowrap;">${viewBtn}</div>`;
       }else{
         return `<div style="display:flex;justify-content:center;align-items:center;gap:0.25rem;white-space:nowrap;">${viewBtn} ${pdfBtn}</div>`;
@@ -251,7 +251,7 @@ function ListWithholdings() {
                     Buscar
                   </button>
                   {/* Botón Crear Retención */}
-                  {rol != "visor" && (
+                  {(rol != "visor" && rol != "auditor") && (
                     <button
                       className="bg-twilight-indigo-600 hover:bg-twilight-indigo-500 text-white font-bold py-2 px-4 rounded"
                       onClick={redirectToCreate}>
@@ -423,7 +423,7 @@ function ListWithholdings() {
 
                               const wb = utils.book_new();
                               var ws;
-                              if (rol == 'admin'){
+                              if (rol == 'admin' || rol == 'auditor'){
                                 ws = utils.json_to_sheet(
                                   allData.map((r) => ({
                                     "Fecha": formatDate(r.fecha_emision),

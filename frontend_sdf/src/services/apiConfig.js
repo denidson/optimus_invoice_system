@@ -3,7 +3,13 @@ import api from "./axiosConfig"; // Centralized axios configuration
 // Get all IVA
 export const getTaxCategories = async () => {
   try {
-    const response = await api.get("/api/config/iva-categorias");
+    var response = await api.get("/api/config/iva-categorias");
+    const responseIgtf = await api.get("/api/seniat/igtf");
+    response.data.push({
+      'id': 0,
+      'nombre': responseIgtf.data.descripcion,
+      'tasa_porcentaje': responseIgtf.data.porcentaje,
+    });
     return response.data; // Retorna los datos directamente
   } catch (error) {
     console.error("Error fetching tax categories:", error);

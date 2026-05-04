@@ -84,7 +84,7 @@ export default function ListCompanyUsers() {
             {/* Header */}
             <div className="rounded-t bg-white mb-0 px-6 py-6 border-b flex justify-between items-center">
               <h6 className="text-blueGray-700 text-xl font-bold">Lista de Usuarios</h6>
-              {rol != "visor" && (
+              {(rol != "visor" && rol != "auditor") && (
                 <button
                   className="bg-twilight-indigo-600 hover:bg-twilight-indigo-500 text-white px-4 py-2 rounded"
                   onClick={() => navigate("/company-users/create")}>
@@ -148,7 +148,7 @@ export default function ListCompanyUsers() {
                       /*const toggleBtn = data
                         ? `<button class="btn-delete px-2 py-1 text-red-600" data-id="${row.id}" data-nombre="${row.nombre}" data-action="delete"><i class="fa-regular fa-rectangle-xmark fa-lg"></i></button>`
                         : `<button class="btn-delete px-2 py-1 text-green-600" data-id="${row.id}" data-nombre="${row.nombre}" data-action="active"><i class="fa-regular fa-square-check fa-lg"></i></button>`;*/
-                      if (rol == "visor"){
+                      if (rol == "visor" || rol == "auditor"){
                         return `<div style="display:flex;justify-content:center;align-items:center;gap:0.25rem;white-space:nowrap;">${viewBtn}</div>`; //${toggleBtn}
                       }else{
                         return `<div style="display:flex;justify-content:center;align-items:center;gap:0.25rem;white-space:nowrap;">${viewBtn}${editBtn}</div>`; //${toggleBtn}

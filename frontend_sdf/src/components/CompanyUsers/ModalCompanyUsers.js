@@ -26,7 +26,9 @@ function ModalCompanyUsers({ isOpen, onClose, companyUser }) {
               {companyUser.rol == 'operador' ?
               `${formatText('Operador')}`
                   : companyUser.rol == 'operador_admin' ?
-                    formatText('Operador Admin') : formatText('Visor')}
+                    formatText('Operador Admin') : companyUser.rol == 'Visor' ?
+                      formatText('Visor') : companyUser.rol == 'admin' ?
+                        formatText('Administrador') : formatText('Auditor')}
             </p>
           </div>
           {/* botón de cierre */}

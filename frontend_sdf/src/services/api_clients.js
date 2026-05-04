@@ -8,7 +8,7 @@ export const getClients = async () => {
     if (authData) {
       const { rol } = JSON.parse(authData);
       var response;
-      if (rol == 'admin'){
+      if (rol == 'admin' || rol == 'auditor'){
         response = await api.get('/admin/clients');
       }else{
         response = await api.get('/api/clients');
@@ -28,7 +28,7 @@ export const showClient = async (id) => {
     if (authData) {
       const { rol } = JSON.parse(authData);
       var response;
-      if (rol == 'admin'){
+      if (rol == 'admin' || rol == 'auditor'){
         response = await api.get(`/admin/clients/${id}`);
       }else{
         response = await api.get(`/api/clients/${id}`);
@@ -65,7 +65,7 @@ export const editClient = async (id, body) => {
         // Eliminar logo del body principal para no enviarlo duplicado
         delete body.logo;
       }
-      if (rol == 'admin'){
+      if (rol == 'admin' || rol == 'auditor'){
         response = await api.put(`/admin/clients/${id}`, body);
       }else{
         response = await api.put(`/api/clients/${id}`, body);

@@ -19,7 +19,7 @@ export const getPreInvoices = async (params = {}) => {
 
     const { rol } = JSON.parse(authData);
 
-    const endpoint = rol === 'admin'
+    const endpoint = (rol === 'admin' || rol == "auditor")
       ? '/admin/pre-invoices'
       : '/api/pre-invoices';
 
@@ -59,7 +59,7 @@ export const showPreInvoice = async (id) => {
     if (authData) {
       const { rol } = JSON.parse(authData);
       var response;
-      if (rol == 'admin'){
+      if (rol == 'admin' || rol == "auditor"){
         response = await api.get(`/admin/pre-invoices/${id}`);
         //response = await api.get(`/pre-invoices/${id}`);
       }else{

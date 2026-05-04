@@ -20,7 +20,7 @@ import { getClients } from "../services/api_clients";
 export default function Dashboard({ collapsed }) {
   const { user } = useContext(AuthContext);
 
-  const isAdmin = user?.rol === "admin";
+  const isAdmin = (user?.rol === "admin" || user?.rol === "auditor");
   const cliente_id = user?.cliente_id;
   const nombreUsuario = user?.nombre || "Usuario";
 
