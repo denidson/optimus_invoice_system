@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 
 function ModalConfirmation({ isOpen, onClose, onConfirm, message }) {
-  if (!isOpen) return null; // Si la modal no está abierta, no renderiza nada
+  if (!isOpen) return null;
 
   return (
     <div style={overlayStyle}>
