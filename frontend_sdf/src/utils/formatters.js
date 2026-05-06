@@ -38,10 +38,29 @@ export const formatInteger = (value) => {
   }).format(Number(value || 0));
 };
 
-export const formatDate = (value) => {
+/*export const formatDate = (value) => {
   if (!value) return "";
 
   const date = new Date(value);
+  if (isNaN(date.getTime())) return "";
+
+  return date.toLocaleDateString("es-ES", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  });
+};*/
+
+export const formatDate = (value) => {
+  if (!value) return "";
+
+  const parts = value.split("-");
+
+  if (parts.length !== 3) return "";
+
+  const [year, month, day] = parts.map(Number);
+  const date = new Date(year, month - 1, day);
+
   if (isNaN(date.getTime())) return "";
 
   return date.toLocaleDateString("es-ES", {

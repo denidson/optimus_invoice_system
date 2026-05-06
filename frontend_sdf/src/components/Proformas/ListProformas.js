@@ -306,6 +306,177 @@ function ListProformas() {
     e.target.value = ""; // limpiar input
   };
 
+  var columns = [];
+  var columnDefs;
+
+  columns.push({ title: "Fecha", data: "fecha_factura", className: "dt-center",
+    render: (data, type, row) => {
+      return formatDate(data);
+    }
+  });
+
+  if (rol == 'admin' || rol == 'auditor'){
+    columns.push({ title: "RIF (Afiliada)", data: "cliente_emisor.rif", className: "dt-center", render: (data, type, row) => {
+        return formatText(data);
+      }
+    });
+    columns.push({ title: "Nombre (Afiliada)", data: "cliente_emisor.nombre_empresa", render: (data, type, row) => {
+        return formatText(data);
+      }
+    });
+    columnDefs = [6, 7, 8, 10, 11, 12, 13]
+  }else{
+    columnDefs = [4, 5, 6, 8, 9, 10, 11]
+  }
+
+  columns.push({ title: "RIF", data: "cliente_final_rif", className: "dt-center", render: (data, type, row) => {
+      return formatText(data);
+    }
+  });
+  columns.push({ title: "Razón Social", data: "cliente_final_nombre", render: (data, type, row) => {
+      return formatText(data);
+    }
+  });
+  columns.push({
+    title: "Tipo de documento",
+    data: "tipo_documento",
+    className: "text-center",
+    orderable: true,
+    searchable: true,
+    render: (data, type, row) => {
+      if (data == 'FC'){
+        return 'FACTURA';
+      }else if (data == 'NC'){
+        return 'NOTA DE CRÉDITO';
+      } else {
+        return 'NOTA DE DÉBITO';
+      }
+
+    }
+  });
+  columns.push({ title: "Correlativo", data: "correlativo_interno", className: "dt-center", render: (data, type, row) => {
+      return formatText(data);
+    }
+  });
+  columns.push({
+    title: "Base imponible (Bs.)",
+    data: "total_base",
+    render: (data, type, row) => {
+      return formatDecimal(data);
+    }
+  });
+  columns.push({
+    title: "I.V.A. (Bs.)",
+    data: "total_impuestos",
+    render: (data, type, row) => {
+      return formatDecimal(data);
+    }
+  });
+  columns.push({
+    title: "Total (Bs.)",
+    data: "total_neto",
+    render: (data, type, row) => {
+      return formatDecimal(data);
+    }
+  });
+  columns.push({
+    title: "Pagado en divisas (Bs.)",
+    data: "monto_pagado_divisas",
+    render: (data, type, row) => {
+      return formatDecimal(data);
+    }
+  });
+  columns.push({
+    title: "IGTF (Bs.)",
+    data: "igtf_monto",
+    render: (data, type, row) => {
+      return formatDecimal(data);
+    }
+  });
+  columns.push({
+    title: "Zona",
+    data: "zona",
+    orderable: true,
+    searchable: false,
+    render: (data, type, row) => {
+      return formatText(data);
+    }
+  });
+  columns.push({
+    title: "Estatus",
+    data: "estatus",
+    className: "dt-center",
+    orderable: true,
+    searchable: true,
+    render: (data, type, row) => {
+      if (data == 'borrador'){
+        return '<i class="fas fa-circle text-orange-500 mr-2"></i> ' + formatText(data);
+      }else if (data == 'facturada'){
+        return '<i class="fas fa-circle text-emerald-500 mr-2"></i> ' + formatText(data);
+      } else {
+        return '<i class="fas fa-circle text-red-500 mr-2"></i> ' + formatText(data);
+      }
+
+    }
+  });
+  columns.push({
+    title: "Acciones",
+    data: null,
+    orderable: false,
+    searchable: false,
+    className: 'no-export',
+    render: (data, type, row) => {
+      // const viewBtn = `<button class="btn-view px-2 py-1 text-gray-700" data-id="${row.id}"><i class="fa-solid fa-lg fa-expand"></i></button>`;
+      const viewBtn = tooltipBtn({
+        html: `
+          <button
+            class="btn-view px-2 py-1 text-gray-700"
+            data-id="${row.id}">
+            <i class="fa-solid fa-lg fa-expand"></i>
+          </button>
+        `,
+        text: "Ver proformas"
+      });
+
+      if (rol === "admin" || rol === 'visor' || rol == "auditor") {
+        return `<div style="display:flex;justify-content:center;align-items:center;gap:0.25rem;white-space:nowrap;">${viewBtn}</div>`;
+      }
+      if (row.estatus.toUpperCase() != 'FACTURADA'){
+        // const editBtn = `<button class="btn-edit px-2 py-1 text-blue-600" data-id="${row.id}"><i class="fa-solid fa-lg fa-pen-to-square"></i></button>`;
+        // const invoiceBtn = `<button class="btn-invoice px-1 py-1 mx-0 text-green-600" data-id="${row.id}" data-factura_afectada_id="${row.factura_afectada_rel ? row.factura_afectada_rel.id : 0}" data-correlativo_interno="${row.correlativo_interno}"><i class="fa-solid fa-file-invoice fa-lg"></i></button>`;
+        const editBtn = tooltipBtn({
+          html: `
+            <button
+              class="btn-edit px-2 py-1 text-blue-600"
+              data-id="${row.id}">
+              <i class="fa-solid fa-lg fa-pen-to-square"></i>
+            </button>
+          `,
+          text: "Editar proformas"
+        });
+        const invoiceBtn = tooltipBtn({
+          html: `
+            <button
+              class="btn-invoice px-1 py-1 mx-0 text-green-600"
+              data-descripcion="${((row.tipo_documento == 'FC' ? 'Factura' : (row.tipo_documento == 'ND' ? 'Nota de Débito' : 'Nota de Crédito') ))}"
+              data-id="${row.id}"
+              data-factura_afectada_id="${
+                row.factura_afectada_rel ? row.factura_afectada_rel.id : 0
+              }"
+              data-correlativo_interno="${row.correlativo_interno}">
+              <i class="fa-solid fa-file-invoice fa-lg"></i>
+            </button>
+          `,
+          text: "Convertir en " + ((row.tipo_documento == 'FC' ? 'Factura' : (row.tipo_documento == 'ND' ? 'Nota de Débito' : 'Nota de Crédito') ))
+        });
+        return `<div style="display:flex;justify-content:center;align-items:center;gap:0.25rem;white-space:nowrap;">${viewBtn}${editBtn}${invoiceBtn}</div>`;
+      }else{
+        return `<div style="display:flex;justify-content:center;align-items:center;gap:0.25rem;white-space:nowrap;">${viewBtn}</div>`;
+      }
+    }
+  });
+
+
   // ----------------------
   // Confirmar importación (guardar en backend)
   // ----------------------
@@ -435,165 +606,10 @@ function ListProformas() {
               <DataTable
                 id="ListPreInvoicesDt"
                 className="table-auto w-full"
-                columns={[
-                  {
-                    title: "Fecha",
-                    data: "fecha_factura",
-                    className: "dt-center",
-                    render: (data, type, row) => {
-                      return formatDate(data);
-                    }
-                  },
-                  { title: "RIF", data: "cliente_final_rif", className: "dt-center", render: (data, type, row) => {
-                      return formatText(data);
-                    }
-                  },
-                  { title: "Razón Social", data: "cliente_final_nombre", render: (data, type, row) => {
-                      return formatText(data);
-                    }
-                  },
-                  {
-                    title: "Tipo de documento",
-                    data: "tipo_documento",
-                    className: "text-center",
-                    orderable: true,
-                    searchable: true,
-                    render: (data, type, row) => {
-                      if (data == 'FC'){
-                        return 'FACTURA';
-                      }else if (data == 'NC'){
-                        return 'NOTA DE CRÉDITO';
-                      } else {
-                        return 'NOTA DE DÉBITO';
-                      }
-
-                    }
-                  },
-                  { title: "Correlativo", data: "correlativo_interno", className: "dt-center", render: (data, type, row) => {
-                      return formatText(data);
-                    }
-                  },
-                  {
-                    title: "Base imponible (Bs.)",
-                    data: "total_base",
-                    render: (data, type, row) => {
-                      return formatDecimal(data);
-                    }
-                  },
-                  {
-                    title: "I.V.A. (Bs.)",
-                    data: "total_impuestos",
-                    render: (data, type, row) => {
-                      return formatDecimal(data);
-                    }
-                  },
-                  {
-                    title: "Total (Bs.)",
-                    data: "total_neto",
-                    render: (data, type, row) => {
-                      return formatDecimal(data);
-                    }
-                  },
-                  {
-                    title: "Pagado en divisas (Bs.)",
-                    data: "monto_pagado_divisas",
-                    render: (data, type, row) => {
-                      return formatDecimal(data);
-                    }
-                  },
-                  {
-                    title: "IGTF (Bs.)",
-                    data: "igtf_monto",
-                    render: (data, type, row) => {
-                      return formatDecimal(data);
-                    }
-                  },
-                  {
-                    title: "Zona",
-                    data: "zona",
-                    orderable: true,
-                    searchable: false,
-                    render: (data, type, row) => {
-                      return formatText(data);
-                    }
-                  },
-                  {
-                    title: "Estatus",
-                    data: "estatus",
-                    className: "dt-center",
-                    orderable: true,
-                    searchable: true,
-                    render: (data, type, row) => {
-                      if (data == 'borrador'){
-                        return '<i class="fas fa-circle text-orange-500 mr-2"></i> ' + formatText(data);
-                      }else if (data == 'facturada'){
-                        return '<i class="fas fa-circle text-emerald-500 mr-2"></i> ' + formatText(data);
-                      } else {
-                        return '<i class="fas fa-circle text-red-500 mr-2"></i> ' + formatText(data);
-                      }
-
-                    }
-                  },
-                  {
-                    title: "Acciones",
-                    data: null,
-                    orderable: false,
-                    searchable: false,
-                    className: 'no-export',
-                    render: (data, type, row) => {
-                      // const viewBtn = `<button class="btn-view px-2 py-1 text-gray-700" data-id="${row.id}"><i class="fa-solid fa-lg fa-expand"></i></button>`;
-                      const viewBtn = tooltipBtn({
-                        html: `
-                          <button
-                            class="btn-view px-2 py-1 text-gray-700"
-                            data-id="${row.id}">
-                            <i class="fa-solid fa-lg fa-expand"></i>
-                          </button>
-                        `,
-                        text: "Ver proformas"
-                      });
-
-                      if (rol === "admin" || rol === 'visor' || rol == "auditor") {
-                        return `<div style="display:flex;justify-content:center;align-items:center;gap:0.25rem;white-space:nowrap;">${viewBtn}</div>`;
-                      }
-                      if (row.estatus.toUpperCase() != 'FACTURADA'){
-                        // const editBtn = `<button class="btn-edit px-2 py-1 text-blue-600" data-id="${row.id}"><i class="fa-solid fa-lg fa-pen-to-square"></i></button>`;
-                        // const invoiceBtn = `<button class="btn-invoice px-1 py-1 mx-0 text-green-600" data-id="${row.id}" data-factura_afectada_id="${row.factura_afectada_rel ? row.factura_afectada_rel.id : 0}" data-correlativo_interno="${row.correlativo_interno}"><i class="fa-solid fa-file-invoice fa-lg"></i></button>`;
-                        const editBtn = tooltipBtn({
-                          html: `
-                            <button
-                              class="btn-edit px-2 py-1 text-blue-600"
-                              data-id="${row.id}">
-                              <i class="fa-solid fa-lg fa-pen-to-square"></i>
-                            </button>
-                          `,
-                          text: "Editar proformas"
-                        });
-                        const invoiceBtn = tooltipBtn({
-                          html: `
-                            <button
-                              class="btn-invoice px-1 py-1 mx-0 text-green-600"
-                              data-descripcion="${((row.tipo_documento == 'FC' ? 'Factura' : (row.tipo_documento == 'ND' ? 'Nota de Débito' : 'Nota de Crédito') ))}"
-                              data-id="${row.id}"
-                              data-factura_afectada_id="${
-                                row.factura_afectada_rel ? row.factura_afectada_rel.id : 0
-                              }"
-                              data-correlativo_interno="${row.correlativo_interno}">
-                              <i class="fa-solid fa-file-invoice fa-lg"></i>
-                            </button>
-                          `,
-                          text: "Convertir en " + ((row.tipo_documento == 'FC' ? 'Factura' : (row.tipo_documento == 'ND' ? 'Nota de Débito' : 'Nota de Crédito') ))
-                        });
-                        return `<div style="display:flex;justify-content:center;align-items:center;gap:0.25rem;white-space:nowrap;">${viewBtn}${editBtn}${invoiceBtn}</div>`;
-                      }else{
-                        return `<div style="display:flex;justify-content:center;align-items:center;gap:0.25rem;white-space:nowrap;">${viewBtn}</div>`;
-                      }
-                    }
-                  },
-                ]}
+                columns={columns}
                 options={{
                   columnDefs:[{
-                    targets: [4, 5, 6, 8, 9, 10, 11], // índices de columnas a ocultar (ej: RIF, Zona)
+                    targets: columnDefs, // índices de columnas a ocultar (ej: RIF, Zona)
                     visible: false,
                     searchable: true // siguen siendo buscables
                   }],

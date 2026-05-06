@@ -5,6 +5,8 @@ import { showInvoice } from '../../services/api_invoices'; // Importa el servici
 import { getProducts, showProduct, createProduct } from '../../services/apiProducts'; // Importa el servicio
 import { getEndClients, showEndClient, createEndClient } from '../../services/api_end_clients'; // Importa el servicio
 import { getClients, showClient } from '../../services/api_clients';
+import { getPaymentMethods } from '../../services/api_payment_methods';
+import { getLatestExchangeRateHistory } from '../../services/api_exchange_rate_history';
 import { useNavigate } from "react-router-dom"; // Para la redirección
 import { decryptText } from '../../services/api'; // Importa el servicio para encriptar/desencriptar parametros
 import { useLocation } from "react-router-dom"; // Para la obtener el parametro de la url
@@ -16,7 +18,7 @@ import { Autocomplete, TextField } from "@mui/material";
 import { Tabs, Tab, Box } from "@mui/material";
 import { esES } from '@mui/x-data-grid/locales';
 import $ from "jquery";
-import { formatDecimal, formatMoney, formatDate, formatDateTime, formatText, validateFormatEmail, validateFormatPhone, validateFormatRif } from "../../utils/formatters";
+import { formatDecimal, formatMoney, formatDate, formatDateTime, formatText, validateFormatEmail, validateFormatPhone, validateFormatRif, formatMoneySpecial } from "../../utils/formatters";
 
 // Componente editor para el Autocomplete
 function ProductoEditCell({ params, products }) {
@@ -69,9 +71,113 @@ function ProductoEditCell({ params, products }) {
   );
 }
 
+function ModoPagoEditCell({ params, paymentMethods }) {
+  const inputRef = useRef(null);
+
+  useEffect(() => {
+    if (inputRef.current) {
+      inputRef.current.focus();
+    }
+  }, []);
+
+  return (
+    <Autocomplete
+      options={paymentMethods || []}
+      fullWidth
+      size="small"
+      getOptionLabel={(option) => `${option.nombre} ${option.aplica_igtf ? '(IGTF)' : ''}`}
+      // ← CAMBIO: Buscar por CODIGO (string)
+      value={paymentMethods?.find((p) => p.codigo === params.value) || null}
+      onChange={(event, newValue) => {
+        params.api.setEditCellValue({
+          id: params.id,
+          field: "metodo_pago_codigo",
+          value: newValue ? newValue.codigo : "",
+        });
+        params.api.stopCellEditMode({ id: params.id, field: "metodo_pago_codigo" });
+      }}
+      renderInput={(p) => (
+        <TextField
+          {...p}
+          inputRef={inputRef}
+          variant="standard"
+          placeholder="Seleccione un medio de pago..."
+          fullWidth
+          InputProps={{
+            ...p.InputProps,
+            sx: { height: "100%", padding: "0 !important" },
+          }}
+        />
+      )}
+      sx={{
+        width: "100%",
+        height: "100%",
+        "& .MuiInputBase-root": {
+          height: "100%",
+          padding: "0 !important",
+          display: "flex",
+          alignItems: "center",
+        },
+      }}
+    />
+  );
+}
+
+function BancoEditCell({ params, bancosVenezuela }) {
+  const inputRef = useRef(null);
+
+  useEffect(() => {
+    if (inputRef.current) {
+      inputRef.current.focus();
+    }
+  }, []);
+
+  return (
+    <Autocomplete
+      options={bancosVenezuela || []}
+      fullWidth
+      size="small"
+      getOptionLabel={(option) => option.nombre}
+      value={bancosVenezuela?.find((b) => b.nombre === params.value) || null}
+      onChange={(event, newValue) => {
+        params.api.setEditCellValue({
+          id: params.id,
+          field: "banco",
+          value: newValue ? newValue.nombre : "",
+        });
+      }}
+      renderInput={(p) => (
+        <TextField
+          {...p}
+          inputRef={inputRef}
+          variant="standard"
+          placeholder="Seleccione banco..."
+          fullWidth
+          InputProps={{
+            ...p.InputProps,
+            sx: { height: "100%", padding: "0 !important" },
+          }}
+        />
+      )}
+      sx={{
+        width: "100%",
+        height: "100%",
+        "& .MuiInputBase-root": {
+          height: "100%",
+          padding: "0 !important",
+          display: "flex",
+          alignItems: "center",
+        },
+      }}
+    />
+  );
+}
+
 function FormProformas() {
   const navigate = useNavigate(); // Hook para redirección
   const [products, setProducts] = useState(null);
+  const [paymentMethods, setPaymentMethods] = useState(null);
+  const [latestExchangeRateHistory, setLatestExchangeRateHistory] = useState(null);
   const [clients, setClients] = useState(null);
   const [endClients, setEndClients] = useState(null);
   const [filterResults, setFilterResults] = useState([]);
@@ -99,7 +205,16 @@ function FormProformas() {
   //Autofocus
   const apiRef = useGridApiRef();
   const apiRefNd = useGridApiRef();
+  const apiRefMp = useGridApiRef();
   const [errors, setErrors] = useState({}); // Estado para errores de validación
+
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      e.stopPropagation();
+      return false;
+    }
+  };
   //Campos del DataGrid
   const columns = [
     { field: "id", headerName: "ID", editable: false },
@@ -202,7 +317,7 @@ function FormProformas() {
           color="bg-slate-800"
           size="small"
           onClick={() => handleDeleteRow(params.row.id)}>
-          <i class="fa-solid fa-lg fa-trash"></i>
+          <i class="fa-solid fa-lg fa-trash me-3"></i>
         </Button>
       ),
     },
@@ -235,7 +350,178 @@ function FormProformas() {
           color="bg-slate-800"
           size="small"
           onClick={() => handleDeleteRowNd(params.row.id)}>
-          <i class="fa-solid fa-lg fa-trash"></i>
+          <i class="fa-solid fa-lg fa-trash me-3"></i>
+        </Button>
+      ),
+    },
+  ];
+
+   // ← LISTA COMPLETA DE BANCOS VENEZOLANOS (2024)
+  const bancosVenezuela = [
+    { id: '', nombre: '',},
+    { id: '0102', nombre: 'Banco de Venezuela', logo: 'BDV' },
+    { id: '0104', nombre: 'Venezolano de Crédito', logo: 'BVC' },
+    { id: '0105', nombre: 'Banco Mercantil', logo: 'Mercantil' },
+    { id: '0108', nombre: 'BBVA Provincial', logo: 'BBVA' },
+    { id: '0114', nombre: 'Bancaribe', logo: 'Bancaribe' },
+    { id: '0115', nombre: 'Banco Exterior', logo: 'Exterior' },
+    { id: '0128', nombre: 'Banco Caroní', logo: 'Caroni' },
+    { id: '0134', nombre: 'Banesco', logo: 'Banesco' },
+    { id: '0137', nombre: 'Banco Sofitasa', logo: 'Sofitasa' },
+    { id: '0138', nombre: 'Banco Plaza', logo: 'Plaza' },
+    { id: '0146', nombre: 'Bangente', logo: 'Bangente' },
+    { id: '0151', nombre: 'Banco Fondo Común (BFC)', logo: 'BFC' },
+    { id: '0156', nombre: '100% Banco', logo: '100%' },
+    { id: '0157', nombre: 'DelSur Banco', logo: 'DelSur' },
+    { id: '0163', nombre: 'Banco del Tesoro', logo: 'Tesoro' },
+    { id: '0166', nombre: 'Banco Agrícola de Venezuela', logo: 'Agricola' },
+    { id: '0168', nombre: 'Bancrecer', logo: 'Bancrecer' },
+    { id: '0169', nombre: 'Mi Banco', logo: 'MiBanco' },
+    { id: '0171', nombre: 'Banco Activo', logo: 'Activo' },
+    { id: '0172', nombre: 'Bancamiga', logo: 'Bancamiga' },
+    { id: '0173', nombre: 'Banco Internacional de Desarrollo', logo: 'BID' },
+    { id: '0174', nombre: 'Banplus', logo: 'Banplus' },
+    { id: '0175', nombre: 'Banco Digital de los Trabajadores', logo: 'BDT' }
+  ];
+
+  const columnsMp = [
+    { field: "id", headerName: "ID", editable: false },
+    { field: "nueva_linea", headerName: "Nueva Linea", editable: false },
+    {
+      field: "metodo_pago_codigo",
+      headerName: "Medio de pago",
+      flex: 2.5,
+      editable: true,
+      headerAlign: "center",
+      //maxWidth: 150,
+      renderEditCell: (params) => (
+        <ModoPagoEditCell params={params} paymentMethods={paymentMethods} />
+      ),
+      valueFormatter: (params) => {
+        const codigo = params.value;
+        const paymentMethod = paymentMethods?.find((p) => p.codigo === codigo);
+        return paymentMethod ? `${paymentMethod.nombre} ${paymentMethod.aplica_igtf ? '(IGTF)' : ''}` : codigo || "";
+      },
+      renderCell: (params) => {
+        const codigo = params.value;
+        const paymentMethod = paymentMethods?.find((p) => p.codigo === codigo);
+        if (!paymentMethod) return codigo || "Sin método";
+
+        return (
+          <div className="flex items-center gap-2">
+            <span>{paymentMethod.nombre}</span>
+            {paymentMethod.aplica_igtf && (
+              <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full">
+                IGTF
+              </span>
+            )}
+          </div>
+        );
+      },
+    },
+    {
+      field: "aplica_igtf",
+      headerName: "IGTF",
+      width: 80,
+      editable: false, // ← NO editable, se asigna automáticamente
+      renderCell: (params) => (
+        <div className="flex items-center justify-center">
+          {params.value ? (
+            <i className="fa-solid fa-check text-green-500 text-sm"></i>
+          ) : (
+            <i className="fa-solid fa-times text-red-500 text-sm"></i>
+          )}
+        </div>
+      ),
+    },
+    {
+      field: "banco",
+      headerName: "Banco",
+      flex: 2.5,
+      //maxWidth: 200,
+      editable: true,
+      headerAlign: "center",
+      align: "center", // ← IMPORTANTE: Mantiene el alineado de la columna
+      disableColumnMenu: true,
+      sortable: false,
+      renderCell: (params) => {
+        const nombreBanco = params.value || '';
+        const metodoPagoCodigo = params.row.metodo_pago_codigo;
+        const metodoPago = paymentMethods?.find(p => p.codigo === metodoPagoCodigo);
+        const aplicaIgtf = metodoPago?.aplica_igtf || false;
+
+        // ← CASO 1: Sin banco Y sin IGTF → Em dash centrado
+        if (!nombreBanco && !aplicaIgtf) {
+          return (
+            <div className="flex items-center justify-center w-full h-full">
+              <span className="text-sm text-gray-500">—</span>
+            </div>
+          );
+        }
+
+        // ← CASO 2: APLICA IGTF → SOLO "N/A" CENTRADO
+        if (aplicaIgtf) {
+          return (
+            <div className="flex items-center justify-center w-full h-full">
+              <span className="text-xs bg-red-100 text-red-800 px-3 py-1 rounded-full font-bold whitespace-nowrap">
+                N/A
+              </span>
+            </div>
+          );
+        }
+
+        // ← CASO 3: Banco seleccionado (NO IGTF) → Nombre del banco
+        return (
+          <div className="flex items-center justify-center w-full h-full cursor-pointer hover:bg-gray-50 rounded p-1 select-none">
+            <span className="truncate text-sm font-medium">
+              {nombreBanco}
+            </span>
+          </div>
+        );
+      },
+      renderEditCell: (params) => {
+        const metodoPagoCodigo = params.row.metodo_pago_codigo;
+        const metodoPago = paymentMethods?.find(p => p.codigo === metodoPagoCodigo);
+
+        // ← SI APLICA IGTF → MOSTRAR N/A CENTRADO (NO EDITOR)
+        if (metodoPago?.aplica_igtf) {
+          return (
+            <div className="flex items-center justify-center w-full h-full bg-gray-50 rounded p-2">
+              <span className="text-xs bg-red-100 text-red-800 px-3 py-1 rounded-full font-bold">
+                N/A
+              </span>
+            </div>
+          );
+        }
+
+        // ← EDITOR NORMAL si NO aplica IGTF
+        return <BancoEditCell params={params} bancosVenezuela={bancosVenezuela} />;
+      },
+    },
+    {
+      field: "monto",
+      headerName: "Monto (Bs.)",
+      flex: 2.5,
+      type: "number",
+      editable: (type == 'NC' ? false : true),
+      headerAlign: "center",
+      renderCell: (params) => {
+        const raw = params?.value ?? 0;
+        return formatDecimal(raw);
+      },
+    },
+    {
+      field: "acciones",
+      headerName: "",
+      flex: 0.4,
+      sortable: false,
+      //maxWidth: 60,
+      renderCell: (params) => (
+        <Button
+          color="bg-slate-800"
+          size="small"
+          onClick={() => handleDeleteRowMp(params.row.id)}>
+          <i className="fa-solid fa-lg fa-trash me-3"></i>
         </Button>
       ),
     },
@@ -257,6 +543,10 @@ function FormProformas() {
           setProducts(datapts);
           const datacls = await getEndClients({ page: 1, per_page: 20, request_type: 'export' });
           setEndClients(datacls.data);
+          const datamp = await getPaymentMethods();
+          setPaymentMethods(datamp);
+          const datalerh = await getLatestExchangeRateHistory();
+          setLatestExchangeRateHistory(datalerh);
         }else{
           setProducts([]);
           setEndClients([]);
@@ -274,6 +564,14 @@ function FormProformas() {
               data['aplica_igtf'] = true;
               $('#aplica_igtf').prop('checked', true);
               $('.apply_igtf').removeClass('hidden');
+            }
+            data.cliente_final_telefono = data.cliente_final.telefono;
+            data.cliente_final_email = data.cliente_final.email;
+            data.cliente_final_direccion = data.cliente_final.direccion;
+            for (var i = 0; i < data.items.length; i++){
+              if (data.items[i].iva_categoria_id != undefined && data.items[i].iva_categoria_id != null){
+                data.items[i].tasa_porcentaje = data.items[i].iva_categoria.tasa_porcentaje;
+              }
             }
           }else{
             data = await showInvoice(decryptText(preInvoiceId)); // Llamamos a showPreInvoice con el ID
@@ -295,6 +593,9 @@ function FormProformas() {
             for (var i = 0; i < data.items.length; i++){
               if (data.items[i].cantidad_disponible != 0){
                 data.items[i].cantidad = data.items[i].cantidad_disponible;
+                if (data.items[i].iva_categoria_id != undefined && data.items[i].iva_categoria_id != null){
+                  data.items[i].tasa_porcentaje = data.items[i].iva_categoria.tasa_porcentaje;
+                }
                 itemsNc.push(data.items[i]);
               }
             }
@@ -325,6 +626,7 @@ function FormProformas() {
             fecha_factura: formattedDate,
             serial: '',
             conceptos_nd: [],
+            pagos: [],
           })
         }
       } catch (err) {
@@ -428,18 +730,38 @@ function FormProformas() {
 
   //Calcular monto del igtf en la Proformas
   const igtfAmount = useMemo(() => {
-    if (!preInvoice?.items) return 0;
-    if (!preInvoice?.monto_pagado_divisas) return 0;
-    const igtfAmount = preInvoice.monto_pagado_divisas * (preInvoice.igtf_porcentaje / 100);
+    if (!preInvoice?.pagos) return 0;
 
-    // resultado final redondeado a 2 decimales
+    // Calcular monto_pagado_divisas sumando SOLO los montos de pagos que aplican IGTF
+    let montoPagadoDivisas = 0;
+    for (let i = 0; i < preInvoice.pagos.length; i++) {
+      if (preInvoice.pagos[i].aplica_igtf === true) {
+        montoPagadoDivisas += Number(preInvoice.pagos[i].monto) || 0;
+      }
+    }
+    if (montoPagadoDivisas > totalAmount){
+      montoPagadoDivisas = totalAmount;
+    }
+    // Actualizar el estado con el monto calculado (opcional, para mostrarlo)
+    setPreInvoice(prev => ({
+      ...prev,
+      monto_pagado_divisas: montoPagadoDivisas
+    }));
+    if (montoPagadoDivisas > 0){
+      $('.apply_igtf').removeClass('hidden');
+    }else{
+      $('.apply_igtf').addClass('hidden');
+    }
+    const igtfAmount = montoPagadoDivisas * ((preInvoice.igtf_porcentaje || 3.0) / 100);
+
     return roundTo(igtfAmount, 2);
-  }, [preInvoice?.monto_pagado_divisas]);
+  }, [preInvoice?.pagos, preInvoice?.igtf_porcentaje]); // Dependencias correctas
 
   if (loading) return <div>Cargando...</div>;
   if (error) return <div>{error}</div>;
 
   const validate = () => {
+    console.log('validate-preInvoice: ', preInvoice);
     const newErrors = {};
     var errorToast = [];
     if (!preInvoice.fecha_factura) {
@@ -649,18 +971,65 @@ function FormProformas() {
         }
       }
     }
-    if (preInvoice.aplica_igtf && preInvoice.monto_pagado_divisas <= 0) {
-      newErrors.monto_pagado_divisas = "Monto pagado en divisas es obligatorias";
-      errorToast.push("- Debe indicar el monto pagado en divisas del documento.");
-      //toast.error("Debe indicar el monto pagado en divisas del documento.");
+    if (preInvoice.pagos.length == 0) {
+      if (newErrors.pagos == undefined){
+        newErrors.pagos = [];
+      }
+      newErrors.pagos.push("Los pagos son obligatorios");
+      errorToast.push("- Debe ingresar los pagos del documento.");
+      //toast.error("Debe ingresar las lineas del documento.");
       setButtonDisabled(false);
       //return;
     }
-    if (preInvoice.aplica_igtf && (preInvoice.monto_pagado_divisas > totalAmount)) {
-      newErrors.monto_pagado_divisas = "Monto pagado en divisas no puede exceder el monto de la proforma";
-      errorToast.push("- Monto pagado en divisas no puede exceder el monto de la proforma.");
-      //toast.error("Debe indicar el monto pagado en divisas del documento.");
-      setButtonDisabled(false);
+    var totalPaid = 0;
+    for (var i = 0; i < preInvoice.pagos.length; i++){
+      if (!preInvoice.pagos[i].metodo_pago_codigo || preInvoice.pagos[i].metodo_pago_codigo == '') {
+        if (newErrors.pagos == undefined){
+          newErrors.pagos = [];
+        }
+        newErrors.pagos.push("No se pueden procesar pagos sin medio de pago especificado.");
+        errorToast.push("- No se pueden procesar pagos sin medio de pago especificado.");
+        //toast.error("No se pueden procesar las lineas sin producto especificado.");
+        setButtonDisabled(false);
+        //return;
+      }
+      if (!preInvoice.pagos[i].aplica_igtf && (!preInvoice.pagos[i].banco || preInvoice.pagos[i].banco == '')) {
+        if (newErrors.pagos == undefined){
+          newErrors.pagos = [];
+        }
+        newErrors.pagos.push("No se pueden procesar pagos sin el banco especificado.");
+        errorToast.push("- No se pueden procesar pagos sin el banco especificado.");
+        //toast.error("No se pueden procesar las lineas con cantidades menor o igual que 0.");
+        setButtonDisabled(false);
+        //return;
+      }
+      if (preInvoice.pagos[i].monto <= 0) {
+        if (newErrors.pagos == undefined){
+          newErrors.pagos = [];
+        }
+        newErrors.pagos.push("No se pueden procesar pagos con monto menor o igual que 0.");
+        errorToast.push("- No se pueden procesar pagos con monto menor o igual que 0.");
+        //toast.error("No se pueden procesar las lineas con precio unitario menor o igual que 0.");
+        setButtonDisabled(false);
+        //return;
+      }else{
+        totalPaid = totalPaid + Number(preInvoice.pagos[i].monto);
+      }
+    }
+    if (preInvoice.pagos.length > 0) {
+      totalPaid = Math.max(0, roundTo(totalPaid, 2));
+      const totalInvoice = Math.max(0, roundTo((totalAmount + igtfAmount), 2));
+      console.log('validate-totalPaid: ', totalPaid);
+      console.log('validate-totalInvoice: ', totalInvoice);
+      if (totalPaid != totalInvoice){
+        if (newErrors.pagos == undefined){
+          newErrors.pagos = [];
+        }
+        newErrors.pagos.push("Diferencia encontrada en el total y los pagos registrados.");
+        errorToast.push("- Diferencia encontrada en el total y los pagos registrados.");
+        //toast.error("Debe ingresar las lineas del documento.");
+        setButtonDisabled(false);
+      }
       //return;
     }
     //console.log('newErrors: ', newErrors);
@@ -716,7 +1085,7 @@ function FormProformas() {
         action = 'update';
         data = await editPreInvoice(decryptText(preInvoiceId), preInvoice); // Llamamos a editPreInvoice con el ID
       }
-      //console.log('editPreInvoice-data: ', data);
+      console.log('editPreInvoice-data: ', data);
       //setPreInvoice(data.resultados[0]); // Guardamos los datos del preInvoice en el estado
       // Mostrar una notificación de éxito
       //console.log(action +'-status: ', data);
@@ -740,6 +1109,9 @@ function FormProformas() {
             }, 2000); // El tiempo debe ser el mismo o ligeramente mayor que la duración de la notificación
           },
         });
+      }else if (data.error != undefined){
+        toast.error(data.error);
+        setButtonDisabled(false);
       }else{
         //console.log('EditPreInvoice-Error:==>');
         if (action == 'create'){
@@ -818,6 +1190,52 @@ function FormProformas() {
     });
   };
 
+  // ← AGREGAR NUEVA LÍNEA DE PAGO
+  const handleAddRowMp = () => {
+    // ← VALIDACIÓN 1: Calcular monto restante ANTES de agregar
+    const totalPagadoActual = preInvoice.pagos.reduce((sum, pago) => {
+      return sum + (Number(pago.monto) || 0);
+    }, 0);
+
+    const montoRestante = Math.max(0, roundTo((totalAmount + igtfAmount) - totalPagadoActual, 2));
+
+    // ← NUEVA VALIDACIÓN: No agregar si no hay monto restante
+    if (montoRestante <= 0) {
+      toast.error('No hay saldo pendiente por cancelar');
+      return; // ← NO agregar la línea
+    }
+
+    const newId = preInvoice.pagos.length > 0
+      ? Math.max(...preInvoice.pagos.map((r) => r.id)) + 1
+      : 1;
+
+    const newRow = {
+      id: newId,
+      nueva_linea: true,
+      metodo_pago_codigo: "",
+      monto: montoRestante,  // Monto restante por defecto
+      banco: ''
+    };
+
+    setPreInvoice((prev) => {
+      const updated = {
+        ...prev,
+        pagos: [...prev.pagos, newRow],
+      };
+
+      setTimeout(() => {
+        try {
+          apiRefMp.current.setCellFocus(newId, "metodo_pago_codigo");
+          apiRefMp.current.startCellEditMode({ id: newId, field: "metodo_pago_codigo" });
+        } catch (err) {
+          console.log('Error:', err);
+        }
+      });
+
+      return updated;
+    });
+  };
+
   // Función para eliminar fila
   const handleDeleteRow = (id) => {
     setPreInvoice((prev) => ({
@@ -826,11 +1244,19 @@ function FormProformas() {
     }));
   };
 
-  // Función para eliminar fila
+  // Función para eliminar fila del concepto en nota de debito
   const handleDeleteRowNd = (id) => {
     setPreInvoice((prev) => ({
       ...prev,
       conceptos_nd: prev.conceptos_nd.filter((row) => row.id !== id),
+    }));
+  };
+
+  // Función para eliminar fila del medio de pago
+  const handleDeleteRowMp = (id) => {
+    setPreInvoice((prev) => ({
+      ...prev,
+      pagos: prev.pagos.filter((row) => row.id !== id),
     }));
   };
 
@@ -894,6 +1320,57 @@ const processRowUpdateNd = (newRow, oldRow) => {
   return updatedRow; // obligatorio retornar la fila actualizada
 };
 
+const processRowUpdateMp = (newRow, oldRow) => {
+  try {
+    const selectedPaymentMethod = paymentMethods?.find(p => p.codigo === newRow.metodo_pago_codigo) || null;
+
+    let monto = 0;
+    if (newRow.monto != null && newRow.monto !== '') {
+      monto = parseFloat(newRow.monto?.toString().replace(",", ".") || "0");
+      if (isNaN(monto)) monto = 0;
+    }
+
+    // ← NUEVA VALIDACIÓN 2: Calcular límites
+    const totalPagadoActual = preInvoice.pagos.reduce((sum, pago) => {
+      if (pago.id === newRow.id) return sum; // Excluir la fila actual del cálculo
+      return sum + (Number(pago.monto) || 0);
+    }, 0);
+
+    const montoRestante = roundTo((totalAmount + igtfAmount) - totalPagadoActual, 2);
+
+    // ← AJUSTAR MONTO si excede el saldo restante
+    if (monto > montoRestante) {
+      monto = montoRestante;
+      toast.info(`Monto ajustado a saldo restante: ${formatMoney(monto)}`);
+    }
+
+    // ← LIMPIAR BANCO si aplica IGTF
+    const banco = selectedPaymentMethod?.aplica_igtf ? '' : (newRow.banco || '');
+
+    const aplicaIgtf = selectedPaymentMethod ? selectedPaymentMethod.aplica_igtf : false;
+
+    const updatedRow = {
+      ...newRow,
+      monto: Number(monto.toFixed(2)),
+      aplica_igtf: aplicaIgtf,
+      banco: banco,
+    };
+
+    setPreInvoice((prev) => {
+      if (!prev || !prev.pagos) return prev;
+      const updatedPagos = prev.pagos.map((row) =>
+        row.id === updatedRow.id ? updatedRow : row
+      );
+      return { ...prev, pagos: updatedPagos };
+    });
+
+    return updatedRow;
+  } catch (error) {
+    console.error('Error en processRowUpdateMp:', error);
+    return oldRow || newRow;
+  }
+};
+
 const handleSearchRif = (value, type) => {
   //console.log('handleSearchRif-value: ', value);
   //console.log('handleSearchRif-type: ', type);
@@ -947,19 +1424,19 @@ const handleSearchRif = (value, type) => {
   }
   var results;
   if (type == 'admin'){
-    console.log('clients: ', clients);
+    //console.log('clients: ', clients);
     results = clients.filter((c) =>
       c.rif.toUpperCase().includes(value) ||
       c.nombre_empresa.toUpperCase().includes(value)
     );
   }else{
-    console.log('endClients: ', endClients);
+    //console.log('endClients: ', endClients);
     results = endClients.filter((c) =>
       c.rif.toUpperCase().includes(value) ||
       c.nombre.toUpperCase().includes(value)
     );
   }
-  console.log('handleSearchRif-results.length: ', results.length);
+  //console.log('handleSearchRif-results.length: ', results.length);
   if (results.length == 0){
     $('#div_none_endclients').attr('style', "width: 600px;");
     $('.form-client-complement').addClass('mt-10');
@@ -997,7 +1474,7 @@ const handleSearchRif = (value, type) => {
 
 const selectClient = async (client, type) => {
   if (type == 'admin'){
-    console.log('selectClient-client: ', client);
+    //console.log('selectClient-client: ', client);
     setPreInvoice((prev) => ({
       ...prev,
       cliente_id: client.id || '#',
@@ -1005,7 +1482,7 @@ const selectClient = async (client, type) => {
       cliente_nombre: client.nombre_empresa || '',
     }));
     if (client && client.id){
-      console.log('selectClient-filterResultsAdmin: ', filterResultsAdmin[0]);
+      //console.log('selectClient-filterResultsAdmin: ', filterResultsAdmin[0]);
       const datacls = await getEndClients({ client_id: client.id });
       setEndClients(datacls.data);
       const datapts = await getProducts({ client_id: client.id });
@@ -1020,6 +1497,7 @@ const selectClient = async (client, type) => {
       cliente_final_telefono: client.telefono || '',
       cliente_final_email: client.email || '',
       cliente_final_direccion: client.direccion || '',
+      zona: client.zona || '',
     }));
   }
   if (type == 'admin'){
@@ -1063,9 +1541,36 @@ const handleRadioChange = (event) => {
             <div className="flex-auto px-4 lg:px-10 py-10 pt-0 bg-white">
               <div className="w-full flex flex-wrap px-4 pt-4">
                 <div className="w-full lg:w-3/12 px-0">
-                  <h6 class="text-blueGray-400 text-sm mt-3 my-6 font-bold uppercase">Informacion de la Proformas</h6>
+                  <h6 class="text-blueGray-400 text-sm mt-3 my-6 font-bold uppercase">Información de la Proformas</h6>
                 </div>
-                {rol == 'admin' && (
+                <div className="w-full lg:w-9/12 px-0 text-right space-y-1">
+                {/* LÍNEA 1: Título + Fecha */}
+                <div className="flex justify-end items-baseline gap-2">
+                  <h6 className="text-blueGray-400 text-sm font-bold uppercase whitespace-nowrap">
+                    {formatText("Tasa de cambio del día:")}
+                  </h6>
+                  <h6 className="text-blueGray-400 text-sm font-bold uppercase whitespace-nowrap">
+                    {formatDate(latestExchangeRateHistory.tasas['USD'].fecha_valor)}
+                  </h6>
+                </div>
+
+                {/* LÍNEA 2: USD */}
+                <div className="flex justify-end items-baseline gap-2 pr-0">
+                  <span className="text-sm font-bold text-blueGray-600">USD</span>
+                  <h6 className="text-lg font-black text-gray-800">
+                    {formatMoneySpecial(latestExchangeRateHistory.tasas['USD'].tasa, 4)}
+                  </h6>
+                </div>
+
+                {/* LÍNEA 3: EUR */}
+                <div className="flex justify-end items-baseline gap-2 pr-0">
+                  <span className="text-sm font-bold text-blueGray-600">EUR</span>
+                  <h6 className="text-lg font-black text-gray-800">
+                    {formatMoneySpecial(latestExchangeRateHistory.tasas['EUR'].tasa, 4)}
+                  </h6>
+                </div>
+              </div>
+                    {rol == 'admin' && (
                   <div className="relative lg:w-3/12 mb-3">
                       <label className="block text-blueGray-600 text-xs font-bold mb-2">Empresa Afiliada (RIF)</label>
                       <input
@@ -1175,7 +1680,7 @@ const handleRadioChange = (event) => {
                   </div>
                 )}
               </div>
-              <form onSubmit={handleSubmit}>
+              <form onSubmit={handleSubmit} onKeyDown={handleKeyDown}>
                 <hr class="my-6 border-b-1 border-blueGray-300"/>
                 <div className="flex flex-wrap">
                   <div className="w-full lg:w-6/12 px-4 hidden">
@@ -1213,118 +1718,93 @@ const handleRadioChange = (event) => {
                         onChange={(e) => setPreInvoice({ ...preInvoice, cliente_final_id: e.target.value })}
                       />
                       <div className="relative">
-                        {/*<input
-                          type="text"
-                          maxLength={12}
-                          className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full"
-                          placeholder="V-12345678-9"
-                          value={preInvoice.cliente_final_rif}
-                          onChange={(e) => handleSearchRif(e.target.value)}
-                          onKeyDown={(e) => {
-                            console.log('e.key: ', e.key);
-                            if (e.key === "ArrowDown") {
-                              $('.li_search_client').focus()
-                            }
-                            // Si el usuario presiona Backspace
-                            if (e.key === "Backspace") {
-                              if (preInvoice.cliente_final_rif.substr(preInvoice.cliente_final_rif.length - 1, preInvoice.cliente_final_rif.length) == '-'){
-                                reduceRif(preInvoice.cliente_final_rif.substr(0, preInvoice.cliente_final_rif.length - 1));
-                              }
-                            }
-                            // Si el usuario presiona Enter y hay resultados
-                            if (e.key === "Enter") {
-                              e.preventDefault(); // evita submit del formulario
-
-                              if (filterResults.length > 0) {
-                                selectClient(filterResults[0]); // selecciona el primer resultado
-                              } else {
-                                // si no hay resultados se oculta la lista igual
-                                setShowResults(false);
-                              }
-                            }
-                          }}
-                        />*/}
                         <Autocomplete
-                            freeSolo
-                            options={
-                                showResults && preInvoice.cliente_final_rif !== ''
-                                  ? filterResults ?? []
-                                  : endClients ?? []
-                              }
-                            getOptionLabel={(opt) =>
-                              opt?.rif ? `${opt.rif} — ${opt.nombre}` : ""
-                            }
-                            filterOptions={(options) => options} // usamos tu propio filtro manual
-                            value={null}
-                            inputValue={preInvoice.cliente_final_rif || ""}
-                            onInputChange={(e, value) => handleSearchRif(value, 'client')}
-                            onChange={(event, newValue) => {
-                              if (newValue) selectClient(newValue, 'client');
-                            }}
-                            renderInput={(params) => (
-                              <TextField
-                                {...params}
-                                label="V-12345678-0"
-                                placeholder="V-12345678-0"
-                                variant="outlined"
-                                size="small"
-                                onChange={(e) => {
-                                  let value = e.target.value.toUpperCase();
+                          freeSolo
+                          options={showResults && preInvoice.cliente_final_rif !== '' ? filterResults ?? [] : endClients ?? []}
+                          getOptionLabel={(opt) => opt?.rif ? `${opt.rif} — ${opt.nombre}` : ""}
+                          filterOptions={(options) => options} // Desactiva filtro automático
+                          value={null}
+                          inputValue={preInvoice.cliente_final_rif || ""}
+                          onInputChange={(e, value) => handleSearchRif(value, 'client')}
+                          onChange={(event, newValue) => {
+                            if (newValue) selectClient(newValue, 'client');
+                          }}
+                          renderInput={(params) => (
+                            <TextField
+                              {...params}
+                              label="V-12345678-0"
+                              placeholder="V-12345678-0"
+                              variant="outlined"
+                              size="small"
+                              onKeyDown={(e) => {
+                                // 🔑 ENTER: Selecciona el PRIMER elemento si hay resultados
+                                if (e.key === "Enter") {
+                                  e.preventDefault(); // ← EVITA submit del form
+                                  e.stopPropagation(); // ← EVITA bubbling
 
-                                  // Elimina caracteres no válidos (solo letras, números y guiones)
-                                  value = value.replace(/[^A-Z0-9-]/g, "");
+                                  if (filterResults.length > 0) {
+                                    selectClient(filterResults[0], 'client'); // ← SELECCIONA PRIMERO
+                                  }
+                                  setTimeout(() => {
+                                    const correlativoInput = document.querySelector('input[name="correlativo_interno"]');
 
-                                  // Forzar el patrón paso a paso
-                                  if (value.length === 1) {
-                                    // Primera posición → solo letras válidas
-                                    if (!/[VJEPG123456789]/.test(value)) value = "";
-                                  } else if (value.length === 2) {
-                                      // Solo agregar guion si comienza con letra válida
-                                      if (/[VJEPG]/.test(value[0]) && !value.includes("-")) {
-                                        if (/[VJEPG123456789-]/.test(value[1])){
-                                          value = value[0] + "-" + value[1];
-                                        }else{
-                                          value = value[0];
-                                        }
+                                    if (correlativoInput) {
+                                      correlativoInput.focus();
+                                    }
+                                  }, 100);
+                                  return false;
+                                }
+
+                                // Backspace para guiones
+                                if (e.key === "Backspace") {
+                                  if (preInvoice.cliente_final_rif.endsWith('-')) {
+                                    const newRif = preInvoice.cliente_final_rif.slice(0, -1);
+                                    reduceRif(newRif, 'client');
+                                  }
+                                }
+                              }}
+                              onChange={(e) => {
+                                let value = e.target.value.toUpperCase();
+
+                                // Elimina caracteres no válidos (solo letras, números y guiones)
+                                value = value.replace(/[^A-Z0-9-]/g, "");
+
+                                // Forzar el patrón paso a paso
+                                if (value.length === 1) {
+                                  // Primera posición → solo letras válidas
+                                  if (!/[VJEPG123456789]/.test(value)) value = "";
+                                } else if (value.length === 2) {
+                                    // Solo agregar guion si comienza con letra válida
+                                    if (/[VJEPG]/.test(value[0]) && !value.includes("-")) {
+                                      if (/[VJEPG123456789-]/.test(value[1])){
+                                        value = value[0] + "-" + value[1];
+                                      }else{
+                                        value = value[0];
                                       }
-                                    } else if (value.length > 2) {
-                                    // Nuevo: permitir solo números (hasta 8)
-                                    const matchSoloNumeros = value.match(/^\d{0,8}$/);
+                                    }
+                                  } else if (value.length > 2) {
+                                  // Nuevo: permitir solo números (hasta 8)
+                                  const matchSoloNumeros = value.match(/^\d{0,8}$/);
 
-                                    if (matchSoloNumeros) {
-                                      value = matchSoloNumeros[0];
+                                  if (matchSoloNumeros) {
+                                    value = matchSoloNumeros[0];
+                                  } else {
+                                    // Caso RIF tradicional
+                                    const match = value.match(/^([VJEPG])-(\d{0,8})-?(\d{0,1})?$/);
+                                    if (match) {
+                                      const [, letra, numeros, verificador] = match;
+                                      value = `${letra}-${numeros}${numeros.length === 8 ? "-" : ""}${verificador || ""}`;
                                     } else {
-                                      // Caso RIF tradicional
-                                      const match = value.match(/^([VJEPG])-(\d{0,8})-?(\d{0,1})?$/);
-                                      if (match) {
-                                        const [, letra, numeros, verificador] = match;
-                                        value = `${letra}-${numeros}${numeros.length === 8 ? "-" : ""}${verificador || ""}`;
-                                      } else {
-                                        value = preInvoice.cliente_final_rif;
-                                      }
+                                      value = preInvoice.cliente_final_rif;
                                     }
                                   }
+                                }
 
-                                  setPreInvoice({ ...preInvoice, cliente_final_rif: value });
-                                }}
-                                onKeyDown={(e) => {
-                                  // Si el usuario presiona Backspace
-                                  if (e.key === "Backspace") {
-                                    if (preInvoice.cliente_final_rif.substr(preInvoice.cliente_final_rif.length - 1, preInvoice.cliente_final_rif.length) == '-'){
-                                      reduceRif(preInvoice.cliente_final_rif.substr(0, preInvoice.cliente_final_rif.length - 1), 'client');
-                                    }
-                                  }
-                                  // ENTER para seleccionar primer elemento si no se ha elegido uno
-                                  if (e.key === "Enter") {
-                                    if (filterResults.length > 0) {
-                                      e.preventDefault();
-                                      selectClient(filterResults[0], 'client');
-                                    }
-                                  }
-                                }}
-                              />
-                            )}
-                          />
+                                setPreInvoice({ ...preInvoice, cliente_final_rif: value });
+                              }}
+                            />
+                          )}
+                        />
 
                         {/*
                         {showResults && filterResults.length > 0 && (
@@ -1451,6 +1931,7 @@ const handleRadioChange = (event) => {
                         className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
                         value={preInvoice.correlativo_interno}
                         placeholder="0000..."
+                        name="correlativo_interno"
                         onChange={(e) => setPreInvoice({ ...preInvoice, correlativo_interno: e.target.value.toString().toUpperCase() })}
                       />
                       {errors.correlativo_interno && <p className="text-red-500 text-xs mt-1">{errors.correlativo_interno}</p>}
@@ -1571,65 +2052,109 @@ const handleRadioChange = (event) => {
                         ))}
                     </p>}
                   </div>
-                  <div className="w-full lg:w-4/12 px-4 mt-3">
-                    <div className="relative w-full mb-3">
-                      <label class="inline-flex items-center cursor-pointer">
-                        <input value={preInvoice.aplica_igtf} type="checkbox" id="aplica_igtf" class="form-checkbox border-0 rounded text-blueGray-700 ml-1 w-5 h-5 ease-linear transition-all duration-150"
-                          onChange={(e) => {
-                            const aplica_igtf = e.target.checked; // obtienes el value normal
-                            if (aplica_igtf){
-                              $('.apply_igtf').removeClass('hidden');
-                            }else{
-                              $('.apply_igtf').addClass('hidden');
-                            }
-                            // actualizamos el atributo aplica_igtf
-                            setPreInvoice({ ...preInvoice, aplica_igtf: e.target.value })
-                          }}/>
-                        <span class="ml-2 text-sm font-semibold text-blueGray-600">Aplicar IGTF</span>
-                      </label>
-                      <div className="apply_igtf mt-3 p-4 border rounded bg-gray-50 hidden">
-                        <label className="block text-blueGray-600 text-xs font-bold mb-2">Monto pagado en divisas</label>
-                        <label className="block text-blueGray-600 text-xs font-bold mb-2">Nota: El monto ingresado debe ser expresado en (Bs.)</label>
-                        <input
-                          type="number" step="0.01"
-                          className="border-0 px-3 py-3 placeholder-blueGray-300 text-right text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
-                          value={preInvoice.monto_pagado_divisas}
-                          placeholder="0,00"
-                          onChange={(e) => {
-                            // convertir a float, pero permitir "" si el input está vacío
-                            const value = e.target.value;
-                            setPreInvoice({...preInvoice,
-                              monto_pagado_divisas: value === "" ? "" : value
-                            });
+                  <div className="flex w-full lg:w-8/12 px-4 ml-0 lg:ml-4 pb-3 flex-1 min-w-0 border border-gray-200 rounded-lg shadow-sm">
+                    <div className="w-full lg:w-9/12 px-1 mt-3 pl-0">
+                      <div className="relative w-full mb-3 text-end">
+                        <Button
+                            variant="contained"
+                            color="primary"
+                            onClick={handleAddRowMp}
+                            style={{ marginBottom: 10 }}>
+                            Agregar pago
+                          </Button>
+                        <DataGrid
+                          apiRef={apiRefMp}
+                          rows={preInvoice.pagos || []}
+                          columns={columnsMp}
+                          getRowId={(row) => row.id}
+                          pageSize={5}
+                          autoHeight
+                          processRowUpdate={processRowUpdateMp}
+                          onProcessRowUpdateError={(error) => {
+                            console.error('Error updating payment row:', error);
+                            toast.error('Error al actualizar pago');
                           }}
-                          onBlur={(e) => {
-                            const value = parseFloat(e.target.value || 0).toFixed(2); // redondea a 2 decimales
-                            setPreInvoice({
-                              ...preInvoice,
-                              monto_pagado_divisas: parseFloat(value) // guardamos como float
-                            });
-                          }}/>
-                          {errors.monto_pagado_divisas && <p className="text-red-500 text-xs mt-1">{errors.monto_pagado_divisas}</p>}
+                          // ← EVENTOS SIMPLIFICADOS Y CORREGIDOS
+                          onCellClick={(params, event) => {
+                            // Solo intervenir si es la columna 'banco'
+                            if (params.field === 'banco') {
+                              const metodoPago = paymentMethods?.find(p => p.codigo === params.row.metodo_pago_codigo);
+
+                              // Si aplica IGTF → bloquear completamente
+                              if (metodoPago?.aplica_igtf) {
+                                event.stopPropagation();
+                                event.preventDefault();
+                                return;
+                              }
+
+                              // Si NO aplica IGTF → dejar que MUI maneje la edición normal
+                              // NO forzar startCellEditMode aquí
+                            }
+                          }}
+                          columnVisibilityModel={{
+                            id: false,
+                            nueva_linea: false,
+                            aplica_igtf: false,
+                          }}
+                          rowHeight={30}
+                          localeText={esES.components.MuiDataGrid.defaultProps.localeText}
+                          sx={{
+                            '& .MuiDataGrid-columnHeaderTitle': {
+                              fontWeight: 'bold',
+                              fontSize: '0.80rem',
+                            },
+                          }}
+                        />
+                        <div className="w-full lg:w-12/12 px-5 my-1 text-center">
+                          {errors.pagos &&
+                            <p className="text-red-500 text-xs mt-1">
+                              {errors.pagos.map(pago => (
+                                <span className="text-start">{pago}<br/></span>
+                              ))}
+                          </p>}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="w-full lg:w-3/12 px-1 pr-0 pt-1 pb-1 mt-10">
+                      {/* CONTENEDOR PRINCIPAL con bordes redondeados */}
+                      <div className="apply_igtf mt-3 border border-gray-200 rounded-lg shadow-sm bg-gray-50 hidden">
+                        {/* FILA 1: Total pagado */}
+                        <div className="p-4 pb-2 border-b border-gray-200">
+                          <label className="block text-blueGray-600 text-xs font-bold mb-2">
+                            Total pagado en divisas
+                          </label>
+                        </div>
+
+                        {/* VALOR 1: Monto */}
+                        <div className="p-4 pt-0 text-right border-b border-gray-200">
+                          <label className="border-0 px-3 text-blueGray-600 rounded text-lg font-bold">
+                            {formatMoney(preInvoice.monto_pagado_divisas)}
+                          </label>
+                        </div>
+
+                        {/* FILA 2: IGTF */}
+                        <div className="p-4 pb-2 border-b border-gray-200">
+                          <label className="block text-blueGray-600 text-xs font-bold mb-2">
+                            {'IGTF ' + formatDecimal(preInvoice.igtf_porcentaje) + '%' }
+                          </label>
+                        </div>
+
+                        {/* VALOR 2: Monto IGTF */}
+                        <div className="p-4 pt-0 text-right">
+                          <label className="border-0 px-3 text-blueGray-600 rounded text-lg font-bold">
+                            {formatMoney(igtfAmount)}
+                          </label>
+                        </div>
                       </div>
                     </div>
                   </div>
-                  <div className="w-full lg:w-3/12 px-4 mt-10">
-                    <div className="apply_igtf mt-3 p-4 pb-2 border border-b-0 rounded rounded-t-none bg-gray-50 hidden">
-                        <label className="block text-blueGray-600 text-xs font-bold mb-2">{'IGTF ' + formatDecimal(preInvoice.igtf_porcentaje) + '%' }</label>
-                    </div>
-                    <div className="apply_igtf p-4 pt-0 border border-t-0 rounded rounded-b-none bg-gray-50 text-right hidden">
-                        <label className="border-0 px-3 text-blueGray-600 rounded text-lg font-bold">
-                        {formatMoney(igtfAmount)}
-                        </label>
-                      </div>
-                  </div>
-                  <div className="w-full lg:w-5/12 px-4 mt-3">
+                  <div className="w-full lg:w-4/12 px-4 mt-3">
                     <div className="flex w-full mb-1">
-                      <div className="w-full lg:w-4/12 px-4 mt-3">
+                      <div className="w-full lg:w-5/12 px-4 mt-3">
                         <label className="block text-blueGray-600 font-bold text-lg">Base imponible</label>
                       </div>
-                      <div className="w-full lg:w-9/12 px-4 mt-3 text-right">
-                        <label className="text-right border-0 px-3 text-blueGray-600 bg-white rounded text-lg font-bold">
+                      <div className="w-full lg:w-7/12 px-4 mt-3 text-right pr-0">
+                        <label className="text-right border-0 px-3 text-blueGray-600 bg-white rounded text-lg font-bold pr-1">
                         {formatMoney(taxBase)}
                         </label>
                       </div>
@@ -1638,29 +2163,29 @@ const handleRadioChange = (event) => {
                       <div className="w-full lg:w-4/12 px-4">
                         <label className="block text-blueGray-600 font-bold text-lg">I.V.A.</label>
                       </div>
-                      <div className="w-full lg:w-9/12 px-4 text-right">
-                        <label className="text-right border-0 px-3 text-blueGray-600 bg-white rounded text-lg font-bold">
+                      <div className="w-full lg:w-8/12 px-4 text-right pr-0">
+                        <label className="text-right border-0 px-3 text-blueGray-600 bg-white rounded text-lg font-bold pr-1">
                         {formatMoney(taxApplied)}
                         </label>
                       </div>
                     </div>
                     <div className="flex w-full mb-3">
-                      <div className="w-full lg:w-3/12 px-4">
+                      <div className="w-full lg:w-4/12 px-4">
                         <label className="block text-blueGray-600 font-bold text-lg">Total</label>
                       </div>
-                      <div className="w-full lg:w-9/12 px-4 text-right">
-                        <label className="text-right border-0 px-3 text-blueGray-600 bg-white rounded text-lg font-bold">
+                      <div className="w-full lg:w-8/12 px-4 text-right pr-0">
+                        <label className="text-right border-0 px-3 text-blueGray-600 bg-white rounded text-lg font-bold pr-1">
                         {formatMoney(totalAmount)}
                         </label>
                       </div>
                     </div>
                     {(preInvoice.monto_pagado_divisas > 0.0) ?
                     (<div className="flex w-full mb-3">
-                        <div className="w-full lg:w-3/12 px-4">
+                        <div className="w-full lg:w-4/12 px-4">
                           <label className="block text-blueGray-600 font-bold text-lg">Total + IGTF</label>
                         </div>
-                        <div className="w-full lg:w-9/12 px-4 text-right">
-                          <label className="text-right border-0 px-3 text-blueGray-600 bg-white rounded text-lg font-bold">
+                        <div className="w-full lg:w-8/12 px-4 text-right pr-0">
+                          <label className="text-right border-0 px-3 text-blueGray-600 bg-white rounded text-lg font-bold pr-1 ">
                           {formatMoney(totalAmount + igtfAmount)}
                           </label>
                         </div>

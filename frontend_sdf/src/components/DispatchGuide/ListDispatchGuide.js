@@ -170,7 +170,7 @@ function ListDispatchGuide() {
           `,
           text: "Generar PDF"
         });
-        if (rol === "visor"){
+        if (rol === "visor" || rol === 'auditor'){
           return `<div style="display:flex;justify-content:center;align-items:center;gap:0.25rem;white-space:nowrap;">${viewBtn}</div>`;
         }else{
           return `<div style="display:flex;justify-content:center;align-items:center;gap:0.25rem;white-space:nowrap;">${viewBtn}${pdfBtn}</div>`;

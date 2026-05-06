@@ -89,6 +89,7 @@ export const convertInInvoice = async (body) => {
 export const editPreInvoice = async (id, body) => {
   try {
     const authData = localStorage.getItem("authData");
+    var items;
     if (authData) {
       const { rol } = JSON.parse(authData);
       var response;
@@ -97,9 +98,9 @@ export const editPreInvoice = async (id, body) => {
         response = await api.get(`/admin/pre-invoices/${id}`);
         //response = await api.get(`/pre-invoices/${id}`);
       }else{
-        var items = body.items;
-        console.log('body: ', body);
-        console.log('items: ', items);
+        items = body.items;
+        /*console.log('body: ', body);
+        console.log('items: ', items);*/
         delete body.items;
         response = await api.put(`/api/pre-invoices/${id}`, body);
         for (var i = 0; i < items.length; i++){
@@ -107,7 +108,7 @@ export const editPreInvoice = async (id, body) => {
             delete items[i].id;
           }
         }
-        console.log('items(F): ', items);
+        //console.log('items(F): ', items);
         response_i = await api.put(`/api/pre-invoices/${id}/items:bulk_upsert`, items);
         console.log('response_i: ', response_i);
       }
@@ -115,7 +116,9 @@ export const editPreInvoice = async (id, body) => {
     }
   } catch (error) {
     console.error("Error al editar el pre-facturas:", error);
-    throw error;
+    //throw error;
+    body.items = items;
+    return error.response.data;
   }
 };
 
@@ -126,7 +129,7 @@ export const createPreInvoice = async (body, client_id=false) => {
     if (client_id == false){
       response = await api.post(`/api/invoices`, body);
     }else{
-      console.log('createPreInvoice-response: ', `/admin/clients/${client_id}/pre-invoices`);
+      //console.log('createPreInvoice-response: ', `/admin/clients/${client_id}/pre-invoices`);
       response = await api.post(`/admin/clients/${client_id}/pre-invoices`, body);
     }
     console.log('createPreInvoice-response: ', response);

@@ -213,7 +213,7 @@ function ListEndClients() {
               <h6 className="text-blueGray-700 text-xl font-bold">Lista de Clientes</h6>
 
               <div className="flex items-center space-x-3">
-                {rol != "visor" && (
+                {(rol != "visor" &&  rol != 'auditor') && (
                   <button
                     className="bg-twilight-indigo-600 hover:bg-twilight-indigo-500 text-white font-bold py-2 px-4 rounded"
                     onClick={redirectToCreate}>
@@ -317,7 +317,7 @@ function ListEndClients() {
                       const toggleBtn = data
                         ? `<button class="btn-delete px-2 py-1 text-red-600" data-id="${row.id}" data-nombre="${row.nombre}" data-action="delete"><i class="fa-regular fa-rectangle-xmark fa-lg"></i></button>`
                         : `<button class="btn-delete px-2 py-1 text-green-600" data-id="${row.id}" data-nombre="${row.nombre}" data-action="active"><i class="fa-regular fa-square-check fa-lg"></i></button>`;
-                      if (rol == 'visor'){
+                      if (rol == 'visor' || rol == 'auditor'){
                         return `<div style="display:flex;justify-content:center;align-items:center;gap:0.25rem;white-space:nowrap;">${viewBtn}</div>`;
                       }else{
                         return `<div style="display:flex;justify-content:center;align-items:center;gap:0.25rem;white-space:nowrap;">${viewBtn}${editBtn}${toggleBtn}</div>`;

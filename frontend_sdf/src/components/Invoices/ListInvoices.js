@@ -271,39 +271,54 @@ function ListInvoices({ title, type }) {
 
   var columns = [];
   var columnDefs = [];
+  columns.push({ title: "Fecha", data: "fecha_factura", className: "dt-center",
+    render: (data, type, row) => {
+      return formatDate(data);
+    }
+  });
+  if (rol == 'admin' || rol == 'auditor'){
+    columns.push({ title: "RIF (Afiliada)", data: "cliente_emisor.rif", className: "dt-center", render: (data, type, row) => {
+        return formatText(data);
+      }
+    });
+    columns.push({ title: "Nombre (Afiliada)", data: "cliente_emisor.nombre_empresa", render: (data, type, row) => {
+        return formatText(data);
+      }
+    });
+  }
   columns.push({
-      title: "Fecha",
-      data: "fecha_factura",
-      className: "dt-center",
-      render: (data, type, row) => {
+   title: "RIF", data: "cliente_final_rif", className: "dt-center", render: (data, type, row) => {
+      return formatText(data);
+    }
+  });
+  columns.push({
+    title: "Razón Social", data: "cliente_final_nombre", render: (data, type, row) => {
+      return formatText(data);
+    }
+  });
+  if (type != 'FC'){
+    columns.push({
+      title: "Fecha (Factura)", data: "factura_afectada_rel.fecha_emision", className: "dt-center", render: (data, type, row) => {
         return formatDate(data);
       }
     });
     columns.push({
-     title: "RIF", data: "cliente_final_rif", className: "dt-center", render: (data, type, row) => {
+      title: "Nro de control (Factura)", data: "factura_afectada_rel.numero_control", className: "dt-center", render: (data, type, row) => {
         return formatText(data);
       }
     });
-    columns.push({
-      title: "Razón Social", data: "cliente_final_nombre", render: (data, type, row) => {
-        return formatText(data);
-      }
-    });
-    if (type != 'FC'){
-      columns.push({
-        title: "Fecha (Factura)", data: "factura_afectada_rel.fecha_emision", className: "dt-center", render: (data, type, row) => {
-          return formatDate(data);
-        }
-      });
-      columns.push({
-        title: "Nro de control (Factura)", data: "factura_afectada_rel.numero_control", className: "dt-center", render: (data, type, row) => {
-          return formatText(data);
-        }
-      });
+    if (rol == 'admin' || rol == 'auditor'){
+      columnDefs = [8, 9, 10, 12, 13, 14];
+    }else{
+      columnDefs = [6, 7, 8, 10, 11, 12];
+    }
+  }else{
+    if (rol == 'admin' || rol == 'auditor'){
       columnDefs = [6, 7, 8, 10, 11, 12];
     }else{
       columnDefs = [4, 5, 6, 8, 9, 10];
     }
+  }
     /*{
       title: "Tipo de documento",
       data: "tipo_documento",
