@@ -578,6 +578,7 @@ function FormProformas() {
             data['tipo_documento'] = type;
             data['factura_afectada_id'] = data['id'];
             data['id'] = '#';
+            data['fecha_factura_old'] = data['fecha_factura'];
             data['fecha_factura'] = formattedDate;
             data['aplica_igtf'] = false;
             data['monto_pagado_divisas'] = 0.0;
@@ -585,6 +586,7 @@ function FormProformas() {
             if (type == 'ND'){
               data['items'] = [];
               data['conceptos_nd'] = [];
+              data['pagos'] = [];
             }
           }
           //console.log('data: ', data);
@@ -624,7 +626,6 @@ function FormProformas() {
             igtf_monto: 0,
             tipo_documento: 'FC',
             fecha_factura: formattedDate,
-            serial: '',
             conceptos_nd: [],
             pagos: [],
           })
@@ -836,13 +837,6 @@ function FormProformas() {
       newErrors.correlativo_interno = "Correlativo interno es obligatorio";
       errorToast.push("- Debe indicar el correlativo interno del documento.");
       //toast.error("Debe indicar el correlativo interno del documento.");
-      setButtonDisabled(false);
-      //return;
-    }
-    if (!preInvoice.serial) {
-      newErrors.serial = "Serial es obligatorio";
-      errorToast.push("- Debe indicar el serial del documento.");
-      //toast.error("Debe indicar el serial del documento.");
       setButtonDisabled(false);
       //return;
     }
@@ -1550,7 +1544,11 @@ const handleRadioChange = (event) => {
                     {formatText("Tasa de cambio del día:")}
                   </h6>
                   <h6 className="text-blueGray-400 text-sm font-bold uppercase whitespace-nowrap">
-                    {formatDate(latestExchangeRateHistory.tasas['USD'].fecha_valor)}
+                    {type != 'NC' ? (
+                      formatDate(latestExchangeRateHistory.tasas['USD'].fecha_valor)
+                    ):(
+                      formatDate(preInvoice.tasa_bcv.fecha)
+                    )}
                   </h6>
                 </div>
 
@@ -1558,7 +1556,11 @@ const handleRadioChange = (event) => {
                 <div className="flex justify-end items-baseline gap-2 pr-0">
                   <span className="text-sm font-bold text-blueGray-600">USD</span>
                   <h6 className="text-lg font-black text-gray-800">
-                    {formatMoneySpecial(latestExchangeRateHistory.tasas['USD'].tasa, 4)}
+                    {type != 'NC' ? (
+                      formatMoneySpecial(latestExchangeRateHistory.tasas['USD'].tasa, 4)
+                    ):(
+                      formatMoneySpecial(preInvoice.tasa_bcv.tasa_usd, 4)
+                    )}
                   </h6>
                 </div>
 
@@ -1566,7 +1568,11 @@ const handleRadioChange = (event) => {
                 <div className="flex justify-end items-baseline gap-2 pr-0">
                   <span className="text-sm font-bold text-blueGray-600">EUR</span>
                   <h6 className="text-lg font-black text-gray-800">
-                    {formatMoneySpecial(latestExchangeRateHistory.tasas['EUR'].tasa, 4)}
+                    {type != 'NC' ? (
+                      formatMoneySpecial(latestExchangeRateHistory.tasas['EUR'].tasa, 4)
+                    ):(
+                      formatMoneySpecial(preInvoice.tasa_bcv.tasa_eur, 4)
+                    )}
                   </h6>
                 </div>
               </div>
@@ -1696,7 +1702,7 @@ const handleRadioChange = (event) => {
                   </div>
                   <div className="w-full lg:w-2/12 px-4">
                     <div className="relative w-full mb-3">
-                      <label className="block text-blueGray-600 text-xs font-bold mb-2">Fecha de factura</label>
+                      <label className="block text-blueGray-600 text-xs font-bold mb-2">Fecha de {type == 'FC' ? 'factura' : (type == 'NC' ? 'la Nota de Crédito' : 'la Nota de Débito')}</label>
                       <input
                         type="date"
                         className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
@@ -1725,6 +1731,7 @@ const handleRadioChange = (event) => {
                           filterOptions={(options) => options} // Desactiva filtro automático
                           value={null}
                           inputValue={preInvoice.cliente_final_rif || ""}
+                          disabled={type != 'FC' ? true : false}
                           onInputChange={(e, value) => handleSearchRif(value, 'client')}
                           onChange={(event, newValue) => {
                             if (newValue) selectClient(newValue, 'client');
@@ -1837,7 +1844,7 @@ const handleRadioChange = (event) => {
                         type="text"
                         className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
                         value={preInvoice.cliente_final_nombre}
-                        placeholder="Nombre de la empresa"
+                        placeholder="Nombre de la empresa" disabled={type != 'FC' ? true : false}
                         onChange={(e) => setPreInvoice({ ...preInvoice, cliente_final_nombre: e.target.value.toString().toUpperCase() })}
                       />
                     </div>
@@ -1849,7 +1856,7 @@ const handleRadioChange = (event) => {
                       <input
                         type="text"
                         className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
-                        value={preInvoice.cliente_final_telefono}
+                        value={preInvoice.cliente_final_telefono} disabled={type != 'FC' ? true : false}
                         placeholder="0000-0000000"
                         onChange={(e) => {
                           let value = e.target.value;
@@ -1875,7 +1882,7 @@ const handleRadioChange = (event) => {
                       <input
                         type="text"
                         className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
-                        value={preInvoice.cliente_final_email}
+                        value={preInvoice.cliente_final_email} disabled={type != 'FC' ? true : false}
                         placeholder="correo@correo.com"
                         onChange={(e) => setPreInvoice({ ...preInvoice, cliente_final_email: e.target.value.toString().toUpperCase() })}
                       />
@@ -1888,17 +1895,17 @@ const handleRadioChange = (event) => {
                       <input
                         type="text"
                         className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
-                        value={preInvoice.cliente_final_direccion}
+                        value={preInvoice.cliente_final_direccion} disabled={type != 'FC' ? true : false}
                         placeholder="Calle, Avenida, Torre y/o Edificio"
                         onChange={(e) => setPreInvoice({ ...preInvoice, cliente_final_direccion: e.target.value.toString().toUpperCase() })}
                       />
                       {errors.cliente_final_direccion && <p className="text-red-500 text-xs mt-1">{errors.cliente_final_direccion}</p>}
                     </div>
                   </div>
-                  <div className="w-full lg:w-2/12 px-4">
+                  <div className="w-full lg:w-3/12 px-4">
                     <div className="relative w-full mb-3">
-                      <label className="block text-blueGray-600 text-xs font-bold mb-4">Tipo de documento</label>
-                      <label className="block text-blueGray-600 text-xs mt-4 font-bold">{preInvoice.tipo_documento == 'FC' ?
+                      <label className="block text-blueGray-600 text-xs font-bold mb-3">Tipo de documento</label>
+                      <label className="block text-blueGray-600 text-xs mt-0 font-bold">{preInvoice.tipo_documento == 'FC' ?
                         ('FACTURA')
                         :
                         (preInvoice.tipo_documento == 'NC'?
@@ -1906,6 +1913,12 @@ const handleRadioChange = (event) => {
                           :
                           ('NOTA DE DEBITO')
                         )
+                      }</label>
+                      <label className="block text-blueGray-600 text-xs mt-2 font-bold">{preInvoice.tipo_documento != 'FC' &&
+                        ('Fecha de emisión de la factura: '+ formatDate(preInvoice.fecha_factura_old))
+                      }</label>
+                      <label className="block text-blueGray-600 text-xs mt-2 font-bold">{preInvoice.tipo_documento != 'FC' &&
+                        ('N° de factura afectada: '+ formatText(preInvoice.numero_factura))
                       }</label>
                       <input
                         type="text"
@@ -1923,7 +1936,7 @@ const handleRadioChange = (event) => {
                       </select>*/}
                     </div>
                   </div>
-                  <div className="w-full lg:w-2/12 px-4">
+                  <div className="w-full lg:w-3/12 px-4">
                     <div className="relative w-full mb-3">
                       <label className="block text-blueGray-600 text-xs font-bold mb-2">Correlativo Interno</label>
                       <input
@@ -1937,26 +1950,13 @@ const handleRadioChange = (event) => {
                       {errors.correlativo_interno && <p className="text-red-500 text-xs mt-1">{errors.correlativo_interno}</p>}
                     </div>
                   </div>
-                  <div className="w-full lg:w-2/12 px-4">
-                    <div className="relative w-full mb-3">
-                      <label className="block text-blueGray-600 text-xs font-bold mb-2">Serial</label>
-                      <input
-                        type="text"
-                        className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
-                        value={preInvoice.serial}
-                        placeholder="0000..."
-                        onChange={(e) => setPreInvoice({ ...preInvoice, serial: e.target.value.toString().toUpperCase() })}
-                      />
-                      {errors.serial && <p className="text-red-500 text-xs mt-1">{errors.serial}</p>}
-                    </div>
-                  </div>
                   <div className="w-full lg:w-6/12 px-4">
                     <div className="relative w-full mb-3">
                       <label className="block text-blueGray-600 text-xs font-bold mb-2">Zona</label>
                       <input
                         type="text"
                         className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
-                        value={preInvoice.zona}
+                        value={preInvoice.zona} disabled={type != 'FC' ? true : false}
                         placeholder="Ciudad"
                         onChange={(e) => setPreInvoice({ ...preInvoice, zona: e.target.value.toString().toUpperCase() })}
                       />
