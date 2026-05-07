@@ -1,9 +1,13 @@
 import api from "./axiosConfig"; 
 
 // Obtener todos los usuarios
-export const getCompanyUsers = async ({ page = 1, per_page = 20 } = {}) => {
+export const getCompanyUsers = async (params = {}) => {
   try {
-    const response = await api.get(`/api/company-users?page=${page}&per_page=${per_page}`);
+    const query = new URLSearchParams();
+
+    if (params.include_inactive) query.append("include_inactive", params.include_inactive);
+
+    const response = await api.get(`/api/company-users?${query.toString()}`);
     return response.data; // Retorna los datos directamente
   } catch (error) {
     console.error("Error fetching company users:", error);
@@ -38,13 +42,35 @@ export const editCompanyUsers = async (id, body) => {
 };
 
 // Crear un usuario
-export const createCompanyUsers = async (body) => {
+export const createCompanyUsers = async (body, client_id=false) => {
   try {
-    const response = await api.post(`/api/company-users`, body);
-    console.log('createClient-response: ', response);
+    var response;
+    console.log('api-client_id: ', client_id);
+    if (client_id === false){
+      response = await api.post(`/api/company-users`, body);
+    }else{
+      response = await api.post(`/admin/clients/${client_id}/users`, body);
+    }
     return response.data;
   } catch (error) {
     console.error("Error al crear el usuario:", error);
-    throw error;
+    return error.response.data;
   }
 };
+
+// Delete a Usuario
+export const deleteCompanyUser = async (id) => {
+  const response = await api.delete(`/api/company-users/${id}`);
+  return response.data;
+};
+
+export const activateCompanyUser = async (id) => {
+  try {
+    const response = await api.put(`/api/company-users/${id}/activar`);
+    //console.log('activateProduct-response: ', response);
+    return response.data;
+  } catch (error) {
+    console.error("Error al activar el usuario:", error);
+    throw error;
+  }
+}

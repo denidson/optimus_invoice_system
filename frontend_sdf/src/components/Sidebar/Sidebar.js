@@ -89,7 +89,7 @@ export default function Sidebar({ collapsed, setCollapsed }) {
         { to: "/config-exchange-rate-history", icon: "fa-solid fa-list-ul", label: "Tasas de cambios BCV", roles: ["admin", "operador_admin", "visor", "auditor"] },
         { to: "/config-payment-methods", icon: "fas fa-tags", label: "Métodos de pago", roles: ["admin", "operador_admin", "visor", "auditor"] },
         { to: "/auditlogs", icon: "fa-solid fa-list-ul", label: "Registro de auditoria", roles: ["admin"] },
-        { to: "/company-users", icon: "fas fa-users", label: "Usuarios", roles: ["operador_admin", "visor", "auditor"] },
+        { to: "/company-users", icon: "fas fa-users", label: "Usuarios", roles: ["admin", "operador_admin", "visor", "auditor"] },
       ],
     },
   ];

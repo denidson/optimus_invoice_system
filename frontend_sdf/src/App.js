@@ -356,7 +356,7 @@ function App() {
             path="/company-users"
             element={
               <PrivateRoute>
-                <RoleRoute roles={["operador_admin", "visor", "auditor"]}>
+                <RoleRoute roles={["admin", "operador_admin", "visor", "auditor"]}>
                   <ListCompanyUsers />
                 </RoleRoute>
               </PrivateRoute>
@@ -366,7 +366,7 @@ function App() {
             path="/company-users/create"
             element={
               <PrivateRoute>
-                <RoleRoute roles={["operador_admin", "operador"]}>
+                <RoleRoute roles={["admin", "operador_admin", "operador"]}>
                   <FormCompanyUsers />
                 </RoleRoute>
               </PrivateRoute>
@@ -376,7 +376,7 @@ function App() {
             path="/company-users/edit"
             element={
               <PrivateRoute>
-                <RoleRoute roles={["operador_admin", "operador"]}>
+                <RoleRoute roles={["admin", "operador_admin", "operador"]}>
                   <FormCompanyUsers />
                 </RoleRoute>
               </PrivateRoute>

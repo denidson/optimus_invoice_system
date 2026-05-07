@@ -1,13 +1,13 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { useNavigate } from "react-router-dom";
 import { AuthContext } from "../../context/AuthContext";
-import { getCompanyUsers, editCompanyUsers, createCompanyUsers, showCompanyUsers } from "../../services/apiCompanyUsers";
+import { getCompanyUsers, editCompanyUsers, createCompanyUsers, showCompanyUsers, deleteCompanyUser, activateCompanyUser } from "../../services/apiCompanyUsers";
 import { formatDecimal, formatMoney, formatDate, formatDateTime, formatText } from "../../utils/formatters";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { encryptText } from '../../services/api';
 import ModalCompanyUsers from "./ModalCompanyUsers";
-
+import ModalConfirmation from "../Modals/ModalConfirmation";
 import $ from "jquery";
 import DataTable from "datatables.net-react";
 import DT from "datatables.net-dt";
@@ -29,7 +29,10 @@ export default function ListCompanyUsers() {
   var responseCache = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
   const [modalOpenCompanyUsers, setModalOpenCompanyUsers] = useState(false);
+  const [modalOpen, setModalOpen] = useState(false);
   const [companyUsersIdToAction, setCompanyUserIdToAction] = useState(null);
+  const [filterType, setFilterType] = useState("");
+  const [userIdToAction, setUserIdToAction] = useState(null);
   const { user } = useContext(AuthContext);
   const rol = user?.rol;
 
@@ -46,9 +49,18 @@ export default function ListCompanyUsers() {
         const id = $(this).data("id");
         handleOpenModalCompanyUsers(id);
       });
+
+    $("#ListCompanyUsersDt tbody").on("click", "button.btn-delete", function () {
+      const id = $(this).data("id");
+      const nombre = $(this).data("nombre");
+      const action = $(this).data("action");
+      handleOpenModal(id, nombre, action);
+    });
+
     return () => {
       $("#ListCompanyUsersDt tbody").off("click", "button.btn-edit");
       $("#ListCompanyUsersDt tbody").off("click", "button.btn-view");
+      $("#ListCompanyUsersDt tbody").off("click", "button.btn-delete");
     };
   }, []);
 
@@ -74,6 +86,53 @@ export default function ListCompanyUsers() {
 
   const handleCloseModalCompanyUsers = () => setModalOpenCompanyUsers(false);
 
+  const handleOpenModal = (id, nombre, action) => {
+    setUserIdToAction({ id, nombre, action });
+    setModalOpen(true);
+  };
+
+  const handleCloseModal = () => setModalOpen(false);
+
+  const handleConfirm = () => {
+    if (userIdToAction) {
+      handleAction(userIdToAction.id, userIdToAction.action);
+      setModalOpen(false);
+    }
+  };
+
+  const handleAction = async (id, action) => {
+    try {
+      let data;
+      if (action === 'delete') data = await deleteCompanyUser(id);
+      else data = await activateCompanyUser(id);
+
+      toast.success(data.mensaje || 'Acción realizada con éxito', { onClose: refreshCompanyUsers });
+    } catch (err) {
+      console.error(err);
+      toast.error("Error al actualizar el usuario");
+    }
+  };
+
+  const refreshCompanyUsers = async () => {
+    try {
+      const data = await getCompanyUsers();
+      const table = $('#ListCompanyUsersDt').DataTable();
+      table.clear();
+      table.rows.add(data);
+      table.draw();
+    } catch (error) {
+      console.error("Error cargando usuarios:", error);
+      toast.error("Error al recargar la lista de usuarios");
+    }
+  };
+
+  const actionSearch = () => {
+    const table = $("#ListCompanyUsersDt").DataTable();
+    table.clear();
+    table.search("");
+    table.columns().search("");
+    table.ajax.reload();
+  };
 
   return (
     <div className="mx-auto w-full">
@@ -82,15 +141,31 @@ export default function ListCompanyUsers() {
         <div className="w-full lg:w-12/12">
           <div className="relative bg-white flex flex-col min-w-0 break-words w-full mb-6 shadow-lg rounded-lg bg-blueGray-100 border-0">
             {/* Header */}
-            <div className="rounded-t bg-white mb-0 px-6 py-6 border-b flex justify-between items-center">
+            <div className="rounded-t bg-white mb-0 px-6 py-6 flex justify-between items-center border-b">
               <h6 className="text-blueGray-700 text-xl font-bold">Lista de Usuarios</h6>
-              {(rol != "visor" && rol != "auditor") && (
-                <button
-                  className="bg-twilight-indigo-600 hover:bg-twilight-indigo-500 text-white px-4 py-2 rounded"
-                  onClick={() => navigate("/company-users/create")}>
-                  Crear Usuario
-                </button>
-              )}
+              <div className="flex items-center space-x-3">
+                <div className="flex items-center flex-wrap gap-2">
+                  <h3 className="text-blueGray-700 font-bold mr-3 whitespace-nowrap">Buscar por:</h3><br/>
+                  {/* SELECT PRINCIPAL */}
+                  <select id="filter_type" className="border p-2 rounded" value={filterType} onChange={(e) => setFilterType(e.target.value)}>
+                    <option value="all">Todos</option>
+                    <option value="active">Activos</option>
+                    <option value="inactive">Inactivos</option>
+                  </select>
+                  <button
+                    className="bg-twilight-indigo-600 hover:bg-twilight-indigo-500 text-white font-bold py-2 px-4 rounded"
+                    onClick={actionSearch}>
+                    Buscar
+                  </button>
+                  {(rol != "visor" && rol != "auditor") && (
+                    <button
+                      className="bg-twilight-indigo-600 hover:bg-twilight-indigo-500 text-white font-bold px-4 py-2 rounded"
+                      onClick={() => navigate("/company-users/create")}>
+                      Crear Usuario
+                    </button>
+                  )}
+                </div>
+              </div>
             </div>
 
             {/* Tabla */}
@@ -137,6 +212,18 @@ export default function ListCompanyUsers() {
                     }
                   },
                   {
+                    title: "Estado",
+                    data: "activo",
+                    className: "dt-center",
+                    render: (data, type, row) => {
+                      if (!data){
+                        return '<i class="fas fa-circle text-red-500 mr-2"></i> ' + formatText('No');
+                      }else{
+                        return '<i class="fas fa-circle text-emerald-500 mr-2"></i> ' + formatText('Si');
+                      }
+                    }
+                  },
+                  {
                     title: "Acciones",
                     data: "activo",
                     orderable: false,
@@ -145,13 +232,13 @@ export default function ListCompanyUsers() {
                     render: (data, type, row) => {
                       const viewBtn = `<button class="btn-view px-2 py-1 text-gray-700" data-id="${row.id}"><i class="fa-solid fa-lg fa-expand"></i></button>`;
                       const editBtn = `<button class="btn-edit px-2 py-1 text-blue-600" data-id="${row.id}"><i class="fa-solid fa-lg fa-pen-to-square"></i></button>`;
-                      /*const toggleBtn = data
+                      const toggleBtn = data
                         ? `<button class="btn-delete px-2 py-1 text-red-600" data-id="${row.id}" data-nombre="${row.nombre}" data-action="delete"><i class="fa-regular fa-rectangle-xmark fa-lg"></i></button>`
-                        : `<button class="btn-delete px-2 py-1 text-green-600" data-id="${row.id}" data-nombre="${row.nombre}" data-action="active"><i class="fa-regular fa-square-check fa-lg"></i></button>`;*/
-                      if (rol == "visor" || rol == "auditor"){
+                        : `<button class="btn-delete px-2 py-1 text-green-600" data-id="${row.id}" data-nombre="${row.nombre}" data-action="active"><i class="fa-regular fa-square-check fa-lg"></i></button>`;
+                      if (rol == "visor" || rol == "auditor" || rol == "operador"){
                         return `<div style="display:flex;justify-content:center;align-items:center;gap:0.25rem;white-space:nowrap;">${viewBtn}</div>`; //${toggleBtn}
                       }else{
-                        return `<div style="display:flex;justify-content:center;align-items:center;gap:0.25rem;white-space:nowrap;">${viewBtn}${editBtn}</div>`; //${toggleBtn}
+                        return `<div style="display:flex;justify-content:center;align-items:center;gap:0.25rem;white-space:nowrap;">${viewBtn}${editBtn}${toggleBtn}</div>`; //${toggleBtn}
                       }
                     }
                   }
@@ -163,20 +250,30 @@ export default function ListCompanyUsers() {
                     "<'row'<'col-sm-6 text-end'l><'col-sm-6'f>>" +    // Fila 1: lengthMenu izquierda, filtro derecha
                     "<'row'<'col-sm-12'tr>>" +               // Fila 3: tabla
                     "<'row'<'col-sm-5 text-start'i><'col-sm-7 text-end'p>>",     // Fila 4: info izquierda, paginación derecha
-
                   serverSide: true,
                   processing: true,
-                  ajax: async (params, callback) => {
+                  ajax: async (dataTablesParams, callback) => {
                     try {
-                      const page = Math.floor(params.start / params.length) + 1;
-                      const per_page = params.length;
-                      const searchValue = params.search?.value?.toLowerCase() || '';
-                      //console.log('searchValue: ', searchValue);
+                      const searchValue = dataTablesParams.search?.value?.toLowerCase() || '';
+                      const page = Math.floor(dataTablesParams.start / dataTablesParams.length) + 1;
+                      const per_page = dataTablesParams.length;
+                      const query = {
+                        page,
+                        per_page
+                      };
+                      // Añadir filtros según filtro activo
+                      query.include_inactive = ($('#filter_type option:selected').val() == 'active' ? false : true);
+                      //console.log('query: ', query);
                       if (searchValue == ''){
-                        const response = await getCompanyUsers({ page, per_page });
+                        //console.log('if');
+                        // Pasamos los filtros al servicio
+                        //const response = await getInvoices(query);
+                        const response = await getCompanyUsers(query);
                         // Respaldar response anterior
                         responseCache = response;
-                        //console.log('response: ', response);
+                        //console.log('responseCache: ', responseCache);
+
+                        // Aseguramos que la estructura esperada esté presente
                         var { data, total } = response;
                       }else{
                         //console.log('else');
@@ -189,9 +286,7 @@ export default function ListCompanyUsers() {
                           Object.entries(item).some(([key, value]) => {
                             // Excluir campos internos
                             if (CAMPOS_EXCLUIDOS.includes(key)) return false;
-
                             if (!value) return false;
-
                             return String(value).toUpperCase().includes(searchValue.toUpperCase());
                           })
                         );
@@ -200,24 +295,21 @@ export default function ListCompanyUsers() {
                         var total = filteredData.length;
                         //var { data, total } = responseCache;
                       }
-
                       callback({
-                        draw: params.draw,
+                        draw: dataTablesParams.draw,
                         recordsTotal: total,
                         recordsFiltered: total,
-                        data: data
+                        data: data,
                       });
-                    } catch (error) {
-                      console.error("Error cargando usuarios de la empresa:", error);
+                    } catch {
                       callback({
-                        draw: params.draw,
+                        draw: dataTablesParams.draw,
                         recordsTotal: 0,
                         recordsFiltered: 0,
                         data: []
                       });
                     }
                   },
-
                   paging: true,
                   searching: true,
                   ordering: true,
@@ -303,6 +395,14 @@ export default function ListCompanyUsers() {
           isOpen={modalOpenCompanyUsers}
           onClose={handleCloseModalCompanyUsers}
           companyUser={companyUsersIdToAction}
+        />
+
+        {/* Modales */}
+        <ModalConfirmation
+          isOpen={modalOpen}
+          onClose={handleCloseModal}
+          onConfirm={handleConfirm}
+          message={`¿Estás seguro de que deseas ${userIdToAction?.action === 'delete' ? 'desactivar' : 'activar'} al usuario ${userIdToAction?.nombre || ''}?`}
         />
       </div>
     </div>

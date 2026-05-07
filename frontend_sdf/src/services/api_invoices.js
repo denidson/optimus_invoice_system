@@ -45,6 +45,11 @@ export const showInvoice = async (id) => {
       }else{
         response = await api.get(`/api/invoices/${id}`);
       }
+      if (response.data.cliente_final){
+        response.data.cliente_final_direccion = response.data.cliente_final.direccion;
+        response.data.cliente_final_telefono = response.data.cliente_final.telefono;
+        response.data.cliente_final_email = response.data.cliente_final.email;
+      }
       return response.data;
     }
   } catch (error) {

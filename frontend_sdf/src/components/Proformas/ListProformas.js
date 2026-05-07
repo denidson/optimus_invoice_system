@@ -61,7 +61,6 @@ function ListProformas() {
         cliente_final_telefono: "",
         fecha_factura: "2025-11-20",
         tipo_documento: "FC",
-        serial: "S001",
         cliente_final_direccion: "",
         zona: "CCS",
         aplica_igtf: "Si",
@@ -262,7 +261,6 @@ function ListProformas() {
                 igtf_monto: Number(row.igtf_monto) || 0,
                 tipo_documento: row.tipo_documento || "FC",
                 fecha_factura: row.fecha_factura || formattedDate,
-                serial: row.serial || "",
               },
               items: [],
             };

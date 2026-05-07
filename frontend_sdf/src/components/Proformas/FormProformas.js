@@ -1601,7 +1601,9 @@ const handleRadioChange = (event) => {
                             inputValue={preInvoice.cliente_rif || ""}
                             onInputChange={(e) => {
                               let value = e.target.value.toString().toUpperCase();
-
+                              if (value == undefined){
+                                value = '';
+                              }
                               // Elimina caracteres no válidos (solo letras, números y guiones)
                               value = value.replace(/[^A-Z0-9-]/g, "");
 
@@ -1772,7 +1774,9 @@ const handleRadioChange = (event) => {
                               }}
                               onChange={(e) => {
                                 let value = e.target.value.toUpperCase();
-
+                                if (value == undefined){
+                                  value = '';
+                                }
                                 // Elimina caracteres no válidos (solo letras, números y guiones)
                                 value = value.replace(/[^A-Z0-9-]/g, "");
 
