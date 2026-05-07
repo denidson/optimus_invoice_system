@@ -15,7 +15,6 @@ function ModalConfirmation({ isOpen, onClose, onConfirm, message }) {
     </div>
   );
 }
-
 // Estilos para la modal
 const overlayStyle = {
   position: "fixed",
