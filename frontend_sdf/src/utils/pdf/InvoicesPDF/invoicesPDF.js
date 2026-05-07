@@ -63,7 +63,7 @@ export const buildInvoicesPDF = async (data, invoiceId, mode = "download") => {
   const pageHeight = doc.internal.pageSize.height;
   const margin = 8;
 
-  const { documento, emisor, receptor: cliente, items, totales } = data;
+  const { documento, emisor, receptor: cliente, items, totales, pagos_detalle } = data;
 
   const layout = grid(12, margin, pageWidth, 2);
 
@@ -499,20 +499,89 @@ export const buildInvoicesPDF = async (data, invoiceId, mode = "download") => {
   line(doc, margin, y, pageWidth - margin - 2, y);
 
   y = doc.lastAutoTable.finalY + 5;
+
+  /* =====================================================
+     Pagos
+  ===================================================== */
+  if (pagos_detalle.length > 0){
+    const tableBodyMp = [...pagos_detalle.map(p => [
+      formatText(p.metodo_nombre),
+      formatText((p.aplica_igtf == false && p.banco != "") ? p.banco : ''),
+      formatDecimal(p.monto),
+    ]),];
+    autoTable(doc, {
+      startY: y-2,
+      margin: { left: marginTb, right: marginTb }, // usa los mismos márgenes que la página
+      tableWidth: 'auto', // o 'wrap', para que jsPDF calcule según columnas
+      head: [["Medio de pago", "Banco", "Monto (Bs.)"]],
+      body: tableBodyMp,
+      styles: {
+        fontSize: 7,
+        cellPadding: 0.8,
+        lineColor: [100, 119, 140],
+      },
+      headStyles: {
+        fillColor: [255, 255, 255],
+        textColor: [0, 0, 0],
+        fontStyle: "bold",
+        lineWidth: 0 // quitamos bordes laterales
+      },
+      didParseCell: function (data) {
+        /* ===== HEADER ===== */
+        if (data.section === "head") {
+          // Solo dibujar borde superior e inferior
+          data.cell.styles.lineWidth = {
+            top: 0.0,
+            bottom: 0.6,
+            left: 0,
+            right: 0
+          };
+          data.cell.styles.halign = "center";
+          data.cell.styles.lineColor = [100, 119, 140];
+        }
+         /* ===== BODY ===== */
+        if (data.section === "body") {
+          data.cell.styles.lineWidth = {
+            top: 0.1,
+            bottom: 0.1,
+            left: 0.0,
+            right: 0.0
+          };
+          data.cell.styles.lineColor = [100, 119, 140];
+        }
+      },
+      bodyStyles: {
+        textColor: [60, 60, 60]
+      },
+      alternateRowStyles: {
+        fillColor: [255, 255, 255]    // efecto zebra opcional
+      },
+      columnStyles: {
+        0: { halign: "left", cellWidth: 28 },
+        1: { halign: "center", cellWidth: 28 },
+        2: { halign: "right", cellWidth: 26 },
+      },
+      didDrawPage: function (data) {
+        if (documento.es_copia == true){
+        }
+      }
+    });
+  }
+
   /* =====================================================
      OBSERVACIÓN
   ===================================================== */
 
   doc.setFont("helvetica", "bold");
-  doc.text("Observación:", margin, y);
+  doc.text("Observación:", ((pageWidth / 3)+21), y);
 
   doc.setFont("helvetica", "normal");
   textWrap(
     doc,
-    formatText(documento.observacion || "Observación de prueba"),
-    margin,       // X inicial
+    formatText(documento.observacion || ""),
+    ((pageWidth / 3)+21), //margin,       // X inicial
     y + 5,            // Y inicial
-    (pageWidth / 2) - (margin),     // ancho máximo
+    (pageWidth / 3) - (margin + 15),     // ancho máximo
     7,            // tamaño fuente
     "justify",     // alineación centrada
     false,          // negrita

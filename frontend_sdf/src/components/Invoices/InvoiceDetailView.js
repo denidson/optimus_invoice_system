@@ -165,51 +165,117 @@ const InvoiceDetailView = ({ message }) => {
         ))
       )}
 
-      {/* Totales */}
-      <div className="flex flex-wrap justify-between px-2 text-right font-bold mb-4">
-        {message.monto_pagado_divisas > 0 && (
-          <div className="w-1/2 text-left">
-            Monto pagado en divisas: {formatMoney(message.monto_pagado_divisas)}
-          </div>
-        )}
-        {message.monto_pagado_divisas == 0 && (
-          <div className="w-1/2 text-left">
+      <div className="flex flex-wrap">
+                  <div className="flex w-full lg:w-8/12 px-2 ml-0 lg:ml-0 mt-0 pb-3 flex-1 min-w-0 border border-gray-200 rounded-lg shadow-sm">
+                    <div className="w-full lg:w-9/12 px-1 mt-3 pl-0">
+                      <div className="relative w-full mb-3 text-end">
+                        <div className="px-5 flex justify-between border-4 border-double p-2 mb-2">
+                          <span className="lg:w-4/12 text-center font-bold">Medio de pago</span>
+                          <span className="lg:w-4/12 text-center font-bold">Banco</span>
+                          <span className="lg:w-4/12 text-center font-bold">Monto</span>
+                        </div>
 
-          </div>
-        )}
-        <div className="w-1/2">
-          Base imponible: {formatMoney(message.total_base)}
-        </div>
-      </div>
-      <div className="flex flex-wrap justify-between px-2 text-right font-bold mb-4">
-        {message.igtf_monto > 0 && (
-          <div className="w-1/2 text-left">
-            IGTF ({formatDecimal(message.igtf_porcentaje)}%):{formatMoney(message.igtf_monto)}
-          </div>
-        )}
-        {message.igtf_monto == 0 && (
-          <div className="w-1/2 text-left">
+                        {message.pagos && message.pagos.length > 0 ? (
+                          message.pagos.map(pago => (
+                            <div key={pago.id} className="px-5 flex justify-between border-b py-1">
+                              <span className="lg:w-4/12 text-start">{pago.metodo_pago_nombre ? formatText(pago.metodo_pago_nombre) : ''}</span>
+                              <span className="lg:w-4/12 text-center">{pago.banco && pago.aplica_igtf == false ? formatText(pago.banco) : 'N/A'}</span>
+                              <span className="lg:w-4/12 text-right">{formatDecimal(pago.monto)}</span>
+                            </div>
+                          ))
+                        ) : (
+                          <div className="px-5 text-center border-b py-2">
+                            No se encontraron pagos asociadas
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    <div className="w-full lg:w-3/12 px-1 pr-0 pt-1 pb-1 mt-0">
+                      {(message.monto_pagado_divisas > 0.0) ?
+                        (<div className="mt-3 border border-gray-200 rounded-lg shadow-sm bg-gray-50">
 
-          </div>
-        )}
-        <div className="w-1/2">
-          I.V.A: {formatMoney(message.total_impuestos)}
-        </div>
-      </div>
-      <div className="flex flex-wrap justify-between px-2 text-right font-bold mb-4">
-        <div className="w-1/2"></div>
-        <div className="w-1/2">
-          Total: {formatMoney(message.total_neto ? message.total_neto - message.igtf_monto : message.total - message.igtf_monto)}
-        </div>
-      </div>
-      {message.igtf_monto > 0 && (
-        <div className="flex flex-wrap justify-between px-2 text-right font-bold mb-4">
-          <div className="w-1/2"></div>
-          <div className="w-1/2">
-            Total + IGTF: {formatMoney(message.total_neto ? message.total_neto : message.total)}
-          </div>
-        </div>
-      )}
+                          <div className="p-4 pb-2 border-b border-gray-200">
+                            <label className="block text-blueGray-600 text-xs font-bold mb-2">
+                              Total pagado en divisas
+                            </label>
+                          </div>
+
+                          <div className="p-4 pt-0 text-right border-b border-gray-200">
+                            <label className="border-0 px-3 text-blueGray-600 rounded text-lg font-bold">
+                              {formatMoney(message.monto_pagado_divisas)}
+                            </label>
+                          </div>
+
+                          <div className="p-4 pb-2 border-b border-gray-200">
+                            <label className="block text-blueGray-600 text-xs font-bold mb-2">
+                              {'IGTF ' + formatDecimal(message.igtf_porcentaje) + '%' }
+                            </label>
+                          </div>
+
+                          <div className="p-4 pt-0 text-right">
+                            <label className="border-0 px-3 text-blueGray-600 rounded text-lg font-bold">
+                              {formatMoney(message.igtf_monto)}
+                            </label>
+                          </div>
+                        </div>)
+                        :
+                        (<div className="apply_igtf mt-3 rounded-lg shadow-sm bg-gray-50">
+                        </div>)
+                      }
+                    </div>
+                  </div>
+                  <div className="w-full lg:w-4/12 px-0 mt-0">
+                    <div className="flex w-full mb-1">
+                      <div className="w-full lg:w-5/12 px-4 mt-3">
+                        <label className="block text-blueGray-600 font-bold text-lg">Base imponible</label>
+                      </div>
+                      <div className="w-full lg:w-7/12 px-4 mt-3 text-right pr-0">
+                        <label className="text-right border-0 px-3 text-blueGray-600 bg-white rounded text-lg font-bold pr-1">
+                        {formatMoney(message.total_base)}
+                        </label>
+                      </div>
+                    </div>
+                    <div className="flex w-full mb-1">
+                      <div className="w-full lg:w-4/12 px-4">
+                        <label className="block text-blueGray-600 font-bold text-lg">I.V.A.</label>
+                      </div>
+                      <div className="w-full lg:w-8/12 px-4 text-right pr-0">
+                        <label className="text-right border-0 px-3 text-blueGray-600 bg-white rounded text-lg font-bold pr-1">
+                        {formatMoney(message.total_impuestos)}
+                        </label>
+                      </div>
+                    </div>
+                    <div className="flex w-full mb-3">
+                      <div className="w-full lg:w-4/12 px-4">
+                        <label className="block text-blueGray-600 font-bold text-lg">Total</label>
+                      </div>
+                      <div className="w-full lg:w-8/12 px-4 text-right pr-0">
+                        <label className="text-right border-0 px-3 text-blueGray-600 bg-white rounded text-lg font-bold pr-1">
+                        {formatMoney(message.total_neto - message.igtf_monto)}
+                        </label>
+                      </div>
+                    </div>
+                    {(message.monto_pagado_divisas > 0.0) ?
+                    (<div className="flex w-full mb-3">
+                        <div className="w-full lg:w-4/12 px-4">
+                          <label className="block text-blueGray-600 font-bold text-lg">Total + IGTF</label>
+                        </div>
+                        <div className="w-full lg:w-8/12 px-4 text-right pr-0">
+                          <label className="text-right border-0 px-3 text-blueGray-600 bg-white rounded text-lg font-bold pr-1 ">
+                          {formatMoney(message.total_neto)}
+                          </label>
+                        </div>
+                      </div>)
+                      :
+                      (<div className="hidden flex w-full mb-3">
+                        <div className="w-full lg:w-3/12 px-4">
+                        </div>
+                        <div className="w-full lg:w-9/12 px-4 text-right">
+                        </div>
+                      </div>)
+                    }
+                  </div>
+                </div>
 
     </>
   );
