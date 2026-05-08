@@ -45,6 +45,9 @@ function FormCompanyUsers() {
             nombre: "",
             email: "",
             rol: "",
+            cliente_id: '#',
+            cliente_rif: '',
+            cliente_nombre: '',
           })
         }
         if (rol == 'admin'){
@@ -85,6 +88,10 @@ function FormCompanyUsers() {
       newErrors.rol = "Rol es obligatorio";
       errorToast.push("- Rol es obligatorio");
     }
+    if ((companyUser.rol == 'operador' || companyUser.rol == 'operador_admin' || companyUser.rol == 'visor') && (companyUser.cliente_id == null || companyUser.cliente_id == '#')){//
+      newErrors.cliente_id = "Cliente es obligatorio";
+      errorToast.push("- Cliente es obligatorio");
+    }
     setErrors(newErrors);
     if (errorToast.length > 0){
       toast.error(<div>
@@ -100,24 +107,25 @@ function FormCompanyUsers() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     // Aquí enviarías los datos de nuevo al backend para actualizar al companyUser
-    setButtonDisabled(true); // Iniciar carga (deshabilitar botón)
     if (!validate()) return;
-    console.log("Company User:", companyUser);
+    setButtonDisabled(true); // Iniciar carga (deshabilitar botón)
+    //console.log("Company User:", companyUser);
     try {
       var data;
       var message = '';
       if (companyUser.id == '#'){
         delete companyUser.id;
-        console.log("Company User(F): ", companyUser);
+        //console.log("Company User(F): ", companyUser);
         if (rol == 'admin'){
           var cliente_id = companyUser.cliente_id;
-          delete companyUser.cliente_id;
-          delete companyUser.cliente_rif;
-          delete companyUser.cliente_nombre;
-          if (rol == 'admin' || rol == 'auditor'){
+          //console.log("Company cliente_id(F): ", cliente_id);
+          if (companyUser.rol == 'admin' || companyUser.rol == 'auditor'){
+            delete companyUser.cliente_id;
+            delete companyUser.cliente_rif;
+            delete companyUser.cliente_nombre;
             cliente_id = null;
           }
-          console.log("Company cliente_id(F): ", cliente_id);
+          //console.log("Company cliente_id(F): ", cliente_id);
           data = await createCompanyUsers(companyUser, cliente_id);
         }else{
           data = await createCompanyUsers(companyUser);
@@ -127,11 +135,18 @@ function FormCompanyUsers() {
         data = await editCompanyUsers(decryptText(companyUserId), companyUser); 
         message = '!Actualización de usuario de la empresa realizada correctamente!';
       }
-      setCompanyUser(data);
-      if (data.error != undefined || data.error != false){
-        toast.error(data.error);
+      //setCompanyUser(data);
+      //console.log('data: ', data);
+      if (data.status != 201 && data.status != 200) {
+        if (data.data?.error) {
+          toast.error(data.data.error);
+        } else {
+          toast.error(`${data.status} - ${data.message}`);
+        }
+        setButtonDisabled(false);
+        return;
       }else{
-        toast.success(message, {
+        toast.success(data.data.mensaje, {
           onClose: () => {
             // Espera a que la notificación se cierre para redirigir
             setTimeout(() => {
@@ -364,6 +379,7 @@ const reduceRif = (rif, type) => {
                               )}
                             />
                         </div>
+                        {errors.cliente_id && <p className="text-red-500 text-xs mt-1">{errors.cliente_id}</p>}
                     </div>
                   )}
                   {(rol == 'admin') && (
@@ -444,7 +460,7 @@ const reduceRif = (rif, type) => {
                         <option value="operador">Operador</option>
                         <option value="operador_admin">Operador Admin</option>
                         <option value="visor">Visor</option>
-                        <option value="admin">Administrador</option>
+                        {/*<option value="admin">Administrador</option>*/}
                         <option value="auditor">Auditor</option>
                       </select>
                       {errors.rol && <p className="text-red-500 text-xs mt-1">{errors.rol}</p>}

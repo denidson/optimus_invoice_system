@@ -45,7 +45,6 @@ export const editCompanyUsers = async (id, body) => {
 export const createCompanyUsers = async (body, client_id=false) => {
   try {
     var response;
-    console.log('api-client_id: ', client_id);
     if (client_id === false){
       response = await api.post(`/api/company-users`, body);
     }else if (client_id === null){
@@ -53,10 +52,10 @@ export const createCompanyUsers = async (body, client_id=false) => {
     }else{
       response = await api.post(`/admin/clients/${client_id}/users`, body);
     }
-    return response.data;
+    return response;
   } catch (error) {
     console.error("Error al crear el usuario:", error);
-    return error.response.data;
+    return error;
   }
 };
 
