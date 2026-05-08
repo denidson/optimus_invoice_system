@@ -48,6 +48,8 @@ export const createCompanyUsers = async (body, client_id=false) => {
     console.log('api-client_id: ', client_id);
     if (client_id === false){
       response = await api.post(`/api/company-users`, body);
+    }else if (client_id === null){
+      response = await api.post(`/admin/users`, body);
     }else{
       response = await api.post(`/admin/clients/${client_id}/users`, body);
     }
