@@ -95,7 +95,6 @@ function ModalPreinvoices({ isOpen, onClose, message }) {
         {tab === "FC" && viewMode === "detalle" && (
           <InvoiceDetailView message={message} />
         )}
-
         {tab === "DV" && viewMode === "detalle" && (
           message.documentos_vinculados?.length > 0 ? (
             <>
