@@ -545,8 +545,6 @@ function FormProformas() {
           setEndClients(datacls.data);
           const datamp = await getPaymentMethods();
           setPaymentMethods(datamp);
-          const datalerh = await getLatestExchangeRateHistory();
-          setLatestExchangeRateHistory(datalerh);
         }else{
           setProducts([]);
           setEndClients([]);
@@ -555,6 +553,8 @@ function FormProformas() {
           const dataclsAdmin = await getClients({ page: 1, per_page: 20, request_type: 'export' });
           setClients(dataclsAdmin.data);
         }
+        const datalerh = await getLatestExchangeRateHistory();
+        setLatestExchangeRateHistory(datalerh);
         var data;
         if (preInvoiceId != null){
           //console.log('type: ', type);
@@ -1529,7 +1529,7 @@ const handleRadioChange = (event) => {
             <ToastContainer />
             <div class="rounded-t bg-white mb-0 px-6 py-6">
               <div class="text-center flex justify-between">
-                <h6 class="text-blueGray-700 text-xl font-bold">{preInvoice.id == '#'? "Crear" : "Actualizar"} Proformas</h6>
+                <h6 class="text-blueGray-700 text-xl font-bold">{preInvoice?.id == '#'? "Crear" : "Actualizar"} Proformas</h6>
               </div>
             </div>
             <div className="flex-auto px-4 lg:px-10 py-10 pt-0 bg-white">
@@ -2216,7 +2216,7 @@ const handleRadioChange = (event) => {
                   disabled={buttonDisabled} // Deshabilita el botón si `buttonDisabled` es `true`
                   style={{ opacity: buttonDisabled ? 0.5 : 1 }} // Cambiar la opacidad cuando está deshabilitado
                 >
-                  {buttonDisabled ? "Actualizando..." : preInvoice.id == '#'? "Guardar" : "Actualizar"} {/* Cambia el texto mientras está cargando */}
+                  {buttonDisabled ? "Actualizando..." : preInvoice?.id == '#'? "Guardar" : "Actualizar"} {/* Cambia el texto mientras está cargando */}
                 </button>
               </form>
             </div>
